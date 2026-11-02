@@ -1,7 +1,7 @@
 import { HttpResponse, http } from 'msw';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { server } from '@/test/msw-server';
-import { apiFetch, browserNavigation } from './client';
+import { api, apiFetch, browserNavigation, unwrap } from './client';
 import { ApiError } from './errors';
 
 const ME_URL = 'http://api.test/api/v1/me';
@@ -112,5 +112,65 @@ describe('apiFetch', () => {
 
     await expect(apiFetch('/me')).rejects.toBeInstanceOf(ApiError);
     expect(assign).not.toHaveBeenCalled();
+  });
+});
+
+describe('unwrap (타입 있는 클라이언트)', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    window.history.pushState({}, '', '/');
+  });
+
+  it('성공 봉투면 data 만 돌려준다', async () => {
+    server.use(
+      http.get(ME_URL, () =>
+        HttpResponse.json({
+          success: true,
+          data: { user: { githubLogin: 'echoport' }, organizations: [] },
+        }),
+      ),
+    );
+
+    const me = await unwrap(api.GET('/api/v1/me'));
+
+    expect(me.user.githubLogin).toBe('echoport');
+  });
+
+  it('실패 봉투면 ApiError 로 던진다', async () => {
+    server.use(
+      http.get('http://api.test/api/v1/orgs/o1/services/s1', () =>
+        HttpResponse.json(
+          { success: false, code: 'SERVICE_NOT_FOUND', message: 'not found' },
+          { status: 404, headers: { 'X-Request-ID': 'req-9' } },
+        ),
+      ),
+    );
+
+    await expect(
+      unwrap(
+        api.GET('/api/v1/orgs/{org_id}/services/{service_id}', {
+          params: { path: { org_id: 'o1', service_id: 's1' } },
+        }),
+      ),
+    ).rejects.toMatchObject({ status: 404, code: 'SERVICE_NOT_FOUND', requestId: 'req-9' });
+  });
+
+  it('401 이면 로그인 화면으로 보낸다', async () => {
+    const assign = vi.spyOn(browserNavigation, 'assign').mockImplementation(() => {});
+    window.history.pushState({}, '', '/o/echoport');
+    server.use(
+      http.get(ME_URL, () =>
+        HttpResponse.json({ success: false, code: 'UNAUTHENTICATED' }, { status: 401 }),
+      ),
+    );
+
+    await expect(unwrap(api.GET('/api/v1/me'))).rejects.toMatchObject({ status: 401 });
+    expect(assign).toHaveBeenCalledWith(`/login?next=${encodeURIComponent('/o/echoport')}`);
+  });
+
+  it('네트워크 오류는 상태 0 의 ApiError 다', async () => {
+    server.use(http.get(ME_URL, () => HttpResponse.error()));
+
+    await expect(unwrap(api.GET('/api/v1/me'))).rejects.toBeInstanceOf(ApiError);
   });
 });

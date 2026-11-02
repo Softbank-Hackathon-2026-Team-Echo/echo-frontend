@@ -1,11 +1,22 @@
-import { Server } from 'lucide-react';
+import { MoreHorizontal, Pencil, RefreshCw, Server, Trash2 } from 'lucide-react';
+import { useState } from 'react';
 import { useParams } from 'react-router';
+import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorState } from '@/components/ErrorState';
 import { PageHeader } from '@/components/PageHeader';
+import { ProviderLabel } from '@/components/ProviderLabel';
 import { RoleButton } from '@/components/RoleButton';
 import { SimulatedBadge } from '@/components/SimulatedBadge';
 import { StatusBadge } from '@/components/StatusBadge';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,
@@ -15,19 +26,21 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { useEnvironment, useEnvironments } from '@/lib/api/environments';
+import { useRole } from '@/hooks/useRole';
+import {
+  useCheckConnection,
+  useDeleteEnvironment,
+  useEnvironment,
+  useEnvironments,
+} from '@/lib/api/environments';
 import { useCurrentOrg } from '@/lib/api/me';
 import type { EnvironmentSummary } from '@/lib/api/types';
-import { connectionStatusView, providerLabel } from '@/lib/status';
-import { cn } from '@/lib/utils';
+import { hasRole } from '@/lib/roles';
+import { connectionStatusView } from '@/lib/status';
+import { EnvironmentFormDialog } from './EnvironmentFormDialog';
+import { SettingsTabs } from './SettingsTabs';
 
 const SKELETON_ROWS = 5;
-
-const PROVIDER_DOT: Record<string, string> = {
-  aws: 'bg-aws',
-  gcp: 'bg-gcp',
-  onprem: 'bg-onprem',
-};
 
 function clusterName(environment: EnvironmentSummary): string | null {
   const value = environment.config?.clusterName ?? environment.config?.kubeContext;
@@ -58,26 +71,63 @@ function ClusterCell({ orgId, environment }: { orgId: string; environment: Envir
   );
 }
 
+type RowActionsProps = {
+  environment: EnvironmentSummary;
+  onEdit: () => void;
+  onDelete: () => void;
+  onCheck: () => void;
+  checking: boolean;
+};
+
+/** 행 메뉴. 권한이 없는 항목은 숨기지 않고 비활성 + 필요한 역할을 적는다 */
+function RowActions({ environment, onEdit, onDelete, onCheck, checking }: RowActionsProps) {
+  const role = useRole();
+  const canWrite = hasRole(role, 'DEVELOPER');
+  const canDelete = hasRole(role, 'ADMIN');
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon-sm" aria-label={`Actions for ${environment.name}`}>
+          <MoreHorizontal aria-hidden />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-52">
+        <DropdownMenuItem disabled={!canWrite || checking} onSelect={onCheck}>
+          <RefreshCw aria-hidden />
+          <span className="flex-1">Check connection</span>
+          {!canWrite && <span className="text-caption text-fg-muted">Developer</span>}
+        </DropdownMenuItem>
+        <DropdownMenuItem disabled={!canWrite} onSelect={onEdit}>
+          <Pencil aria-hidden />
+          <span className="flex-1">Edit</span>
+          {!canWrite && <span className="text-caption text-fg-muted">Developer</span>}
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem variant="destructive" disabled={!canDelete} onSelect={onDelete}>
+          <Trash2 aria-hidden />
+          <span className="flex-1">Delete</span>
+          {!canDelete && <span className="text-caption text-fg-muted">Admin</span>}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 function EnvironmentRow({
   orgId,
   environment,
+  actions,
 }: {
   orgId: string;
   environment: EnvironmentSummary;
+  actions: React.ReactNode;
 }) {
   const status = connectionStatusView(environment.connectionStatus);
   return (
     <TableRow>
       <TableCell className="text-body-medium">{environment.name}</TableCell>
       <TableCell>
-        <span className="flex items-center gap-2">
-          <span
-            aria-hidden
-            className={cn('size-2 rounded-full', PROVIDER_DOT[environment.kind] ?? 'bg-fg-muted')}
-          />
-          {providerLabel(environment.kind)}
-          <span className="text-fg-muted">· {environment.location ?? '—'}</span>
-        </span>
+        <ProviderLabel kind={environment.kind} location={environment.location} />
       </TableCell>
       <TableCell>
         <ClusterCell orgId={orgId} environment={environment} />
@@ -88,6 +138,7 @@ function EnvironmentRow({
           title={environment.connectionError ? `Reason: ${environment.connectionError}` : undefined}
         />
       </TableCell>
+      <TableCell className="w-10 text-right">{actions}</TableCell>
     </TableRow>
   );
 }
@@ -108,6 +159,7 @@ function SkeletonRows() {
       <TableCell>
         <Skeleton className="h-5 w-24" />
       </TableCell>
+      <TableCell />
     </TableRow>
   ));
 }
@@ -118,9 +170,22 @@ export default function EnvironmentsPage() {
   const { organization } = useCurrentOrg(slug);
   const orgId = organization?.id;
   const { data, isPending, isError, error, refetch } = useEnvironments(orgId);
+  const checkConnection = useCheckConnection(orgId ?? '');
+  const deleteEnvironment = useDeleteEnvironment(orgId ?? '');
+
+  const [formOpen, setFormOpen] = useState(false);
+  const [editing, setEditing] = useState<EnvironmentSummary | undefined>();
+  const [deleting, setDeleting] = useState<EnvironmentSummary | undefined>();
 
   const addButton = (
-    <RoleButton requires="DEVELOPER" disabledReason="Coming soon" size="sm">
+    <RoleButton
+      requires="DEVELOPER"
+      size="sm"
+      onClick={() => {
+        setEditing(undefined);
+        setFormOpen(true);
+      }}
+    >
       Add environment
     </RoleButton>
   );
@@ -129,9 +194,10 @@ export default function EnvironmentsPage() {
     <>
       <PageHeader
         title="Environments"
-        description="Clusters your services can run on. Services move between these during evacuation."
+        description="Each environment = one cloud region or one on-prem site. Whether it serves or stands by is decided per service."
         actions={addButton}
       />
+      <SettingsTabs />
       {isError ? (
         <ErrorState error={error} onRetry={() => refetch()} />
       ) : !isPending && data.items.length === 0 ? (
@@ -139,16 +205,20 @@ export default function EnvironmentsPage() {
           icon={Server}
           title="No environments yet"
           description="Register an AWS, GCP or on-prem cluster to deploy services to it."
+          action={addButton}
         />
       ) : (
         <div className="overflow-hidden rounded-lg border border-line bg-surface">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Provider · location</TableHead>
-                <TableHead>Cluster</TableHead>
+                <TableHead>Environment</TableHead>
+                <TableHead>Provider · region</TableHead>
+                <TableHead>Cluster (simulated)</TableHead>
                 <TableHead>Connection</TableHead>
+                <TableHead className="w-10">
+                  <span className="sr-only">Actions</span>
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -156,12 +226,53 @@ export default function EnvironmentsPage() {
                 <SkeletonRows />
               ) : (
                 data.items.map((environment) => (
-                  <EnvironmentRow key={environment.id} orgId={orgId} environment={environment} />
+                  <EnvironmentRow
+                    key={environment.id}
+                    orgId={orgId}
+                    environment={environment}
+                    actions={
+                      <RowActions
+                        environment={environment}
+                        checking={
+                          checkConnection.isPending && checkConnection.variables === environment.id
+                        }
+                        onCheck={() => checkConnection.mutate(environment.id)}
+                        onEdit={() => {
+                          setEditing(environment);
+                          setFormOpen(true);
+                        }}
+                        onDelete={() => setDeleting(environment)}
+                      />
+                    }
+                  />
                 ))
               )}
             </TableBody>
           </Table>
         </div>
+      )}
+
+      {organization && (
+        <EnvironmentFormDialog
+          open={formOpen}
+          onOpenChange={setFormOpen}
+          orgId={organization.id}
+          orgSlug={organization.slug}
+          environment={editing}
+        />
+      )}
+      {deleting && (
+        <ConfirmDeleteDialog
+          open
+          onOpenChange={(open) => !open && setDeleting(undefined)}
+          name={deleting.name}
+          title={`Delete ${deleting.name}?`}
+          description="Environments with services on them cannot be deleted. Move or delete those services first."
+          pending={deleteEnvironment.isPending}
+          onConfirm={() =>
+            deleteEnvironment.mutate(deleting.id, { onSuccess: () => setDeleting(undefined) })
+          }
+        />
       )}
     </>
   );

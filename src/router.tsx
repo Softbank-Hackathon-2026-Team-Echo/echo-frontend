@@ -21,11 +21,43 @@ export const router = createBrowserRouter([
     path: '/o/:slug',
     element: <AppShell />,
     children: [
-      { index: true, handle: crumb('Dashboard'), element: <PlaceholderPage title="Dashboard" /> },
+      {
+        index: true,
+        handle: crumb('Dashboard'),
+        lazy: () =>
+          import('@/pages/dashboard/DashboardPage').then((m) => ({ Component: m.default })),
+      },
       {
         path: 'services',
         handle: crumb('Services'),
-        element: <PlaceholderPage title="Services" />,
+        children: [
+          {
+            index: true,
+            lazy: () =>
+              import('@/pages/services/ServicesPage').then((m) => ({ Component: m.default })),
+          },
+          {
+            path: ':serviceId',
+            handle: crumb('Service'),
+            children: [
+              {
+                index: true,
+                lazy: () =>
+                  import('@/pages/services/ServiceDetailPage').then((m) => ({
+                    Component: m.default,
+                  })),
+              },
+              {
+                path: 'deploys/:deployRequestId',
+                handle: crumb('Deploy'),
+                lazy: () =>
+                  import('@/pages/services/DeployProgressPage').then((m) => ({
+                    Component: m.default,
+                  })),
+              },
+            ],
+          },
+        ],
       },
       {
         path: 'evacuation',
@@ -57,7 +89,8 @@ export const router = createBrowserRouter([
           {
             path: 'members',
             handle: crumb('Members'),
-            element: <PlaceholderPage title="Members" />,
+            lazy: () =>
+              import('@/pages/settings/MembersPage').then((m) => ({ Component: m.default })),
           },
         ],
       },

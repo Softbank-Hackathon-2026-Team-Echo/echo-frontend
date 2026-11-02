@@ -55,8 +55,8 @@
 
 | 메뉴 | 경로 | 화면 ID |
 |---|---|---|
-| Dashboard | `/o/:slug` | S01 |
-| Services | `/o/:slug/services` | SVC |
+| Dashboard | `/o/:slug` (+ 상단 바 Simulate disaster → S01-D 다이얼로그) | S01 |
+| Services | `/o/:slug/services` · `/o/:slug/services/:serviceId` · `/o/:slug/services/:serviceId/deploys/:deployRequestId` | SVC 목록 · 상세 · 배포 진행 |
 | Evacuation | `/o/:slug/evacuation` | E01-1 ~ E01-3 |
 | Migrations | `/o/:slug/migrations` | M01 · M02 |
 | Security | `/o/:slug/security` | SEC |

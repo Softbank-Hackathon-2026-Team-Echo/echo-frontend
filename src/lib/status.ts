@@ -20,3 +20,62 @@ const PROVIDER_LABELS: Record<string, string> = { aws: 'AWS', gcp: 'GCP', onprem
 export function providerLabel(kind: string): string {
   return PROVIDER_LABELS[kind] ?? kind;
 }
+
+const DEPLOY_REQUEST: Record<string, StatusView> = {
+  QUEUED: { label: 'Queued', tone: 'neutral' },
+  BUILDING: { label: 'Building', tone: 'migrating' },
+  DEPLOYING: { label: 'Deploying', tone: 'migrating' },
+  VERIFYING: { label: 'Verifying', tone: 'migrating' },
+  SUCCEEDED: { label: 'Succeeded', tone: 'success' },
+  FAILED: { label: 'Failed', tone: 'danger' },
+  CANCELLED: { label: 'Cancelled', tone: 'neutral' },
+};
+
+export function deployStatusView(status: string): StatusView {
+  return DEPLOY_REQUEST[status] ?? { label: status, tone: 'neutral' };
+}
+
+const ENV_ROLE: Record<string, StatusView> = {
+  SERVING: { label: 'Serving', tone: 'success' },
+  STANDBY: { label: 'Standby', tone: 'neutral' },
+  NONE: { label: 'Not deployed', tone: 'neutral' },
+};
+
+/** 서비스-환경 연결의 역할 (조직 역할과 다르다, ui-terms §5) */
+export function envRoleView(role: string): StatusView {
+  return ENV_ROLE[role] ?? { label: role, tone: 'neutral' };
+}
+
+const VERSION: Record<string, StatusView> = {
+  IN_SYNC: { label: 'In sync', tone: 'success' },
+  OUT_OF_SYNC: { label: 'Out of sync', tone: 'warning' },
+};
+
+export function versionStatusView(status: string): StatusView {
+  return VERSION[status] ?? { label: status, tone: 'neutral' };
+}
+
+// 배포 요청 실패 이유 (echo-was docs/api/deploy-requests.md)
+const DEPLOY_ERRORS: Record<string, string> = {
+  REPO_NOT_ACCESSIBLE: 'The repository is not accessible.',
+  REF_NOT_FOUND: 'The branch or commit was not found.',
+  SOURCE_PROVIDER_UNAVAILABLE: 'GitHub did not respond.',
+  BUILD_FAILED: 'The build failed.',
+  BUILD_TIMEOUT: 'The build timed out.',
+  DEPLOY_FAILED: 'The deployment failed.',
+  DEPLOY_TIMEOUT: 'The deployment timed out.',
+  HEALTH_CHECK_FAILED: 'The health check failed.',
+  HEALTH_CHECK_TIMEOUT: 'The health check timed out.',
+  PUBLIC_URL_UNREACHABLE: 'The public URL could not be reached.',
+  WORKER_LOST: 'The deploy worker stopped responding.',
+  INTERNAL_ERROR: 'An internal error occurred.',
+};
+
+export function deployErrorLabel(code: string): string {
+  return DEPLOY_ERRORS[code] ?? code;
+}
+
+/** 커밋 SHA 는 앞 7자만 보여 준다 (ui-terms §1) */
+export function shortSha(sha: string | null | undefined): string {
+  return sha ? sha.slice(0, 7) : '—';
+}

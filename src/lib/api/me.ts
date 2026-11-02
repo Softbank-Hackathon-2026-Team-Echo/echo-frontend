@@ -1,12 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
-import { apiFetch } from './client';
+import { api, unwrap } from './client';
 import { queryKeys } from './query-keys';
-import type { Me, Organization } from './types';
+import type { Organization } from './types';
 
 export function useMe() {
   return useQuery({
     queryKey: queryKeys.me(),
-    queryFn: () => apiFetch<Me>('/me'),
+    queryFn: () => unwrap(api.GET('/api/v1/me')),
     staleTime: 60_000,
   });
 }

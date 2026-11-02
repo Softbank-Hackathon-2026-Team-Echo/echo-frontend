@@ -52,7 +52,12 @@ cat .github/PULL_REQUEST_TEMPLATE.md
 
 - **항상 현재 템플릿을 읽어** 섹션 제목·순서를 그대로 따른다(템플릿이 바뀌어도 동기화 유지). 섹션을 임의로 추가·삭제하지 않는다.
 - 현재 템플릿: 맨 위 `노션 태스크:` 줄 + 섹션 `🎯 목적` / `📝 작업 요약` / `✅ 체크리스트` / `📌 기타`.
-- `노션 태스크:` 링크는 작업 SPEC(`specs/*.md`)이나 지시서에 적힌 노션 주소를 쓴다. 모르면 비워 두고 완료 보고에 적는다.
+- `노션 태스크:` 링크는 **직접 찾아 채운다**(사용자에게 묻지 않는다). 작업 SPEC(`specs/*.md`) → 관련 GitHub 이슈 본문 첫 줄 `노션 태스크:` 순서로 찾는다.
+  ```bash
+  gh issue view <번호> -R Softbank-Hackathon-2026-Team-Echo/echo-frontend --json body --jq .body | head -1
+  ```
+  이슈가 여러 개면 이슈마다 한 줄씩 적는다. 맞는 태스크가 정말 없으면 가장 가까운 태스크에 "(후속 수정)"을 붙인다.
+- 이슈를 닫을지: 이슈 완료 기준을 이 PR 이 모두 채우면 `Closes #N`, 일부만이면 `Refs: #N` 과 남은 것을 적는다.
 
 ### Step 4: 검증 결과 모으기
 
@@ -62,7 +67,16 @@ PR 본문에는 실제로 돌린 결과만 적는다. 돌리지 않았으면 "�
 pnpm lint && pnpm typecheck && pnpm test && pnpm build
 ```
 
-- 화면을 바꿨으면 `pnpm dev` 로 띄워 바뀐 화면을 라이트·다크·projector 로 확인한다. 브라우저 도구가 있으면 스크린샷을 `docs/pr-assets/`(gitignore)에 저장하고, 없으면 "스크린샷: 사용자가 첨부" 로 남긴다.
+- 화면을 바꿨으면 **스크린샷을 직접 찍어 넣는다**(사용자에게 맡기지 않는다).
+  1. `.env.local` 의 `VITE_USE_MOCKS=true` 로 `pnpm dev` 를 띄우고 내장 브라우저로 바뀐 화면을 연다(라이트 기본, 필요하면 dark·projector·960px).
+  2. React Query devtools 버튼은 JS 로 숨긴다: `document.querySelectorAll('[class*=tsqd]').forEach(e => e.style.display = 'none')`.
+  3. 이미지는 `pr-assets` 브랜치(orphan, main 에 합치지 않음)의 `pr-<번호>/` 에 올린다. 작업 트리를 건드리지 않게 별도 worktree 를 쓴다.
+     ```bash
+     git fetch origin pr-assets && git worktree add <임시 경로> pr-assets
+     # <임시 경로>/pr-<번호>/*.jpg 복사 → commit → git -C <임시 경로> push → git worktree remove <임시 경로>
+     ```
+  4. 본문에는 `https://github.com/Softbank-Hackathon-2026-Team-Echo/echo-frontend/blob/pr-assets/pr-<번호>/<파일>?raw=true` 로 링크한다. PR 번호를 모르면 PR 을 만든 뒤 본문을 고친다(`gh pr edit <번호> --body-file`).
+- 화면 변화가 없으면 "스크린샷: 화면 변화 없음" 한 줄.
 
 ### Step 5: `docs/PR.md` 작성
 

@@ -1,0 +1,294 @@
+import { Check, CircleAlert, Loader2, SquareTerminal, X } from 'lucide-react';
+import { Link, useParams } from 'react-router';
+import { ErrorState } from '@/components/ErrorState';
+import { ExternalLink } from '@/components/ExternalLink';
+import { ProviderLabel } from '@/components/ProviderLabel';
+import { SimulatedBadge } from '@/components/SimulatedBadge';
+import { StatusBadge } from '@/components/StatusBadge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useNow } from '@/hooks/useNow';
+import { useCurrentOrg } from '@/lib/api/me';
+import { isTerminalStatus, useDeployRequest, useService } from '@/lib/api/services';
+import type { DeployRequestDetail } from '@/lib/api/types';
+import { dateTime, elapsed } from '@/lib/format';
+import { deployErrorLabel, deployStatusView, shortSha } from '@/lib/status';
+import { cn } from '@/lib/utils';
+
+type StageState = 'done' | 'current' | 'failed' | 'pending';
+
+const STAGES = [
+  { status: 'QUEUED', label: 'Queued', at: 'queuedAt' },
+  { status: 'BUILDING', label: 'Building', at: 'buildingAt' },
+  { status: 'DEPLOYING', label: 'Deploying', at: 'deployingAt' },
+  { status: 'VERIFYING', label: 'Verifying', at: 'verifyingAt' },
+] as const;
+
+/** 단계별 상태. 실패하면 마지막으로 시작한 단계가 실패 단계다 */
+export function stageStates(
+  request: Pick<DeployRequestDetail, 'status' | 'stageTimes'>,
+): StageState[] {
+  const started = STAGES.map((stage) => Boolean(request.stageTimes[stage.at]));
+  const lastStarted = started.lastIndexOf(true);
+  return STAGES.map((stage, index) => {
+    if (request.status === 'SUCCEEDED') return 'done';
+    if (!started[index]) return 'pending';
+    if (index < lastStarted) return 'done';
+    if (request.status === 'FAILED' || request.status === 'CANCELLED') return 'failed';
+    return stage.status === request.status ? 'current' : 'done';
+  });
+}
+
+const STAGE_ICON: Record<StageState, React.ReactNode> = {
+  done: <Check aria-hidden className="size-4" />,
+  current: <Loader2 aria-hidden className="size-4 animate-spin" />,
+  failed: <X aria-hidden className="size-4" />,
+  pending: null,
+};
+
+const STAGE_CLASSES: Record<StageState, string> = {
+  done: 'bg-success-solid text-fg-on-brand',
+  current: 'bg-migrating-solid text-fg-on-brand',
+  failed: 'bg-danger-solid text-fg-on-brand',
+  pending: 'border border-line-strong bg-surface',
+};
+
+function StepCircle({ state, index }: { state: StageState; index: number }) {
+  return (
+    <span
+      className={cn(
+        'flex size-7 shrink-0 items-center justify-center rounded-full text-label',
+        STAGE_CLASSES[state],
+      )}
+    >
+      {STAGE_ICON[state] ?? <span className="text-fg-muted">{index + 1}</span>}
+    </span>
+  );
+}
+
+/** 가로 스테퍼 (와이어프레임 v2): 큐 · 빌드 · 배포 · 헬스 체크 · Live · 예비 따라가기 */
+function Stepper({ request, now }: { request: DeployRequestDetail; now: number }) {
+  const states = stageStates(request);
+  const times = request.stageTimes;
+  const ends = [times.buildingAt, times.deployingAt, times.verifyingAt, times.finishedAt];
+  const live: StageState =
+    request.status === 'SUCCEEDED' ? 'done' : request.status === 'FAILED' ? 'failed' : 'pending';
+  const steps = [
+    ...STAGES.map((stage, index) => {
+      const state = states[index] ?? 'pending';
+      const startedAt = times[stage.at];
+      let detail = startedAt ? elapsed(startedAt, ends[index] ?? null, now) : 'pending';
+      if (stage.status === 'BUILDING' && request.build?.reused) detail = `${detail} · cache reused`;
+      if (stage.status === 'VERIFYING' && state === 'current') detail = 'health check running';
+      return { label: stage.label, state, detail };
+    }),
+    {
+      label: 'Live',
+      state: live,
+      detail:
+        request.status === 'SUCCEEDED'
+          ? 'serving'
+          : request.status === 'FAILED'
+            ? 'not switched'
+            : 'pending',
+    },
+    {
+      // 예비 환경은 서비스 중 배포가 성공하면 서버가 자동으로 따라간다(STANDBY_SYNC)
+      label: 'Standby sync',
+      state: 'pending' as StageState,
+      detail: request.trigger === 'STANDBY_SYNC' ? 'this is a sync' : 'follows automatically',
+    },
+  ];
+  return (
+    <ol className="flex items-center gap-2 overflow-x-auto rounded-lg border border-line bg-surface p-4">
+      {steps.map((step, index) => (
+        <li key={step.label} className="flex min-w-0 flex-1 items-center gap-2">
+          <StepCircle state={step.state} index={index} />
+          <span className="flex min-w-0 flex-col">
+            <span className="truncate text-body-medium">{step.label}</span>
+            <span
+              className={cn(
+                'truncate text-caption',
+                step.state === 'current' ? 'text-migrating-fg' : 'text-fg-muted',
+              )}
+            >
+              {step.detail}
+            </span>
+          </span>
+          {index < steps.length - 1 && (
+            <span
+              aria-hidden
+              className={cn(
+                'h-0.5 min-w-4 flex-1 rounded-full',
+                step.state === 'done' ? 'bg-success-solid' : 'bg-line',
+              )}
+            />
+          )}
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+function Outcome({ request }: { request: DeployRequestDetail }) {
+  if (request.status === 'SUCCEEDED') {
+    return (
+      <div className="flex flex-col gap-2 rounded-lg border border-line bg-success-bg p-4">
+        <p className="text-title text-success-fg">Live — health check passed</p>
+      </div>
+    );
+  }
+  if (request.status === 'FAILED') {
+    return (
+      <div role="alert" className="flex flex-col gap-1 rounded-lg bg-danger-bg p-4 text-danger-fg">
+        <p className="flex items-center gap-2 text-title">
+          <CircleAlert aria-hidden className="size-4" />
+          {request.errorCode ? deployErrorLabel(request.errorCode) : 'The deploy failed.'}
+        </p>
+        {request.errorMessage && <p className="text-body">{request.errorMessage}</p>}
+        {request.revertStatus === 'SUCCEEDED' && (
+          <p className="text-body">The previous version was kept running.</p>
+        )}
+        {request.revertStatus === 'FAILED' && (
+          <p className="text-body">Reverting to the previous version also failed.</p>
+        )}
+      </div>
+    );
+  }
+  if (request.status === 'CANCELLED') {
+    return (
+      <p className="rounded-lg bg-subtle p-4 text-body text-fg-secondary">
+        {request.cancelReason === 'SUPERSEDED'
+          ? 'Replaced by a newer deploy to the same environment.'
+          : 'Cancelled because the service was deleted.'}
+      </p>
+    );
+  }
+  return null;
+}
+
+function LogPanel({ request }: { request: DeployRequestDetail }) {
+  return (
+    <section className="flex flex-col overflow-hidden rounded-lg border border-line bg-subtle">
+      <header className="flex items-center justify-between gap-2 border-b border-line px-4 py-2">
+        <span className="flex items-center gap-2 font-mono text-mono text-fg-secondary">
+          <SquareTerminal aria-hidden className="size-4" />
+          deploy · {request.id.slice(0, 8)}
+        </span>
+        {!isTerminalStatus(request.status) && (
+          <span className="flex items-center gap-1.5 text-caption text-success-fg">
+            <span aria-hidden className="size-1.5 rounded-full bg-success-solid" />
+            Live
+          </span>
+        )}
+      </header>
+      {/* 배포 로그 API 는 API 서버 4 예정 (계약 §2 SVC 배포 로그 🆕). 지금은 단계 시각만 줄로 보여 준다 */}
+      <ol className="flex flex-col gap-1 p-4 font-mono text-mono">
+        {(
+          [
+            ['queuedAt', 'request queued'],
+            [
+              'buildingAt',
+              request.build?.reused ? 'build started · image reused' : 'build started',
+            ],
+            ['deployingAt', `deploying to ${request.environment.name}`],
+            ['verifyingAt', 'health check started'],
+            ['finishedAt', `finished · ${request.status.toLowerCase()}`],
+          ] as const
+        )
+          .filter(([key]) => request.stageTimes[key])
+          .map(([key, text]) => (
+            <li key={key} className="flex gap-4">
+              <span className="text-fg-muted">
+                {new Date(request.stageTimes[key] ?? '').toLocaleTimeString('en-GB')}
+              </span>
+              <span className="text-fg-muted">INFO</span>
+              <span>{text}</span>
+            </li>
+          ))}
+        <li className="pt-2 text-fg-muted">
+          Detailed build and deploy logs will stream here once the API provides them.
+        </li>
+      </ol>
+    </section>
+  );
+}
+
+function UrlCard({ request }: { request: DeployRequestDetail }) {
+  return (
+    <section className="flex flex-col gap-3 rounded-lg border border-line bg-surface p-4">
+      <h2 className="text-title">Public URL</h2>
+      <ExternalLink href={request.urls.main} />
+      <span className="text-caption text-fg-muted">{request.environment.name}</span>
+      <ExternalLink href={request.urls.environment} />
+    </section>
+  );
+}
+
+/** SVC 배포 진행: 가로 스테퍼 · 로그 · 공개 주소. 실시간이 생기기 전까지 2초 폴링 */
+export default function DeployProgressPage() {
+  const { slug, serviceId, deployRequestId } = useParams();
+  const { organization } = useCurrentOrg(slug);
+  const service = useService(organization?.id, serviceId);
+  const {
+    data: request,
+    isPending,
+    isError,
+    error,
+    refetch,
+  } = useDeployRequest(organization?.id, deployRequestId);
+  const now = useNow(Boolean(request && !isTerminalStatus(request.status)));
+
+  if (isError) return <ErrorState error={error} onRetry={() => refetch()} />;
+  if (isPending) {
+    return (
+      <div className="flex flex-col gap-4">
+        <Skeleton className="h-8 w-72" />
+        <Skeleton className="h-16 w-full" />
+      </div>
+    );
+  }
+
+  const refText = request.ref.type === 'BRANCH' ? request.ref.value : shortSha(request.ref.value);
+  const verb = isTerminalStatus(request.status) ? 'Deploy' : 'Deploying';
+
+  return (
+    <>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex flex-col gap-1">
+          <h1 className="flex flex-wrap items-center gap-2 text-h1">
+            {verb} {service.data?.name ?? 'service'}{' '}
+            <span className="font-mono">{shortSha(request.commitSha)}</span>
+            <StatusBadge {...deployStatusView(request.status)} />
+            {request.simulated && <SimulatedBadge />}
+          </h1>
+          <p className="flex flex-wrap items-center gap-x-2 text-body text-fg-secondary">
+            <ProviderLabel kind={request.environment.kind} showLocation={false} />
+            <span>{request.environment.name}</span>·
+            <span>
+              from <span className="font-mono">{refText}</span>
+            </span>
+            ·<span>started {dateTime(request.stageTimes.queuedAt)}</span>·
+            <span>{request.trigger === 'STANDBY_SYNC' ? 'standby sync' : 'manual'}</span>·
+            <span className="font-mono tabular-nums">
+              {elapsed(request.stageTimes.queuedAt, request.stageTimes.finishedAt, now)}
+            </span>
+          </p>
+        </div>
+        <Link
+          to={`/o/${slug}/services?service=${serviceId}`}
+          className="text-body text-brand hover:underline"
+        >
+          Back to services
+        </Link>
+      </div>
+
+      <Stepper request={request} now={now} />
+      <Outcome request={request} />
+
+      <div className="grid grid-cols-[1fr_20rem] items-start gap-4 max-wide:grid-cols-1">
+        <LogPanel request={request} />
+        <UrlCard request={request} />
+      </div>
+    </>
+  );
+}
