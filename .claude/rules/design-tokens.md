@@ -54,9 +54,10 @@ shadcn 이름(`background` · `foreground` · `card` · `popover` · `primary` �
 
 | 종류 | 클래스 | 토큰 | 규칙 |
 |---|---|---|---|
-| 간격 | `p-16` · `gap-8` · `mt-24` … | `--ep-space-{0,2,4,6,8,10,12,16,20,24,32,40,48,64,80}` | **숫자 = px**. 토큰에 있는 숫자만 쓴다 (`p-16` ○, `p-14` ✕) |
+| 간격 | `p-4` · `gap-2` · `mt-6` … | `--ep-space-*` (`--spacing` = `--ep-space-4`) | Tailwind 기본 눈금(1 = 4px). 토큰 값만 쓴다: `0.5`(2) · `1`(4) · `1.5`(6) · `2`(8) · `2.5`(10) · `3`(12) · `4`(16) · `5`(20) · `6`(24) · `8`(32) · `10`(40) · `12`(48) · `16`(64) · `20`(80). 그 밖(`p-7` 등)은 쓰지 않는다. 요소 크기(`w-48`, `size-7`, `h-40`)는 간격이 아니라서 4px 눈금 안에서 자유롭게 쓴다 |
 | 레이아웃 | `w-sidebar` · `w-sidebar-collapsed` · `h-topbar` · `max-w-content` · `px-gutter` · `px-gutter-compact` | `--ep-layout-*` | 사이드바 220 / 64, 상단 바 48, 본문 최대 1280, 여백 24 / 16 |
-| 화면 너비 | `compact:` · `wide:` | `--ep-layout-bp-*` (1024 · 1280) | 미디어 쿼리는 변수를 못 읽어서 `@theme`에 같은 숫자를 적는다. 토큰이 바뀌면 같이 고친다 |
+| 컨트롤 높이 | 버튼·입력칸 `h-8`(32), 작은 버튼 `h-7`, 큰 버튼 `h-9` | — | 조밀한 밀도(노션 IA v2). shadcn 기본보다 한 단계 낮췄다 |
+| 화면 너비 | `max-compact:`(1024 미만) · `compact:`(1024 이상) · `wide:`(1280 이상) | `--ep-layout-bp-*` | 미디어 쿼리는 변수를 못 읽어서 `@theme`에 같은 숫자를 적는다. 토큰이 바뀌면 같이 고친다. shadcn이 쓰는 `sm:` 등 기본 너비는 남겨 둔다 |
 | 반경 | `rounded-xs` ~ `rounded-2xl` · `rounded-full` | `--ep-radius-*` (4 · 6 · 8 · 12 · 16 · 24 · 999) | 버튼·입력칸 `md`, 카드 `lg`, 다이얼로그 `xl` |
 | 그림자 | `shadow-xs` ~ `shadow-xl` | `--ep-shadow-*` | 카드 `xs`~`sm`, 메뉴·팝오버 `md`, 다이얼로그 `lg`~`xl` |
 | 글꼴 | `font-sans` · `font-mono` | `--ep-font-*` | 커밋 SHA·digest·ID·로그·숫자 표는 `font-mono` |
@@ -105,7 +106,7 @@ shadcn 이름(`background` · `foreground` · `card` · `popover` · `primary` �
 | `font-bold text-lg leading-7` 조합 | `text-h3` 같은 글자 스타일 하나 |
 | `tokens.css` 직접 수정 | Figma 변수 수정 → 다시 뽑기 |
 
-`index.css`의 `@theme`에서 Tailwind 기본 색·간격·글자 크기를 `initial`로 지워 두면 금지한 클래스가 아예 만들어지지 않는다(fe-1에서 적용).
+`index.css`의 `@theme`에서 Tailwind 기본 색·글자 크기·반경·그림자·글꼴을 `initial`로 지웠다. 금지한 클래스(`bg-blue-500`, `text-sm`)는 아예 만들어지지 않는다. 간격은 기본 눈금을 쓰므로 지우지 않았고, 토큰에 없는 단계는 리뷰로 막는다.
 
 ## 6. 토큰이 바뀌었을 때
 
