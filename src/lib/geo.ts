@@ -53,6 +53,11 @@ export function distanceKm(a: LatLng, b: LatLng): number {
   return 2 * EARTH_RADIUS_KM * Math.asin(Math.sqrt(h));
 }
 
+/** 위치의 나라 이름 (데이터 위치 규칙용). 모르면 null */
+export function placeCountry(environment: Pick<EnvironmentSummary, 'location'>): string | null {
+  return place(environment)?.country ?? null;
+}
+
 /** 토폴로지 묶음 이름 (예: JAPAN · TOKYO). 모르면 위치 값 */
 export function regionGroupLabel(environment: Pick<EnvironmentSummary, 'location'>): string {
   const found = place(environment);

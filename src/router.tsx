@@ -64,7 +64,18 @@ export const router = createBrowserRouter([
       {
         path: 'evacuation',
         handle: crumb('Evacuation'),
-        element: <PlaceholderPage title="Evacuation" />,
+        children: [
+          {
+            index: true,
+            lazy: () =>
+              import('@/pages/evacuation/EvacuationPage').then((m) => ({ Component: m.default })),
+          },
+          {
+            path: 'pre-check',
+            handle: crumb('AI pre-check'),
+            element: <PlaceholderPage title="AI pre-check" />,
+          },
+        ],
       },
       {
         path: 'migrations',
