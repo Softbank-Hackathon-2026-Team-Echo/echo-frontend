@@ -1,4 +1,4 @@
-import { Check, CircleAlert, Loader2, SquareTerminal, X } from 'lucide-react';
+import { Check, CircleAlert, Loader2, Minus, SquareTerminal, X } from 'lucide-react';
 import { Link, useParams } from 'react-router';
 import { ErrorState } from '@/components/ErrorState';
 import { ExternalLink } from '@/components/ExternalLink';
@@ -9,12 +9,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useNow } from '@/hooks/useNow';
 import { useCurrentOrg } from '@/lib/api/me';
 import { isTerminalStatus, useDeployRequest, useService } from '@/lib/api/services';
-import type { DeployRequestDetail } from '@/lib/api/types';
+import type { DeployRequestDetail, ServiceDetail } from '@/lib/api/types';
 import { dateTime, elapsed } from '@/lib/format';
 import { deployErrorLabel, deployStatusView, shortSha } from '@/lib/status';
 import { cn } from '@/lib/utils';
 
-type StageState = 'done' | 'current' | 'failed' | 'pending';
+type StageState = 'done' | 'current' | 'failed' | 'pending' | 'skipped';
 
 const STAGES = [
   { status: 'QUEUED', label: 'Queued', at: 'queuedAt' },
@@ -43,6 +43,7 @@ const STAGE_ICON: Record<StageState, React.ReactNode> = {
   current: <Loader2 aria-hidden className="size-4 animate-spin" />,
   failed: <X aria-hidden className="size-4" />,
   pending: null,
+  skipped: <Minus aria-hidden className="size-4" />,
 };
 
 const STAGE_CLASSES: Record<StageState, string> = {
@@ -50,6 +51,7 @@ const STAGE_CLASSES: Record<StageState, string> = {
   current: 'bg-migrating-solid text-fg-on-brand',
   failed: 'bg-danger-solid text-fg-on-brand',
   pending: 'border border-line-strong bg-surface',
+  skipped: 'bg-subtle text-fg-muted',
 };
 
 function StepCircle({ state, index }: { state: StageState; index: number }) {
@@ -66,7 +68,57 @@ function StepCircle({ state, index }: { state: StageState; index: number }) {
 }
 
 /** 가로 스테퍼 (와이어프레임 v2): 큐 · 빌드 · 배포 · 헬스 체크 · Live · 예비 따라가기 */
-function Stepper({ request, now }: { request: DeployRequestDetail; now: number }) {
+/**
+ * 예비 따라가기 단계. 서비스 중 배포가 성공하면 서버가 같은 빌드로 예비 연결마다 배포 요청(STANDBY_SYNC)을 만든다.
+ * 예비가 없으면 건너뛴 것으로, 있으면 몇 곳이 따라갔는지 보여 준다
+ */
+export function standbyStep(
+  request: Pick<DeployRequestDetail, 'status' | 'trigger' | 'commitSha' | 'serviceEnvironmentId'>,
+  service: Pick<ServiceDetail, 'environments'> | undefined,
+): { state: StageState; detail: string; syncingRequestId?: string } {
+  if (request.trigger === 'STANDBY_SYNC') {
+    const state: StageState =
+      request.status === 'SUCCEEDED' ? 'done' : request.status === 'FAILED' ? 'failed' : 'current';
+    return { state, detail: 'this deploy is the sync' };
+  }
+  if (!service) return { state: 'pending', detail: '—' };
+  const standbys = service.environments.filter(
+    (link) => link.serviceEnvironmentId !== request.serviceEnvironmentId && link.currentDeployment,
+  );
+  if (standbys.length === 0) return { state: 'skipped', detail: 'no standby environments' };
+  if (request.status === 'FAILED' || request.status === 'CANCELLED') {
+    return { state: 'pending', detail: 'not triggered' };
+  }
+  if (request.status !== 'SUCCEEDED') {
+    return { state: 'pending', detail: `${standbys.length} standby will follow` };
+  }
+  const syncing = standbys.find((link) => link.activeRequestId || link.queuedRequestId);
+  if (syncing) {
+    return {
+      state: 'current',
+      detail: `syncing ${syncing.environment.name}`,
+      syncingRequestId: syncing.activeRequestId ?? syncing.queuedRequestId ?? undefined,
+    };
+  }
+  const synced = standbys.filter((link) => link.currentDeployment?.commitSha === request.commitSha);
+  return synced.length === standbys.length
+    ? { state: 'done', detail: `${synced.length} standby in sync` }
+    : { state: 'pending', detail: `${standbys.length - synced.length} standby behind` };
+}
+
+function Stepper({
+  request,
+  service,
+  now,
+  requestLink,
+}: {
+  request: DeployRequestDetail;
+  service: ServiceDetail | undefined;
+  now: number;
+  /** 다른 배포 요청 화면 주소를 만든다 (예비 동기화 배포로 가는 링크) */
+  requestLink: (deployRequestId: string) => string;
+}) {
+  const standby = standbyStep(request, service);
   const states = stageStates(request);
   const times = request.stageTimes;
   const ends = [times.buildingAt, times.deployingAt, times.verifyingAt, times.finishedAt];
@@ -94,8 +146,9 @@ function Stepper({ request, now }: { request: DeployRequestDetail; now: number }
     {
       // 예비 환경은 서비스 중 배포가 성공하면 서버가 자동으로 따라간다(STANDBY_SYNC)
       label: 'Standby sync',
-      state: 'pending' as StageState,
-      detail: request.trigger === 'STANDBY_SYNC' ? 'this is a sync' : 'follows automatically',
+      state: standby.state,
+      detail: standby.detail,
+      href: standby.syncingRequestId,
     },
   ];
   return (
@@ -111,7 +164,13 @@ function Stepper({ request, now }: { request: DeployRequestDetail; now: number }
                 step.state === 'current' ? 'text-migrating-fg' : 'text-fg-muted',
               )}
             >
-              {step.detail}
+              {'href' in step && step.href ? (
+                <Link to={requestLink(step.href)} className="underline-offset-2 hover:underline">
+                  {step.detail}
+                </Link>
+              ) : (
+                step.detail
+              )}
             </span>
           </span>
           {index < steps.length - 1 && (
@@ -282,7 +341,12 @@ export default function DeployProgressPage() {
         </Link>
       </div>
 
-      <Stepper request={request} now={now} />
+      <Stepper
+        request={request}
+        service={service.data}
+        now={now}
+        requestLink={(id) => `/o/${slug}/services/${serviceId}/deploys/${id}`}
+      />
       <Outcome request={request} />
 
       <div className="grid grid-cols-[1fr_20rem] items-start gap-4 max-wide:grid-cols-1">

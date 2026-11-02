@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { stageStates } from './DeployProgressPage';
+import { stageStates, standbyStep } from './DeployProgressPage';
 
 const times = {
   queuedAt: '2026-11-02T00:00:00Z',
@@ -40,5 +40,40 @@ describe('stageStates', () => {
       'done',
       'done',
     ]);
+  });
+});
+
+describe('standbyStep', () => {
+  const link = (id: string, sha: string | null, active: string | null = null) => ({
+    serviceEnvironmentId: id,
+    environment: { id: `env-${id}`, name: `env-${id}`, kind: 'gcp' },
+    currentDeployment: sha ? { id: 'd', commitSha: sha, imageDigest: 'x', finishedAt: null } : null,
+    activeRequestId: active,
+    queuedRequestId: null,
+  });
+  const base = {
+    status: 'SUCCEEDED',
+    trigger: 'MANUAL',
+    commitSha: 'abc',
+    serviceEnvironmentId: 'serving',
+  } as const;
+
+  it('예비 환경이 없으면 건너뛴다', () => {
+    const result = standbyStep(base, { environments: [link('serving', 'abc')] as never });
+    expect(result).toEqual({ state: 'skipped', detail: 'no standby environments' });
+  });
+
+  it('예비가 따라가는 중이면 그 배포 요청을 가리킨다', () => {
+    const result = standbyStep(base, {
+      environments: [link('serving', 'abc'), link('standby', 'old', 'req-2')] as never,
+    });
+    expect(result).toMatchObject({ state: 'current', syncingRequestId: 'req-2' });
+  });
+
+  it('예비가 같은 커밋이면 끝났다', () => {
+    const result = standbyStep(base, {
+      environments: [link('serving', 'abc'), link('standby', 'abc')] as never,
+    });
+    expect(result).toEqual({ state: 'done', detail: '1 standby in sync' });
   });
 });
