@@ -1,6 +1,8 @@
+import { Activity, TriangleAlert, Wind } from 'lucide-react';
 import { type FormEvent, useMemo, useState } from 'react';
 import { ProviderLabel } from '@/components/ProviderLabel';
 import { SimulatedBadge } from '@/components/SimulatedBadge';
+import { StatusBadge } from '@/components/StatusBadge';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -10,7 +12,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -19,7 +20,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   type DisasterType,
   EPICENTER_PRESETS,
@@ -27,45 +27,19 @@ import {
   useCreateDisaster,
 } from '@/lib/api/disasters';
 import { useEnvironments } from '@/lib/api/environments';
-import type { EnvironmentSummary } from '@/lib/api/types';
+import { type LatLng, nearLabel } from '@/lib/geo';
+import { cn } from '@/lib/utils';
+import { DisasterMap } from './DisasterMap';
 
-const MIN_MAGNITUDE = 5;
-const MAX_MAGNITUDE = 9;
+// 규모 M5.0 ~ M9.0, 0.2 단계 (데모 기본 M7.2)
+const MAGNITUDES = Array.from({ length: 21 }, (_, index) => Number((5 + index * 0.2).toFixed(1)));
 
-function EnvironmentList({
-  title,
-  tone,
-  environments,
-}: {
-  title: string;
-  tone: 'danger' | 'success' | 'neutral';
-  environments: EnvironmentSummary[];
-}) {
-  const color = { danger: 'text-danger-fg', success: 'text-success-fg', neutral: 'text-fg-muted' }[
-    tone
-  ];
-  return (
-    <div className="flex flex-col gap-1.5">
-      <span className={`text-label ${color}`}>
-        {title} ({environments.length})
-      </span>
-      {environments.length === 0 ? (
-        <span className="text-small text-fg-muted">None</span>
-      ) : (
-        <ul className="flex flex-col gap-1">
-          {environments.map((environment) => (
-            <li key={environment.id} className="flex items-center justify-between gap-2 text-body">
-              <span className="truncate">{environment.name}</span>
-              <ProviderLabel kind={environment.kind} location={environment.location} />
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-}
+const TYPES: { type: DisasterType; label: string; hint: string; icon: typeof Activity }[] = [
+  { type: 'EARTHQUAKE', label: 'Earthquake', hint: 'M5–M9', icon: Activity },
+  { type: 'TYPHOON', label: 'Typhoon', hint: 'Cat. 1–5', icon: Wind },
+];
 
-/** S01-D 재난 시뮬레이션. 진원지 · 규모를 고르면 반경 안의 환경을 미리 보여 주고 재난을 만든다 */
+/** S01-D 재난 시뮬레이션: 지도를 눌러 진원지를 정하면 반경 안의 환경이 위험으로 바뀐다 */
 export function DisasterDialog({
   open,
   onOpenChange,
@@ -78,102 +52,142 @@ export function DisasterDialog({
   const environments = useEnvironments(orgId);
   const items = environments.data?.items ?? [];
   const create = useCreateDisaster(orgId, items);
+  const defaultPreset = EPICENTER_PRESETS[0];
   const [type, setType] = useState<DisasterType>('EARTHQUAKE');
-  const [presetIndex, setPresetIndex] = useState('0');
+  const [epicenter, setEpicenter] = useState<LatLng>(
+    defaultPreset?.epicenter ?? { lat: 35.2, lng: 139.4 },
+  );
   const [magnitude, setMagnitude] = useState(7.2);
-  const preset = EPICENTER_PRESETS[Number(presetIndex)] ?? EPICENTER_PRESETS[0];
 
   const preview = useMemo(
-    () => (preset ? previewDisaster(items, { magnitude, epicenter: preset.epicenter }) : undefined),
-    [items, magnitude, preset],
+    () => previewDisaster(items, { magnitude, epicenter }),
+    [items, magnitude, epicenter],
   );
-  const pick = (ids: string[] = []) => items.filter((environment) => ids.includes(environment.id));
+  const affected = new Set(preview.affected);
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    if (!preset) return;
     create.mutate(
-      { type, magnitude, epicenter: preset.epicenter, epicenterLabel: preset.label },
+      { type, magnitude, epicenter, epicenterLabel: nearLabel(epicenter) },
       { onSuccess: () => onOpenChange(false) },
     );
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="overflow-y-auto sm:max-w-xl">
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               Simulate disaster <SimulatedBadge />
             </DialogTitle>
             <DialogDescription>
-              Nothing real goes down. EchoPort marks environments inside the impact radius as at
-              risk so you can rehearse evacuation.
+              Click the map to set the epicenter. Environments inside the radius turn “At risk”.
+              Nothing real goes down.
             </DialogDescription>
           </DialogHeader>
 
-          <Tabs value={type} onValueChange={(value) => setType(value as DisasterType)}>
-            <TabsList>
-              <TabsTrigger value="EARTHQUAKE">Earthquake</TabsTrigger>
-              <TabsTrigger value="TYPHOON">Typhoon</TabsTrigger>
-            </TabsList>
-          </Tabs>
+          <fieldset className="grid grid-cols-2 gap-2">
+            <legend className="sr-only">Disaster type</legend>
+            {TYPES.map((item) => {
+              const selected = item.type === type;
+              const Icon = item.icon;
+              return (
+                <label
+                  key={item.type}
+                  className={cn(
+                    'flex cursor-pointer items-center gap-3 rounded-lg border p-3 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-focus',
+                    selected
+                      ? 'border-brand bg-brand-subtle ring-1 ring-brand'
+                      : 'border-line hover:bg-subtle',
+                  )}
+                >
+                  <input
+                    type="radio"
+                    name="disaster-type"
+                    value={item.type}
+                    checked={selected}
+                    onChange={() => setType(item.type)}
+                    className="sr-only"
+                  />
+                  <Icon aria-hidden className="size-5 text-brand" />
+                  <span className="flex flex-col">
+                    <span className="text-body-medium">{item.label}</span>
+                    <span className="text-caption text-fg-muted">{item.hint}</span>
+                  </span>
+                </label>
+              );
+            })}
+          </fieldset>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="disaster-epicenter" className="text-label">
-                {type === 'EARTHQUAKE' ? 'Epicenter' : 'Center'}
-              </Label>
-              <Select value={presetIndex} onValueChange={setPresetIndex}>
-                <SelectTrigger id="disaster-epicenter" className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {EPICENTER_PRESETS.map((item, index) => (
-                    <SelectItem key={item.label} value={String(index)}>
-                      {item.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="disaster-magnitude" className="text-label">
-                {type === 'EARTHQUAKE' ? 'Magnitude' : 'Strength'}
-              </Label>
-              <Input
-                id="disaster-magnitude"
-                type="number"
-                step={0.1}
-                min={MIN_MAGNITUDE}
-                max={MAX_MAGNITUDE}
-                value={magnitude}
-                onChange={(event) =>
-                  setMagnitude(
-                    Math.min(
-                      MAX_MAGNITUDE,
-                      Math.max(MIN_MAGNITUDE, Number(event.target.value) || MIN_MAGNITUDE),
-                    ),
-                  )
-                }
-              />
-            </div>
+          <DisasterMap
+            epicenter={epicenter}
+            radiusKm={preview.radiusKm}
+            environments={items}
+            affected={affected}
+            onPick={setEpicenter}
+          />
+
+          <div className="flex flex-wrap items-center gap-3">
+            <Label htmlFor="disaster-magnitude" className="text-label">
+              {type === 'EARTHQUAKE' ? 'Magnitude' : 'Strength'}
+            </Label>
+            <Select
+              value={String(magnitude)}
+              onValueChange={(value) => setMagnitude(Number(value))}
+            >
+              <SelectTrigger id="disaster-magnitude" className="w-28">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {MAGNITUDES.map((value) => (
+                  <SelectItem key={value} value={String(value)}>
+                    M{value.toFixed(1)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <span className="font-mono text-mono text-fg-muted">
+              → radius {preview.radiusKm} km
+            </span>
+            <span className="ml-auto text-small text-fg-secondary">
+              Epicenter {nearLabel(epicenter)}
+            </span>
           </div>
 
-          <div className="flex flex-col gap-3 rounded-lg border border-line bg-subtle p-3">
-            <span className="text-body">
-              Impact radius{' '}
-              <span className="text-body-medium tabular-nums">{preview?.radiusKm ?? '—'} km</span>
-            </span>
-            <EnvironmentList title="At risk" tone="danger" environments={pick(preview?.affected)} />
-            <EnvironmentList title="Safe" tone="success" environments={pick(preview?.safe)} />
-            {(preview?.unknown.length ?? 0) > 0 && (
-              <EnvironmentList
-                title="Unknown location"
-                tone="neutral"
-                environments={pick(preview?.unknown)}
-              />
+          <div
+            className={cn(
+              'flex flex-col gap-2 rounded-lg p-3',
+              preview.affected.length ? 'bg-warning-bg' : 'bg-subtle',
             )}
+          >
+            <span
+              className={cn(
+                'flex items-center gap-2 text-body-medium',
+                preview.affected.length ? 'text-warning-fg' : 'text-fg-secondary',
+              )}
+            >
+              <TriangleAlert aria-hidden className="size-4" />
+              {preview.affected.length} environment{preview.affected.length === 1 ? '' : 's'}{' '}
+              affected · {preview.safe.length} safe target{preview.safe.length === 1 ? '' : 's'}
+            </span>
+            <ul className="flex flex-col gap-1.5">
+              {items.map((environment) => (
+                <li key={environment.id} className="flex items-center justify-between gap-2">
+                  <span className="flex min-w-0 items-center gap-2">
+                    <ProviderLabel kind={environment.kind} showLocation={false} />
+                    <span className="truncate font-mono text-mono">{environment.name}</span>
+                  </span>
+                  {affected.has(environment.id) ? (
+                    <StatusBadge label="At risk" tone="warning" />
+                  ) : preview.unknown.includes(environment.id) ? (
+                    <StatusBadge label="Unknown location" tone="neutral" />
+                  ) : (
+                    <StatusBadge label="Safe" tone="success" />
+                  )}
+                </li>
+              ))}
+            </ul>
           </div>
 
           <DialogFooter>
@@ -185,7 +199,7 @@ export function DisasterDialog({
               variant="destructive"
               disabled={create.isPending || !items.length}
             >
-              Trigger {type === 'EARTHQUAKE' ? 'earthquake' : 'typhoon'}
+              Simulate
             </Button>
           </DialogFooter>
         </form>

@@ -59,3 +59,21 @@ export function regionGroupLabel(environment: Pick<EnvironmentSummary, 'location
   if (!found) return environment.location ?? 'Unknown location';
   return found.country ? `${found.country} · ${found.label}` : found.label;
 }
+
+/** 지도에 이름을 적을 도시들 (온프레 도시 표에서) */
+export const MAP_CITIES = ['tokyo', 'osaka', 'fukuoka', 'seoul', 'busan'].map((key) => ({
+  key,
+  label: PLACES[key]?.label ?? key,
+  coordinates: PLACES[key]?.coordinates ?? { lat: 0, lng: 0 },
+}));
+
+/** 좌표에서 가장 가까운 도시 이름으로 "near Tokyo" 같은 문구를 만든다. 멀면 위경도 */
+export function nearLabel(point: LatLng, maxKm = 250): string {
+  let best: { label: string; km: number } | undefined;
+  for (const city of MAP_CITIES) {
+    const km = distanceKm(point, city.coordinates);
+    if (!best || km < best.km) best = { label: city.label, km };
+  }
+  if (best && best.km <= maxKm) return `near ${best.label}`;
+  return `at ${point.lat.toFixed(1)}°N ${point.lng.toFixed(1)}°E`;
+}
