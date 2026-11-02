@@ -116,5 +116,8 @@ docs/                    # api-contract.md, PR.md(커밋 안 함)
 | 11/2 | `AGENTS.md`를 두지 않는다 | 프론트는 1명이 Claude Code만 쓴다. 다른 에이전트 도구를 쓰게 되면 echo-was처럼 "CLAUDE.md를 따른다" 안내 파일만 더한다 |
 | 11/2 | 예선 `BOARD.md`·작업 로그를 두지 않는다 | 팀 결정과 할 일은 레포별 GitHub Projects가 추적한다 |
 | 11/2 | UI 키트는 shadcn/ui + Tailwind v4, 목업은 MSW | 예선(일반 CSS·UI 키트 없음·자체 목업)과 달리, 본선은 화면 수가 많고 Figma 토큰이 shadcn 변수로 연결돼 나온다 |
-| 11/2 | Tailwind 간격 클래스 숫자 = px(`p-16` = 16px), 토큰에 있는 값만 | 토큰 이름(`--ep-space-16`)과 클래스 이름을 1:1로 맞춰 Figma 값과 바로 대조하려고 |
+| ~~11/2~~ | ~~Tailwind 간격 클래스 숫자 = px(`p-16` = 16px)~~ → 11/2 번복 | |
+| 11/2 | 간격은 Tailwind 기본 눈금(1 = 4px, `--spacing` = `--ep-space-4`)을 쓰고 토큰에 있는 값만 쓴다(`p-4` = 16px, `p-1.5` = 6px) | shadcn 컴포넌트가 기본 눈금(`h-9`, `px-4`)으로 짜여 있어 px 눈금이면 전부 고쳐야 한다. 토큰 간격은 모두 2px 단위라 기본 눈금 0.5 단계로 정확히 맞는다 |
+| 11/2 | 컨트롤 높이 32px(버튼 기본 `h-8`, 입력칸 `h-8`). shadcn 기본보다 한 단계 낮춤 | 노션 IA 와이어프레임 v2의 조밀한 밀도(본문 13px · 컨트롤 32px) |
+| 11/2 | 로컬 개발은 Vite 프록시 없이 `localhost:5173` → `localhost:8000`을 직접 부른다 | echo-was가 CORS·Origin 허용 목록을 이미 지원하고, 5173은 echo-was #12로 요청했다. 운영(`app` → `api`)과 같은 구조라 CORS 문제를 개발 때 잡는다 |
 | 11/2 | 글자색은 `text-fg`·`text-fg-secondary`·`text-fg-muted` | Tailwind v4는 색 이름 하나가 `bg-`·`text-`에 같이 쓰여서, shadcn의 `primary`(브랜드색)와 토큰의 `text-primary`(글자색)가 부딪힌다. shadcn 이름을 그대로 두고 글자색 이름을 바꿨다 |

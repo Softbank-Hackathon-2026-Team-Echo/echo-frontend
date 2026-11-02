@@ -52,9 +52,10 @@ EchoPort 웹 프론트의 골격을 만든다. 이 작업이 끝나면:
 ### 3.3 디자인 토큰 — `feat: 디자인 토큰을 Tailwind 테마에 연결`
 - `src/styles/index.css`: `tokens.css` → `shadcn-theme.css` → `tailwindcss` 순서로 불러오고, `@theme inline`에 [design-tokens.md](../.claude/rules/design-tokens.md) §3 표 전부를 연결한다.
   - 색: `canvas`·`surface`·`raised`·`subtle`·`inverse`·`overlay`, `fg*`, `line*`, `brand*`, `focus`, `success|warning|danger|migrating|ai-{fg,bg,solid}`, `aws`·`gcp`·`onprem`, `chart-1~6`, `globe-*`
-  - 간격(숫자 = px), 레이아웃, 화면 너비(`compact` 1024 · `wide` 1280), 반경, 그림자, 글꼴
+  - 간격(Tailwind 기본 눈금, `--spacing` = `--ep-space-4`), 레이아웃, 화면 너비(`compact` 1024 · `wide` 1280), 반경, 그림자, 글꼴
   - 글자 스타일 `text-h1 … text-mono`: 크기·행간·굵기·자간을 함께(`--text-h1--line-height` 등)
-  - Tailwind 기본 색·간격·글자 크기는 `initial`로 지운다(design-tokens §5)
+  - Tailwind 기본 색·글자 크기·반경·그림자·글꼴은 `initial`로 지운다(design-tokens §5)
+- shadcn 컴포넌트의 `text-sm` 등 기본 글자 크기·`bg-black`·`text-white`를 토큰 클래스로 바꾸고, 버튼·입력칸을 32px로 낮춘다
 - `@custom-variant dark`를 `[data-theme=dark]` 기준으로.
 - `useTheme()`: `light | dark | projector`, `<html data-theme>` 변경, `localStorage` 읽기·쓰기는 try/catch.
 - 개발용 확인 페이지 `/dev/tokens`(개발 모드만): 색·글자 스타일·간격을 한눈에 보고 테마를 바꿔 본다.
@@ -121,7 +122,7 @@ EchoPort 웹 프론트의 골격을 만든다. 이 작업이 끝나면:
 ## 6. 열린 질문
 
 1. echo-was OpenAPI 주소(`OPENAPI_URL`)를 어디서 받는가 — 배포된 `https://api.echoport.uk/openapi.json`이 열려 있는가, 개발 중에는 로컬 echo-was를 띄우는가
-2. 로컬 개발 때 쿠키 세션: 프론트 `localhost:5173` ↔ API는 같은 사이트가 아니다. Vite 프록시(`/api` → echo-was)로 같은 출처를 만들지, echo-was가 로컬 Origin을 허용할지 (제안: Vite 프록시)
+2. ~~로컬 개발 때 쿠키 세션~~ → 결정(11/2): 프록시 없이 `localhost:5173` → `localhost:8000` 직접 호출. 5173은 echo-was #12로 허용 목록에 요청했다. Safari에서 로컬 쿠키가 안 붙으면 echo-was 로컬 `.env`에 `SESSION_COOKIE_SECURE=false`
 3. 경로 이름(`/o/:slug/evacuation` 등)은 가칭 — 노션 IA와 맞출 것
 
 ## 7. 원본 지시서와 다른 점
@@ -132,3 +133,4 @@ EchoPort 웹 프론트의 골격을 만든다. 이 작업이 끝나면:
 | Tailwind 색 `text-primary` | `text-fg` | shadcn `primary`(브랜드색)와 이름이 겹친다(CLAUDE.md 결정 기록) |
 | 커밋 메시지 예 `feat:`, `chore:` | 같음 + 한국어 설명 | echo-was git 규칙과 같게 |
 | (없음) | `/dev/tokens` 확인 페이지, `Mock data` 배지, 테마 전환 버튼 | 토큰 확인 · 목업 표시 규칙 · 테마 수동 확인용 |
+| (없음) | 버튼·입력칸 32px | 노션 IA v2 조밀한 밀도 |

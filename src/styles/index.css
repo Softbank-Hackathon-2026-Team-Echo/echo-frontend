@@ -1,0 +1,199 @@
+/* 순서: 토큰 → shadcn 변수 연결 → Tailwind. 값은 tokens.css 에만 있고 여기서는 이름만 잇는다. */
+@import "./tokens.css";
+@import "./shadcn-theme.css";
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
+/* 토큰에 없는 Tailwind 기본 색·글자 크기·반경·그림자를 지운다. 금지한 클래스가 아예 만들어지지 않는다 */
+@theme {
+  --color-*: initial;
+  --text-*: initial;
+  --radius-*: initial;
+  --shadow-*: initial;
+  --font-*: initial;
+}
+
+@theme inline {
+  /* 간격: Tailwind 기본 눈금(1 = 4px)을 토큰에 묶는다. 토큰 간격은 모두 2px 단위라 0.5 단계로 정확히 맞는다 */
+  --spacing: var(--ep-space-4);
+
+  /* EchoPort 색 */
+  --color-canvas: var(--ep-color-bg-canvas);
+  --color-surface: var(--ep-color-bg-surface);
+  --color-raised: var(--ep-color-bg-raised);
+  --color-subtle: var(--ep-color-bg-subtle);
+  --color-inverse: var(--ep-color-bg-inverse);
+  --color-overlay: var(--ep-color-bg-overlay);
+  --color-fg: var(--ep-color-text-primary);
+  --color-fg-secondary: var(--ep-color-text-secondary);
+  --color-fg-muted: var(--ep-color-text-muted);
+  --color-fg-inverse: var(--ep-color-text-inverse);
+  --color-fg-on-brand: var(--ep-color-text-on-brand);
+  --color-line: var(--ep-color-border-default);
+  --color-line-strong: var(--ep-color-border-strong);
+  --color-brand: var(--ep-color-brand-default);
+  --color-brand-hover: var(--ep-color-brand-hover);
+  --color-brand-subtle: var(--ep-color-brand-subtle);
+  --color-brand-on-subtle: var(--ep-color-brand-on-subtle);
+  --color-focus: var(--ep-color-focus-ring);
+  --color-success-fg: var(--ep-color-status-success-fg);
+  --color-success-bg: var(--ep-color-status-success-bg);
+  --color-success-solid: var(--ep-color-status-success-solid);
+  --color-warning-fg: var(--ep-color-status-warning-fg);
+  --color-warning-bg: var(--ep-color-status-warning-bg);
+  --color-warning-solid: var(--ep-color-status-warning-solid);
+  --color-danger-fg: var(--ep-color-status-danger-fg);
+  --color-danger-bg: var(--ep-color-status-danger-bg);
+  --color-danger-solid: var(--ep-color-status-danger-solid);
+  --color-migrating-fg: var(--ep-color-status-migrating-fg);
+  --color-migrating-bg: var(--ep-color-status-migrating-bg);
+  --color-migrating-solid: var(--ep-color-status-migrating-solid);
+  --color-ai-fg: var(--ep-color-status-ai-fg);
+  --color-ai-bg: var(--ep-color-status-ai-bg);
+  --color-ai-solid: var(--ep-color-status-ai-solid);
+  --color-aws: var(--ep-color-provider-aws);
+  --color-gcp: var(--ep-color-provider-gcp);
+  --color-onprem: var(--ep-color-provider-onprem);
+  --color-chart-1: var(--ep-color-chart-1);
+  --color-chart-2: var(--ep-color-chart-2);
+  --color-chart-3: var(--ep-color-chart-3);
+  --color-chart-4: var(--ep-color-chart-4);
+  --color-chart-5: var(--ep-color-chart-5);
+  --color-chart-6: var(--ep-color-chart-6);
+  --color-globe-sphere: var(--ep-color-globe-sphere);
+  --color-globe-grid: var(--ep-color-globe-grid);
+  --color-globe-land: var(--ep-color-globe-land);
+  --color-globe-land-far: var(--ep-color-globe-land-far);
+  --color-globe-coast: var(--ep-color-globe-coast);
+  --color-globe-arc: var(--ep-color-globe-arc);
+  --color-globe-arc-soft: var(--ep-color-globe-arc-soft);
+
+  /* shadcn/ui 색 이름 (shadcn-theme.css 가 토큰에 연결) */
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* 레이아웃 */
+  --spacing-sidebar: var(--ep-layout-sidebar);
+  --spacing-sidebar-collapsed: var(--ep-layout-sidebar-collapsed);
+  --spacing-topbar: var(--ep-layout-topbar);
+  --spacing-gutter: var(--ep-layout-gutter);
+  --spacing-gutter-compact: var(--ep-layout-gutter-compact);
+  --container-content: var(--ep-layout-content-max);
+
+  /* 반경 · 그림자 */
+  --radius-none: var(--ep-radius-none);
+  --radius-xs: var(--ep-radius-xs);
+  --radius-sm: var(--ep-radius-sm);
+  --radius-md: var(--ep-radius-md);
+  --radius-lg: var(--ep-radius-lg);
+  --radius-xl: var(--ep-radius-xl);
+  --radius-2xl: var(--ep-radius-2xl);
+  --radius-full: var(--ep-radius-full);
+  --shadow-xs: var(--ep-shadow-xs);
+  --shadow-sm: var(--ep-shadow-sm);
+  --shadow-md: var(--ep-shadow-md);
+  --shadow-lg: var(--ep-shadow-lg);
+  --shadow-xl: var(--ep-shadow-xl);
+
+  /* 글꼴: @fontsource-variable 이 등록하는 이름을 토큰 글꼴 앞에 둔다 */
+  --font-sans: "Inter Variable", var(--ep-font-sans);
+  --font-mono: "Geist Mono Variable", var(--ep-font-mono);
+
+  /* 글자 스타일: 크기·행간·굵기·자간을 한 클래스로 */
+  --text-h1: var(--ep-type-h1-size);
+  --text-h1--line-height: var(--ep-type-h1-line);
+  --text-h1--font-weight: var(--ep-type-h1-weight);
+  --text-h1--letter-spacing: var(--ep-type-h1-tracking);
+  --text-h2: var(--ep-type-h2-size);
+  --text-h2--line-height: var(--ep-type-h2-line);
+  --text-h2--font-weight: var(--ep-type-h2-weight);
+  --text-h2--letter-spacing: var(--ep-type-h2-tracking);
+  --text-h3: var(--ep-type-h3-size);
+  --text-h3--line-height: var(--ep-type-h3-line);
+  --text-h3--font-weight: var(--ep-type-h3-weight);
+  --text-h3--letter-spacing: var(--ep-type-h3-tracking);
+  --text-title: var(--ep-type-title-size);
+  --text-title--line-height: var(--ep-type-title-line);
+  --text-title--font-weight: var(--ep-type-title-weight);
+  --text-title--letter-spacing: var(--ep-type-title-tracking);
+  --text-body: var(--ep-type-body-size);
+  --text-body--line-height: var(--ep-type-body-line);
+  --text-body--font-weight: var(--ep-type-body-weight);
+  --text-body--letter-spacing: var(--ep-type-body-tracking);
+  --text-body-medium: var(--ep-type-body-medium-size);
+  --text-body-medium--line-height: var(--ep-type-body-medium-line);
+  --text-body-medium--font-weight: var(--ep-type-body-medium-weight);
+  --text-body-medium--letter-spacing: var(--ep-type-body-medium-tracking);
+  --text-small: var(--ep-type-small-size);
+  --text-small--line-height: var(--ep-type-small-line);
+  --text-small--font-weight: var(--ep-type-small-weight);
+  --text-small--letter-spacing: var(--ep-type-small-tracking);
+  --text-caption: var(--ep-type-caption-size);
+  --text-caption--line-height: var(--ep-type-caption-line);
+  --text-caption--font-weight: var(--ep-type-caption-weight);
+  --text-caption--letter-spacing: var(--ep-type-caption-tracking);
+  --text-label: var(--ep-type-label-size);
+  --text-label--line-height: var(--ep-type-label-line);
+  --text-label--font-weight: var(--ep-type-label-weight);
+  --text-label--letter-spacing: var(--ep-type-label-tracking);
+  --text-overline: var(--ep-type-overline-size);
+  --text-overline--line-height: var(--ep-type-overline-line);
+  --text-overline--font-weight: var(--ep-type-overline-weight);
+  --text-overline--letter-spacing: var(--ep-type-overline-tracking);
+  --text-metric-xl: var(--ep-type-metric-xl-size);
+  --text-metric-xl--line-height: var(--ep-type-metric-xl-line);
+  --text-metric-xl--font-weight: var(--ep-type-metric-xl-weight);
+  --text-metric-xl--letter-spacing: var(--ep-type-metric-xl-tracking);
+  --text-metric: var(--ep-type-metric-size);
+  --text-metric--line-height: var(--ep-type-metric-line);
+  --text-metric--font-weight: var(--ep-type-metric-weight);
+  --text-metric--letter-spacing: var(--ep-type-metric-tracking);
+  --text-mono: var(--ep-type-mono-size);
+  --text-mono--line-height: var(--ep-type-mono-line);
+  --text-mono--font-weight: var(--ep-type-mono-weight);
+  --text-mono--letter-spacing: var(--ep-type-mono-tracking);
+}
+
+/* 화면 너비: 미디어 쿼리는 변수를 못 읽어서 토큰(--ep-layout-bp-*)과 같은 숫자를 적는다 */
+@theme {
+  --breakpoint-compact: 1024px;
+  --breakpoint-wide: 1280px;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply bg-canvas;
+  }
+  body {
+    @apply bg-canvas font-sans text-body text-fg antialiased;
+  }
+}
