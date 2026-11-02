@@ -1,0 +1,32 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Bash(git add:*)",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" && { [ -f package.json ] || exit 0; } && { [ -d node_modules ] || { echo 'Blocked: node_modules 가 없습니다. pnpm install 을 먼저 실행하세요.' >&2; exit 2; }; } && { pnpm -s lint || { echo 'Blocked: pnpm lint 실패. lint 에러를 고치고 다시 시도하세요.' >&2; exit 2; }; } && { pnpm -s typecheck || { echo 'Blocked: pnpm typecheck 실패. 타입 에러를 고치고 다시 시도하세요.' >&2; exit 2; }; } && { pnpm -s test || { echo 'Blocked: pnpm test 실패. 실패한 테스트를 고치고 다시 시도하세요.' >&2; exit 2; }; }",
+            "timeout": 180,
+            "statusMessage": "Running lint & typecheck & test before git add..."
+          },
+          {
+            "type": "command",
+            "if": "Bash(git commit:*)",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" && { [ -f package.json ] || exit 0; } && { [ -d node_modules ] || { echo 'Blocked: node_modules 가 없습니다. pnpm install 을 먼저 실행하세요.' >&2; exit 2; }; } && { pnpm -s lint || { echo 'Blocked: pnpm lint 실패. lint 에러를 고치고 커밋하세요.' >&2; exit 2; }; } && { pnpm -s typecheck || { echo 'Blocked: pnpm typecheck 실패. 타입 에러를 고치고 커밋하세요.' >&2; exit 2; }; } && { pnpm -s test || { echo 'Blocked: pnpm test 실패. 실패한 테스트를 고치고 커밋하세요.' >&2; exit 2; }; }",
+            "timeout": 180,
+            "statusMessage": "Running lint & typecheck & test before git commit..."
+          },
+          {
+            "type": "command",
+            "if": "Bash(git push:*)",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" && { [ -f package.json ] || exit 0; } && { pnpm -s lint 1>&2 || { echo 'Blocked: pnpm lint 실패로 push 차단. lint 부터 통과시키세요.' >&2; exit 2; }; }",
+            "timeout": 180,
+            "statusMessage": "Running lint before git push..."
+          }
+        ]
+      }
+    ]
+  }
+}
