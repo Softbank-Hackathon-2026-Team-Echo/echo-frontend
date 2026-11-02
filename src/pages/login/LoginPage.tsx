@@ -24,7 +24,7 @@ export default function LoginPage() {
     <main className="flex min-h-dvh items-center justify-center bg-canvas p-gutter">
       <Card className="w-full max-w-sm">
         <CardHeader className="justify-items-center gap-3 text-center">
-          <Logo variant="mark" className="size-10" />
+          <Logo variant="mark" className="size-14" />
           <CardTitle className="text-h2">Sign in to EchoPort</CardTitle>
           <CardDescription>
             Move services across AWS, GCP and on-prem without downtime.

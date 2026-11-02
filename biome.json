@@ -7,7 +7,8 @@
       "!public/mockServiceWorker.js",
       "!src/lib/api/schema.d.ts",
       "!**/*.css",
-      "!**/*.md"
+      "!**/*.md",
+      "!src/assets/**/*.svg"
     ]
   },
   "formatter": { "indentStyle": "space", "indentWidth": 2, "lineWidth": 100 },

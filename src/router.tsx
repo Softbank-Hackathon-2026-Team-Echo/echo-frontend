@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate } from 'react-router';
 import { AppShell, type RouteHandle } from '@/layouts/AppShell';
 import NotFoundPage from '@/pages/NotFoundPage';
 import { PlaceholderPage } from '@/pages/PlaceholderPage';
+import { RouteErrorPage } from '@/pages/RouteErrorPage';
 
 function crumb(name: string): RouteHandle {
   return { crumb: name };
@@ -20,6 +21,7 @@ export const router = createBrowserRouter([
   {
     path: '/o/:slug',
     element: <AppShell />,
+    errorElement: <RouteErrorPage />,
     children: [
       {
         index: true,

@@ -32,6 +32,7 @@ import { ErrorState } from '@/components/ErrorState';
 import { Logo } from '@/components/Logo';
 import { MockDataBadge } from '@/components/MockDataBadge';
 import { RoleButton } from '@/components/RoleButton';
+import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -177,7 +178,7 @@ function Sidebar({
       <div className="flex h-16 items-center px-5 max-compact:justify-center max-compact:px-0">
         <Link to={`/o/${organization.slug}`} aria-label="EchoPort home">
           <Logo className="max-compact:hidden" />
-          <Logo variant="mark" className="compact:hidden" />
+          <Logo variant="app-icon" className="compact:hidden" />
         </Link>
       </div>
       <nav aria-label="Main" className="flex flex-1 flex-col gap-1 px-3">
@@ -334,7 +335,9 @@ export function AppShell() {
         <Topbar organizations={me.organizations} organization={organization} />
         <main className="flex-1 overflow-y-auto">
           <div className="mx-auto flex max-w-content flex-col gap-6 p-gutter max-compact:p-gutter-compact">
-            <Outlet />
+            <ScreenErrorBoundary>
+              <Outlet />
+            </ScreenErrorBoundary>
           </div>
         </main>
       </div>
