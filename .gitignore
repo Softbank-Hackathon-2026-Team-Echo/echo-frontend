@@ -1,0 +1,22 @@
+# Claude Code (로컬 전용)
+.claude/settings.local.json
+
+# Node
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# 환경변수 (키 목록은 .env.example 로 공유)
+.env
+.env.*
+!.env.example
+
+# API 타입 생성 입력 (로컬 사본)
+openapi.json
+
+# PR 본문 초안 (write-pr 스킬 출력, 커밋하지 않는다)
+docs/PR.md
+docs/pr-assets/
+
+.DS_Store
