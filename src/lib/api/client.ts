@@ -7,12 +7,19 @@ export function apiUrl(path: string): string {
   return `${API_BASE_URL}/api/v1${path}`;
 }
 
+/** 페이지 이동. 테스트가 바꿔 끼울 수 있게 객체로 둔다(jsdom 은 location.assign 을 가로챌 수 없다) */
+export const browserNavigation = {
+  assign(url: string) {
+    window.location.assign(url);
+  },
+};
+
 /** 지금 화면으로 돌아오도록 로그인 화면으로 보낸다. 로그인 화면에서는 다시 보내지 않는다 */
 export function redirectToLogin() {
   const { pathname, search, hash } = window.location;
   if (pathname === '/login') return;
   const next = encodeURIComponent(`${pathname}${search}${hash}`);
-  window.location.assign(`/login?next=${next}`);
+  browserNavigation.assign(`/login?next=${next}`);
 }
 
 function isEnvelope(body: unknown): body is ApiEnvelope<unknown> {
