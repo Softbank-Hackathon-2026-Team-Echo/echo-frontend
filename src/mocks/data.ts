@@ -28,6 +28,15 @@ export const mockOrganizations: Organization[] = [
     role: 'DEVELOPER',
     createdAt: CREATED_AT,
   },
+  {
+    // 뷰어로 들어온 데모 조직. 권한이 모자라 버튼이 막히는 장면(F4)을 보여 준다
+    id: '0b6f2c3e-1d2a-4c55-9e1a-6f0e5c7a1003',
+    slug: 'echo-viewer',
+    name: 'Echo Viewer (demo)',
+    personal: false,
+    role: 'VIEWER',
+    createdAt: CREATED_AT,
+  },
 ];
 
 export const mockMe: Me = {
@@ -140,6 +149,10 @@ const CLUSTER_INFO: Record<string, EnvironmentDetail['clusterInfo']> = {
 };
 
 export function mockEnvironmentDetail(environment: EnvironmentSummary): EnvironmentDetail {
+  // 접속 확인이 실패한 환경은 클러스터 정보를 읽지 못한다 (echo-was 와 같은 모양)
+  if (environment.connectionStatus === 'FAILED') {
+    return { ...environment, clusterInfo: null, clusterInfoError: environment.connectionError };
+  }
   return {
     ...environment,
     clusterInfo: CLUSTER_INFO[environment.kind] ?? null,
