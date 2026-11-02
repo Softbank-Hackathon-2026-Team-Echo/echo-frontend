@@ -44,15 +44,19 @@ src/
 ├─ styles/               # tokens.css → shadcn-theme.css → index.css(Tailwind @theme 연결) 순서
 ├─ components/
 │  ├─ ui/                # shadcn/ui 생성 파일. 토큰 글자 스타일·32px 밀도로 고쳤다
-│  └─ *.tsx              # 두 화면 이상에서 쓰는 앱 컴포넌트 (RoleButton, StatusBadge, SimulatedBadge, MockDataBadge, EmptyState, ErrorState, PageHeader, Logo)
-├─ layouts/AppShell.tsx  # 사이드바 + 상단 바(브레드크럼·조직 선택·테마·로그아웃). 라우트 handle.crumb 로 브레드크럼
-├─ pages/                # 화면 단위 폴더 (login/, root/, settings/, dev/). 한 화면에서만 쓰는 컴포넌트는 그 폴더 안에
-├─ hooks/                # useTheme(테마 3개, localStorage), useRole(현재 조직 역할)
+│  ├─ disaster/          # 재난 시뮬레이션 다이얼로그(S01-D) · 경보 배너
+│  └─ *.tsx              # 두 화면 이상에서 쓰는 앱 컴포넌트 (RoleButton, StatusBadge, SimulatedBadge, ProviderLabel, FormField, ConfirmDeleteDialog, ExternalLink, EmptyState, ErrorState …)
+├─ layouts/AppShell.tsx  # 사이드바 + 상단 바(브레드크럼·조직 선택·재난 버튼·테마·로그아웃) + 재난 배너. 라우트 handle.crumb 로 브레드크럼
+├─ pages/                # 화면 단위 폴더 (login/, root/, dashboard/, services/, settings/, dev/). 한 화면에서만 쓰는 컴포넌트는 그 폴더 안에
+├─ hooks/                # useTheme(테마 3개, localStorage), useRole(현재 조직 역할), useNow(경과 시간)
 ├─ lib/
-│  ├─ api/               # client(fetch 래퍼) · errors(ApiError·문구) · notify(오류 토스트) · query-client · query-keys
-│  │                     #   types(손으로 쓴 타입, gen:api 전까지) · me · environments · auth(로그인 주소·로그아웃)
+│  ├─ api/               # client(api = openapi-fetch + unwrap, 스키마 밖 경로는 apiFetch) · errors · notify · form-errors(422 → 칸 오류)
+│  │                     #   query-client · query-keys · schema.d.ts(gen:api 생성) · types(스키마 별칭)
+│  │                     #   me · environments · services(서비스·배포 요청) · disasters(🆕 API 전까지 브라우저 시뮬레이션) · auth
 │  ├─ roles.ts           # hasRole · 역할 표기
 │  ├─ status.ts          # 서버 상태 값 → 화면 문구·색 (StatusBadge 와 짝)
+│  ├─ geo.ts             # 리전·도시 → 좌표(계약 4-1 🆕 전까지), 거리 계산
+│  ├─ format.ts          # 상대 시각·경과 시간
 │  ├─ env.ts             # USE_MOCKS
 │  └─ utils.ts           # cn() (커스텀 글자 스타일을 아는 tailwind-merge)
 ├─ mocks/                # MSW: browser · handlers · data (전부 // MOCK:)
@@ -63,7 +67,7 @@ docs/                    # api-contract.md, PR.md(커밋 안 함)
 .claude/launch.json      # 브라우저 미리보기용 개발 서버 설정
 ```
 
-- 데이터 흐름은 `pages/` → `lib/api/`의 쿼리 훅 → fetch 래퍼 → echo-was 한 방향이다. 화면은 `fetch`를 직접 부르지 않는다.
+- 데이터 흐름은 `pages/` → `lib/api/`의 쿼리 훅 → `api`(openapi-fetch) + `unwrap` → echo-was 한 방향이다. 화면은 `fetch`를 직접 부르지 않는다. API 가 바뀌면 `OPENAPI_URL=https://api.echoport.uk/openapi.json pnpm gen:api` 로 타입을 다시 만든다.
 - 서버 상태는 TanStack Query만 가진다. 화면 상태(열린 다이얼로그·선택한 탭)만 컴포넌트 state에 둔다. 전역 상태 라이브러리는 쓰지 않는다.
 - 조직은 URL(`/o/{slug}/…`)로 정한다. `orgId`는 `/me`의 `organizations`에서 slug로 찾는다.
 
@@ -132,4 +136,9 @@ docs/                    # api-contract.md, PR.md(커밋 안 함)
 | 11/2 | 권한·준비 안 된 버튼은 `disabled` 대신 `aria-disabled` + 누름 무시 | `disabled` 버튼은 호버·포커스를 받지 못해 "Requires Developer" 툴팁이 뜨지 않는다 |
 | 11/2 | 환경 표의 클러스터 칸은 행마다 상세(`GET …/environments/{id}`)를 불러 채운다 | 목록 응답(`EnvironmentSummary`)에 `clusterInfo`가 없다. 환경 수가 적어 데모에 문제없고, 목록 요약 칸은 echo-was에 요청 후보(계약 §2) |
 | 11/2 | openapi-fetch 는 `schema.d.ts`가 생긴 뒤 더한다. 그전에는 fetch 래퍼 + 손으로 쓴 타입 | 생성 타입 없이 openapi-fetch 를 쓰면 타입 이점이 없다 |
+| 11/2 | 운영 OpenAPI 로 `schema.d.ts`를 만들고 `api` + `unwrap` 으로 부른다. 화면 타입은 `types.ts` 별칭만 쓴다 | 운영 API 가 열렸다. 스키마가 바뀌면 타입 오류로 바로 드러난다 |
+| 11/2 | 재난(4-3)·좌표(4-1)는 API 가 생기기 전까지 브라우저 안에서 시뮬레이션한다(`lib/api/disasters.ts`, sessionStorage). 운영에서도 동작하고 항상 `simulated` 배지 | 재난은 원래 시뮬레이션이라 목업이라고 밝히면 심사 규칙에 맞고, MSW 를 끈 운영에서도 시연할 수 있다 |
+| 11/2 | 규모 → 반경은 `50·e^(0.9·(M−5.2))` km (M7.2 ≈ 300km), 가칭 | 계약 예시에 맞춘 임시 식. 규모별 반경 근거는 노션 IA 열린 질문 7 |
+| 11/2 | 되돌리기 API(API 서버 4) 전까지 배포 이력의 "Redeploy" 는 그 커밋으로 새 배포 요청을 만든다 | 같은 결과(예전 커밋으로 새 배포)를 지금 API 로 낼 수 있다. 되돌리기 API 가 생기면 `rollback_of_id` 를 남기는 쪽으로 바꾼다 |
+| 11/2 | 환경 카드의 Hot/Warm 은 예비 + 버전 일치를 Warm 으로만 보이고, 복제 지연은 `—` | 복제 지연·Hot 상태는 아직 API 에 없다(인프라·API 서버 8) |
 | 11/2 | 테마 기본값은 light(시스템 설정을 따르지 않음) | 시연 화면이 사용자 OS 설정에 따라 바뀌지 않게 |
