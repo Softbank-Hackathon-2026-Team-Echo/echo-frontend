@@ -15,6 +15,7 @@ import {
   ReactFlow,
   ReactFlowProvider,
   useReactFlow,
+  useStore,
 } from '@xyflow/react';
 import ELK from 'elkjs/lib/elk.bundled.js';
 import { TriangleAlert } from 'lucide-react';
@@ -327,6 +328,14 @@ function TopologyCanvas({ environments, byEnvironment, atRisk, edgeUrl }: Topolo
       cancelled = true;
     };
   }, [structureKey, fitView]);
+
+  // 옆 칸(재난 카드 등)이 생겨 캔버스 너비가 바뀌면 다시 맞춘다
+  const paneWidth = useStore((state) => state.width);
+  useEffect(() => {
+    if (paneWidth === 0) return;
+    const frame = requestAnimationFrame(() => fitView({ padding: 0.12 }));
+    return () => cancelAnimationFrame(frame);
+  }, [paneWidth, fitView]);
 
   const nodes = useMemo(() => {
     const list: TopologyNode[] = [
