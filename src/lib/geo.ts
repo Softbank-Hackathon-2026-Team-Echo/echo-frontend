@@ -4,24 +4,24 @@ import type { EnvironmentSummary } from './api/types';
 
 export type LatLng = { lat: number; lng: number };
 
-const PLACES: Record<string, { label: string; coordinates: LatLng }> = {
+const PLACES: Record<string, { label: string; country?: string; coordinates: LatLng }> = {
   // AWS
-  'ap-northeast-1': { label: 'Tokyo', coordinates: { lat: 35.68, lng: 139.69 } },
-  'ap-northeast-2': { label: 'Seoul', coordinates: { lat: 37.57, lng: 126.98 } },
-  'ap-northeast-3': { label: 'Osaka', coordinates: { lat: 34.69, lng: 135.5 } },
-  'us-east-1': { label: 'N. Virginia', coordinates: { lat: 38.9, lng: -77.4 } },
-  'us-west-2': { label: 'Oregon', coordinates: { lat: 45.6, lng: -121.2 } },
-  'eu-west-1': { label: 'Ireland', coordinates: { lat: 53.3, lng: -6.3 } },
+  'ap-northeast-1': { label: 'Tokyo', country: 'Japan', coordinates: { lat: 35.68, lng: 139.69 } },
+  'ap-northeast-2': { label: 'Seoul', country: 'Korea', coordinates: { lat: 37.57, lng: 126.98 } },
+  'ap-northeast-3': { label: 'Osaka', country: 'Japan', coordinates: { lat: 34.69, lng: 135.5 } },
+  'us-east-1': { label: 'N. Virginia', country: 'US', coordinates: { lat: 38.9, lng: -77.4 } },
+  'us-west-2': { label: 'Oregon', country: 'US', coordinates: { lat: 45.6, lng: -121.2 } },
+  'eu-west-1': { label: 'Ireland', country: 'Ireland', coordinates: { lat: 53.3, lng: -6.3 } },
   // GCP
-  'asia-northeast1': { label: 'Tokyo', coordinates: { lat: 35.68, lng: 139.69 } },
-  'asia-northeast2': { label: 'Osaka', coordinates: { lat: 34.69, lng: 135.5 } },
-  'asia-northeast3': { label: 'Seoul', coordinates: { lat: 37.57, lng: 126.98 } },
+  'asia-northeast1': { label: 'Tokyo', country: 'Japan', coordinates: { lat: 35.68, lng: 139.69 } },
+  'asia-northeast2': { label: 'Osaka', country: 'Japan', coordinates: { lat: 34.69, lng: 135.5 } },
+  'asia-northeast3': { label: 'Seoul', country: 'Korea', coordinates: { lat: 37.57, lng: 126.98 } },
   // 온프레 도시
-  tokyo: { label: 'Tokyo', coordinates: { lat: 35.68, lng: 139.69 } },
-  osaka: { label: 'Osaka', coordinates: { lat: 34.69, lng: 135.5 } },
-  fukuoka: { label: 'Fukuoka', coordinates: { lat: 33.59, lng: 130.4 } },
-  seoul: { label: 'Seoul', coordinates: { lat: 37.57, lng: 126.98 } },
-  busan: { label: 'Busan', coordinates: { lat: 35.18, lng: 129.08 } },
+  tokyo: { label: 'Tokyo', country: 'Japan', coordinates: { lat: 35.68, lng: 139.69 } },
+  osaka: { label: 'Osaka', country: 'Japan', coordinates: { lat: 34.69, lng: 135.5 } },
+  fukuoka: { label: 'Fukuoka', country: 'Japan', coordinates: { lat: 33.59, lng: 130.4 } },
+  seoul: { label: 'Seoul', country: 'Korea', coordinates: { lat: 37.57, lng: 126.98 } },
+  busan: { label: 'Busan', country: 'Korea', coordinates: { lat: 35.18, lng: 129.08 } },
 };
 
 function place(environment: Pick<EnvironmentSummary, 'location'>) {
@@ -51,4 +51,11 @@ export function distanceKm(a: LatLng, b: LatLng): number {
     Math.sin(dLat / 2) ** 2 +
     Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLng / 2) ** 2;
   return 2 * EARTH_RADIUS_KM * Math.asin(Math.sqrt(h));
+}
+
+/** 토폴로지 묶음 이름 (예: JAPAN · TOKYO). 모르면 위치 값 */
+export function regionGroupLabel(environment: Pick<EnvironmentSummary, 'location'>): string {
+  const found = place(environment);
+  if (!found) return environment.location ?? 'Unknown location';
+  return found.country ? `${found.country} · ${found.label}` : found.label;
 }
