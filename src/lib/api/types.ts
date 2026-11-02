@@ -1,20 +1,19 @@
-// TODO(김도영, 2026-11-02): echo-was OpenAPI 를 받으면 `pnpm gen:api` 로 만든 schema.d.ts 의 타입으로 바꾼다.
-// 지금은 echo-was app/schemas 와 docs/api/*.md 모양대로 손으로 쓴다. 칸은 항상 있고 값이 없으면 null 이다.
+// API 타입은 `pnpm gen:api` 로 만든 schema.d.ts 에서 꺼낸다. 화면 코드는 이 파일의 이름만 쓴다.
+// 스키마가 바뀌면 gen:api 를 다시 돌리고, 이름이 바뀐 곳만 여기서 고친다.
+import type { components } from './schema';
 
-/** 성공 봉투. 실패 봉투는 data 없이 code·message·details 를 싣는다 */
+type Schemas = components['schemas'];
+
+/** 성공·실패 공통 봉투. 실패 봉투는 data 없이 code·message·details 를 싣는다 */
 export type ApiEnvelope<T> = {
-  success: boolean;
-  code?: string;
-  message?: string;
+  success?: boolean;
+  code?: string | null;
+  message?: string | null;
   data?: T | null;
-  details?: ErrorDetail[];
+  details?: ErrorDetail[] | null;
 };
 
-export type ErrorDetail = {
-  field: string;
-  reason: string;
-  value?: string;
-};
+export type ErrorDetail = Schemas['ErrorDetail'];
 
 export type Page<T> = {
   items: T[];
@@ -25,56 +24,29 @@ export type Page<T> = {
 };
 
 export const MEMBER_ROLES = ['VIEWER', 'DEVELOPER', 'ADMIN'] as const;
-export type MemberRole = (typeof MEMBER_ROLES)[number];
+export type MemberRole = Schemas['OrganizationRole'];
 
-export type User = {
-  id: string;
-  githubLogin: string;
-  name: string | null;
-  avatarUrl: string | null;
-};
+export type User = Schemas['UserResponse'];
+export type Organization = Schemas['OrganizationResponse'];
+export type Me = Schemas['MeResponse'];
 
-export type Organization = {
-  id: string;
-  slug: string;
-  name: string;
-  personal: boolean;
-  /** 서버는 모르는 값을 보낼 수 있다. 화면은 MemberRole 이 아니면 권한 없음으로 본다 */
-  role: MemberRole | null;
-  createdAt: string;
-};
-
-export type Me = {
-  user: User;
-  organizations: Organization[];
-};
-
-export type ConnectionStatus = 'UNCHECKED' | 'CONNECTED' | 'FAILED';
-
+export type ConnectionStatus = Schemas['EnvironmentSummaryResponse']['connectionStatus'];
 /** 목록 항목. 저장된 값만 담고 clusterInfo 는 없다 */
-export type EnvironmentSummary = {
-  id: string;
-  name: string;
-  /** aws · gcp · onprem. 종류는 서버 레지스트리라 다른 값이 올 수 있다 */
-  kind: string;
-  location: string | null;
-  config: Record<string, unknown> | null;
-  secretRef: string | null;
-  connectionStatus: ConnectionStatus;
-  connectionCheckedAt: string | null;
-  connectionError: string | null;
-  createdAt: string;
-  updatedAt: string;
-};
-
-export type ClusterInfo = {
-  serverVersion: string;
-  nodeCount: number;
-  simulated: boolean;
-};
-
+export type EnvironmentSummary = Schemas['EnvironmentSummaryResponse'];
+export type ClusterInfo = Schemas['ClusterInfoResponse'];
 /** 상세. 부를 때 어댑터로 clusterInfo 를 읽는다 */
-export type EnvironmentDetail = EnvironmentSummary & {
-  clusterInfo: ClusterInfo | null;
-  clusterInfoError: string | null;
-};
+export type EnvironmentDetail = Schemas['EnvironmentDetailResponse'];
+export type EnvironmentKind = Schemas['EnvironmentKindResponse'];
+export type CreateEnvironment = Schemas['CreateEnvironmentRequest'];
+export type UpdateEnvironment = Schemas['UpdateEnvironmentRequest'];
+
+export type ServiceSummary = Schemas['ServiceSummaryResponse'];
+export type ServiceDetail = Schemas['ServiceDetailResponse'];
+export type ServiceEnvironment = Schemas['ServiceEnvironmentResponse'];
+export type CreateService = Schemas['CreateServiceRequest'];
+
+export type DeployRequestStatus = Schemas['DeployRequestStatus'];
+export type DeployRequestSummary = Schemas['DeployRequestSummaryResponse'];
+export type DeployRequestDetail = Schemas['DeployRequestDetailResponse'];
+export type CreateDeploy = Schemas['CreateDeployRequest'];
+export type SimulatedFailureStage = Schemas['SimulatedFailureStage'];

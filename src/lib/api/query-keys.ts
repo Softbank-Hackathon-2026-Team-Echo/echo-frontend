@@ -1,8 +1,16 @@
 // 조직 리소스 키는 ['org', orgId, …] 로 시작한다. 조직을 바꾸거나 실시간 resync 때 그 조직 키만 무효화한다
 export const queryKeys = {
   me: () => ['me'] as const,
+  environmentKinds: () => ['environment-kinds'] as const,
   org: (orgId: string) => ['org', orgId] as const,
   environments: (orgId: string) => ['org', orgId, 'environments'] as const,
   environment: (orgId: string, environmentId: string) =>
     ['org', orgId, 'environments', environmentId] as const,
+  services: (orgId: string) => ['org', orgId, 'services'] as const,
+  service: (orgId: string, serviceId: string) => ['org', orgId, 'services', serviceId] as const,
+  deployRequests: (orgId: string, serviceId: string) =>
+    ['org', orgId, 'services', serviceId, 'deploy-requests'] as const,
+  deployRequest: (orgId: string, deployRequestId: string) =>
+    ['org', orgId, 'deploy-requests', deployRequestId] as const,
+  disasters: (orgId: string) => ['org', orgId, 'disasters'] as const,
 };

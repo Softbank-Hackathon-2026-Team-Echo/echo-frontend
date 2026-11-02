@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { apiFetch, apiUrl } from './client';
+import { api, apiUrl, unwrap } from './client';
 
 /** GitHub 로그인은 fetch 가 아니라 페이지 이동이다. 성공하면 서버가 next 로 돌려보낸다 */
 export function githubLoginUrl(next: string): string {
@@ -15,7 +15,7 @@ export function safeNextPath(next: string | null): string {
 export function useLogout() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: () => apiFetch<void>('/auth/logout', { method: 'POST' }),
+    mutationFn: () => unwrap(api.POST('/api/v1/auth/logout')),
     onSettled: () => {
       queryClient.clear();
       window.location.assign('/login');
