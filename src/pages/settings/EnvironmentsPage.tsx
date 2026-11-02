@@ -38,6 +38,7 @@ import type { EnvironmentSummary } from '@/lib/api/types';
 import { hasRole } from '@/lib/roles';
 import { connectionStatusView } from '@/lib/status';
 import { EnvironmentFormDialog } from './EnvironmentFormDialog';
+import { SettingsTabs } from './SettingsTabs';
 
 const SKELETON_ROWS = 5;
 
@@ -193,9 +194,10 @@ export default function EnvironmentsPage() {
     <>
       <PageHeader
         title="Environments"
-        description="Clusters your services can run on. Services move between these during evacuation."
+        description="Each environment = one cloud region or one on-prem site. Whether it serves or stands by is decided per service."
         actions={addButton}
       />
+      <SettingsTabs />
       {isError ? (
         <ErrorState error={error} onRetry={() => refetch()} />
       ) : !isPending && data.items.length === 0 ? (
@@ -210,9 +212,9 @@ export default function EnvironmentsPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Provider · location</TableHead>
-                <TableHead>Cluster</TableHead>
+                <TableHead>Environment</TableHead>
+                <TableHead>Provider · region</TableHead>
+                <TableHead>Cluster (simulated)</TableHead>
                 <TableHead>Connection</TableHead>
                 <TableHead className="w-10">
                   <span className="sr-only">Actions</span>

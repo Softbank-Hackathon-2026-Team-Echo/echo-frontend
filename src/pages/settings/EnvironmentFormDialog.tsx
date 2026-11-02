@@ -1,14 +1,7 @@
+import { Cloud, Server } from 'lucide-react';
 import { type FormEvent, useEffect, useMemo, useState } from 'react';
 import { FormError, FormField } from '@/components/FormField';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -17,6 +10,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   useCreateEnvironment,
@@ -25,7 +26,9 @@ import {
 } from '@/lib/api/environments';
 import { fieldErrors } from '@/lib/api/form-errors';
 import type { EnvironmentKind, EnvironmentSummary } from '@/lib/api/types';
+import { placeLabel } from '@/lib/geo';
 import { providerLabel } from '@/lib/status';
+import { cn } from '@/lib/utils';
 
 type PropertySchema = {
   type?: string;
@@ -58,6 +61,63 @@ export function configFields(kind: EnvironmentKind | undefined): ConfigField[] {
       property.description ??
       (property.examples?.[0] !== undefined ? `e.g. ${String(property.examples[0])}` : undefined),
   }));
+}
+
+// 와이어프레임: 프로바이더 카드에 연결 방식을 한 줄로 적는다
+const PROVIDER_HINTS: Record<string, string> = {
+  aws: 'IAM role',
+  gcp: 'Service account',
+  onprem: 'K3s agent',
+};
+
+function ProviderCards({
+  kinds,
+  value,
+  onChange,
+  disabled,
+}: {
+  kinds: EnvironmentKind[];
+  value: string;
+  onChange: (kind: string) => void;
+  disabled: boolean;
+}) {
+  return (
+    <fieldset className="grid grid-cols-3 gap-2">
+      <legend className="sr-only">Provider</legend>
+      {kinds.map((item) => {
+        const selected = item.kind === value;
+        const Icon = item.kind === 'onprem' ? Server : Cloud;
+        return (
+          <label
+            key={item.kind}
+            className={cn(
+              'flex cursor-pointer flex-col items-start gap-1 rounded-lg border p-3 transition-colors has-[:disabled]:cursor-not-allowed has-[:disabled]:opacity-50 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-focus',
+              selected
+                ? 'border-brand bg-brand-subtle ring-1 ring-brand'
+                : 'border-line hover:bg-subtle',
+            )}
+          >
+            <input
+              type="radio"
+              name="environment-provider"
+              value={item.kind}
+              checked={selected}
+              disabled={disabled && !selected}
+              onChange={() => onChange(item.kind)}
+              className="sr-only"
+            />
+            <span className="flex items-center gap-2 text-body-medium">
+              <Icon aria-hidden className="size-4" />
+              {providerLabel(item.kind)}
+            </span>
+            <span className="text-caption text-fg-muted">
+              {PROVIDER_HINTS[item.kind] ?? item.kind}
+            </span>
+          </label>
+        );
+      })}
+    </fieldset>
+  );
 }
 
 function humanizeKey(key: string): string {
@@ -140,18 +200,30 @@ export function EnvironmentFormDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <DialogHeader>
-            <DialogTitle>{isEdit ? `Edit ${environment?.name}` : 'Add environment'}</DialogTitle>
-            <DialogDescription>
-              Register a cluster by its region or location. Secrets stay in your secret store —
-              EchoPort only keeps where they are.
-            </DialogDescription>
-          </DialogHeader>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent className="w-full overflow-y-auto sm:max-w-lg">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-6">
+          <SheetHeader className="p-0">
+            <SheetTitle>{isEdit ? `Edit ${environment?.name}` : 'Add environment'}</SheetTitle>
+            <SheetDescription>
+              Each environment is one cloud region or one on-prem site. Any registered environment
+              can become an evacuation target.
+            </SheetDescription>
+          </SheetHeader>
 
           <FormError message={errors._form} />
+
+          {kinds.isPending ? (
+            <Skeleton className="h-16 w-full" />
+          ) : (
+            <ProviderCards
+              kinds={kinds.data ?? []}
+              value={kind}
+              onChange={setKind}
+              disabled={isEdit}
+            />
+          )}
+          {errors.kind && <p className="text-small text-danger-fg">{errors.kind}</p>}
 
           <FormField
             id="env-name"
@@ -167,25 +239,6 @@ export function EnvironmentFormDialog({
               aria-invalid={Boolean(errors.name)}
               required
             />
-          </FormField>
-
-          <FormField id="env-kind" label="Provider" error={errors.kind}>
-            {kinds.isPending ? (
-              <Skeleton className="h-8 w-full" />
-            ) : (
-              <Select value={kind} onValueChange={setKind} disabled={isEdit}>
-                <SelectTrigger id="env-kind" className="w-full" aria-invalid={Boolean(errors.kind)}>
-                  <SelectValue placeholder="Choose a provider" />
-                </SelectTrigger>
-                <SelectContent>
-                  {kinds.data?.map((item) => (
-                    <SelectItem key={item.kind} value={item.kind}>
-                      {providerLabel(item.kind)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            )}
           </FormField>
 
           {fields.map((field) => {
@@ -208,11 +261,21 @@ export function EnvironmentFormDialog({
                       <SelectValue placeholder={`Choose ${field.label.toLowerCase()}`} />
                     </SelectTrigger>
                     <SelectContent>
-                      {field.options.map((option) => (
-                        <SelectItem key={option} value={option}>
-                          {option}
-                        </SelectItem>
-                      ))}
+                      {field.options.map((option) => {
+                        const place = placeLabel({ location: option });
+                        return (
+                          <SelectItem key={option} value={option}>
+                            {place && place !== option ? (
+                              <>
+                                {place}{' '}
+                                <span className="font-mono text-mono text-fg-muted">{option}</span>
+                              </>
+                            ) : (
+                              option
+                            )}
+                          </SelectItem>
+                        );
+                      })}
                     </SelectContent>
                   </Select>
                 ) : (
@@ -231,8 +294,8 @@ export function EnvironmentFormDialog({
           {kind && (
             <FormField
               id="env-secret-ref"
-              label="Secret location"
-              hint={`Where the kubeconfig lives. For env: use the ${orgSecretPrefix(orgSlug)} prefix.`}
+              label="Secret reference"
+              hint={`Where the kubeconfig is stored. EchoPort keeps only this reference, never the secret itself. env: names start with ${orgSecretPrefix(orgSlug)}`}
               error={errors.secretRef}
             >
               <Input
@@ -246,16 +309,16 @@ export function EnvironmentFormDialog({
             </FormField>
           )}
 
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          <SheetFooter className="flex-row justify-end p-0">
+            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
             <Button type="submit" disabled={!kind || mutation.isPending}>
               {mutation.isPending ? 'Saving…' : isEdit ? 'Save' : 'Add environment'}
             </Button>
-          </DialogFooter>
+          </SheetFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 }

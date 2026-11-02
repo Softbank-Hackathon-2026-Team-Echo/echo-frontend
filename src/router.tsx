@@ -89,7 +89,8 @@ export const router = createBrowserRouter([
           {
             path: 'members',
             handle: crumb('Members'),
-            element: <PlaceholderPage title="Members" />,
+            lazy: () =>
+              import('@/pages/settings/MembersPage').then((m) => ({ Component: m.default })),
           },
         ],
       },
