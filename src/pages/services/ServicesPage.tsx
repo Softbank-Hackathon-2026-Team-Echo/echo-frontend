@@ -1,14 +1,10 @@
-import { Boxes, Lock } from 'lucide-react';
+import { Activity, ArrowLeftRight, Boxes, Globe, ShieldCheck } from 'lucide-react';
 import { useState } from 'react';
-import { Link, useParams } from 'react-router';
+import { useParams, useSearchParams } from 'react-router';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorState } from '@/components/ErrorState';
-import { ExternalLink } from '@/components/ExternalLink';
 import { PageHeader } from '@/components/PageHeader';
-import { ProviderLabel } from '@/components/ProviderLabel';
 import { RoleButton } from '@/components/RoleButton';
-import { SimulatedBadge } from '@/components/SimulatedBadge';
-import { StatusBadge } from '@/components/StatusBadge';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,
@@ -19,95 +15,94 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useCurrentOrg } from '@/lib/api/me';
-import { useService, useServices } from '@/lib/api/services';
-import type { ServiceSummary } from '@/lib/api/types';
+import { useServiceDetails, useServices, useServicesDeployRequests } from '@/lib/api/services';
+import type { DeployRequestSummary, ServiceDetail } from '@/lib/api/types';
 import { shortSha } from '@/lib/status';
+import { cn } from '@/lib/utils';
 import { RegisterServiceDialog } from './RegisterServiceDialog';
+import { ServicePanel } from './ServicePanel';
 
-function repoName(repoUrl: string) {
-  return repoUrl.replace(/^https:\/\/github\.com\//, '');
-}
-
-/**
- * 목록 응답에는 어디서 서비스 중인지가 없어서 행마다 상세를 부른다(계약 §2 🔁 서비스 목록 요약).
- * 서비스 수가 적어 데모에는 문제없다.
- */
-function ServingCell({ orgId, serviceId }: { orgId: string; serviceId: string }) {
-  const { data, isPending } = useService(orgId, serviceId);
-  if (isPending) return <Skeleton className="h-4 w-36" />;
-  const serving = data?.environments.find((link) => link.role === 'SERVING');
-  if (!serving) return <span className="text-fg-muted">Not deployed</span>;
-  return (
-    <span className="flex flex-col gap-0.5">
-      <ProviderLabel kind={serving.environment.kind} showLocation={false} />
-      <span className="text-caption text-fg-muted">
-        {serving.environment.name} ·{' '}
-        <span className="font-mono">{shortSha(serving.currentDeployment?.commitSha)}</span>
-      </span>
-    </span>
-  );
-}
-
-function ServiceRow({
-  orgId,
-  orgSlug,
-  service,
+function StatItem({
+  icon: Icon,
+  label,
+  value,
 }: {
-  orgId: string;
-  orgSlug: string;
-  service: ServiceSummary;
+  icon: typeof Globe;
+  label: string;
+  value: React.ReactNode;
 }) {
   return (
-    <TableRow>
-      <TableCell>
-        <span className="flex items-center gap-2">
-          <Link
-            to={`/o/${orgSlug}/services/${service.id}`}
-            className="text-body-medium hover:underline"
-          >
-            {service.name}
-          </Link>
-          {service.simulated && <SimulatedBadge />}
-        </span>
-        {service.description && (
-          <span className="block text-caption text-fg-muted">{service.description}</span>
-        )}
-      </TableCell>
-      <TableCell>
-        <span className="inline-flex items-center gap-1.5 font-mono text-mono">
-          {service.private && (
-            <Lock aria-label="Private repository" className="size-3 text-fg-muted" />
-          )}
-          {repoName(service.repoUrl)}
-        </span>
-      </TableCell>
-      <TableCell>
-        <ServingCell orgId={orgId} serviceId={service.id} />
-      </TableCell>
-      <TableCell className="max-w-64">
-        <ExternalLink href={service.url} />
-      </TableCell>
-      <TableCell>
-        {service.status === 'DELETING' ? (
-          <StatusBadge label="Deleting" tone="warning" />
-        ) : (
-          <StatusBadge label="Active" tone="success" />
-        )}
-      </TableCell>
-    </TableRow>
+    <div className="flex flex-1 items-center gap-3 px-4 first:pl-0">
+      <span className="flex size-9 items-center justify-center rounded-md bg-brand-subtle text-brand-on-subtle">
+        <Icon aria-hidden className="size-4" />
+      </span>
+      <span className="flex flex-col">
+        <span className="text-small text-fg-secondary">{label}</span>
+        <span className="text-body-medium tabular-nums">{value}</span>
+      </span>
+    </div>
   );
 }
 
-/** SVC 서비스 목록 */
+/** 위 요약 숫자 줄: 서비스 수 · 서비스 중인 수 · 오늘 배포 수 · 평균 배포 시간 */
+function StatStrip({
+  services,
+  requests,
+}: {
+  services: ServiceDetail[];
+  requests: DeployRequestSummary[];
+}) {
+  const servingCount = services.filter((service) =>
+    service.environments.some((link) => link.role === 'SERVING'),
+  ).length;
+  const today = new Date().toDateString();
+  const deploysToday = requests.filter(
+    (item) => new Date(item.stageTimes.queuedAt).toDateString() === today,
+  ).length;
+  const durations = requests
+    .filter((item) => item.status === 'SUCCEEDED' && item.stageTimes.finishedAt)
+    .map(
+      (item) =>
+        new Date(item.stageTimes.finishedAt ?? '').getTime() -
+        new Date(item.stageTimes.queuedAt).getTime(),
+    );
+  const average = durations.length
+    ? durations.reduce((sum, ms) => sum + ms, 0) / durations.length / 1000
+    : null;
+  const averageText =
+    average === null
+      ? '—'
+      : `${Math.floor(average / 60)}m ${String(Math.round(average % 60)).padStart(2, '0')}s`;
+  return (
+    <div className="flex divide-x divide-line rounded-lg border border-line bg-surface p-4 max-compact:flex-wrap max-compact:divide-x-0 max-compact:gap-4">
+      <StatItem icon={Globe} label="Services" value={services.length} />
+      <StatItem
+        icon={ArrowLeftRight}
+        label="Serving"
+        value={`${servingCount} / ${services.length}`}
+      />
+      <StatItem icon={Activity} label="Deploys today" value={deploysToday} />
+      <StatItem icon={ShieldCheck} label="Avg deploy time" value={averageText} />
+    </div>
+  );
+}
+
+/** SVC 서비스: 목록 + 오른쪽 상세 패널 (와이어프레임 v2) */
 export default function ServicesPage() {
   const { slug } = useParams();
   const { organization } = useCurrentOrg(slug);
-  const { data, isPending, isError, error, refetch } = useServices(organization?.id);
+  const orgId = organization?.id;
+  const services = useServices(orgId);
+  const ids = services.data?.items.map((service) => service.id) ?? [];
+  const details = useServiceDetails(orgId, ids);
+  const requests = useServicesDeployRequests(orgId, ids);
+  const [searchParams, setSearchParams] = useSearchParams();
   const [registerOpen, setRegisterOpen] = useState(false);
+  const selectedId = searchParams.get('service') ?? ids[0];
 
   const registerButton = (
-    <RoleButton requires="DEVELOPER" size="sm" onClick={() => setRegisterOpen(true)}>
-      Register service
+    <RoleButton requires="DEVELOPER" onClick={() => setRegisterOpen(true)}>
+      Deploy new service
     </RoleButton>
   );
 
@@ -115,54 +110,90 @@ export default function ServicesPage() {
     <>
       <PageHeader
         title="Services"
-        description="Apps you deploy with one click. Each can run on several environments at once."
+        description="Apps deployed by EchoPort and where each one runs."
         actions={registerButton}
       />
-      {isError ? (
-        <ErrorState error={error} onRetry={() => refetch()} />
-      ) : !isPending && data.items.length === 0 ? (
+      {services.isError ? (
+        <ErrorState error={services.error} onRetry={() => services.refetch()} />
+      ) : services.isPending || !organization ? (
+        <div className="flex flex-col gap-4">
+          <Skeleton className="h-16 w-full" />
+          <Skeleton className="h-48 w-full" />
+        </div>
+      ) : services.data.items.length === 0 ? (
         <EmptyState
           icon={Boxes}
           title="No services yet"
-          description="Register a GitHub repository, then deploy it to an environment."
+          description="Connect a GitHub repository, then deploy it to an environment."
           action={registerButton}
         />
       ) : (
-        <div className="overflow-hidden rounded-lg border border-line bg-surface">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Repository</TableHead>
-                <TableHead>Serving on</TableHead>
-                <TableHead>URL</TableHead>
-                <TableHead>Status</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isPending || !organization
-                ? Array.from({ length: 3 }, (_, index) => (
-                    // biome-ignore lint/suspicious/noArrayIndexKey: 순서가 바뀌지 않는 자리 표시 행이다
-                    <TableRow key={index}>
-                      {Array.from({ length: 5 }, (__, cell) => (
-                        // biome-ignore lint/suspicious/noArrayIndexKey: 자리 표시 칸이다
-                        <TableCell key={cell}>
-                          <Skeleton className="h-4 w-28" />
+        <>
+          <StatStrip services={details.data} requests={requests} />
+          <div className="grid grid-cols-[1fr_24rem] items-start gap-4 max-wide:grid-cols-1">
+            <div className="overflow-hidden rounded-lg border border-line bg-surface">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Service</TableHead>
+                    <TableHead>Running on</TableHead>
+                    <TableHead>Version</TableHead>
+                    <TableHead>Public URL</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {services.data.items.map((summary) => {
+                    const detail = details.data.find((item) => item.id === summary.id);
+                    const serving = detail?.environments.find((link) => link.role === 'SERVING');
+                    const selected = summary.id === selectedId;
+                    return (
+                      <TableRow
+                        key={summary.id}
+                        aria-selected={selected}
+                        className={cn(
+                          'cursor-pointer',
+                          selected && 'bg-brand-subtle hover:bg-brand-subtle',
+                        )}
+                        onClick={() => setSearchParams({ service: summary.id }, { replace: true })}
+                      >
+                        <TableCell>
+                          <button
+                            type="button"
+                            className="text-body-medium hover:underline"
+                            onClick={() =>
+                              setSearchParams({ service: summary.id }, { replace: true })
+                            }
+                          >
+                            {summary.name}
+                          </button>
+                          {summary.status === 'DELETING' && (
+                            <span className="ml-2 text-caption text-warning-fg">deleting</span>
+                          )}
                         </TableCell>
-                      ))}
-                    </TableRow>
-                  ))
-                : data.items.map((service) => (
-                    <ServiceRow
-                      key={service.id}
-                      orgId={organization.id}
-                      orgSlug={organization.slug}
-                      service={service}
-                    />
-                  ))}
-            </TableBody>
-          </Table>
-        </div>
+                        <TableCell>
+                          {serving?.environment.name ?? <span className="text-fg-muted">—</span>}
+                        </TableCell>
+                        <TableCell className="font-mono text-mono">
+                          {shortSha(serving?.currentDeployment?.commitSha)}
+                        </TableCell>
+                        <TableCell className="max-w-56 truncate text-fg-secondary">
+                          {summary.url.replace(/^https:\/\//, '')}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+            {selectedId && (
+              <ServicePanel
+                orgId={organization.id}
+                orgSlug={organization.slug}
+                serviceId={selectedId}
+              />
+            )}
+          </div>
+        </>
       )}
       {organization && (
         <RegisterServiceDialog

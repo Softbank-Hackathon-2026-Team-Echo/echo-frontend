@@ -66,6 +66,26 @@ export function useServiceDetails(orgId: string | undefined, serviceIds: string[
   });
 }
 
+/** 여러 서비스의 배포 이력(최근 20개씩). 서비스 목록 위 요약 숫자(오늘 배포 수·평균 배포 시간)에 쓴다 */
+export function useServicesDeployRequests(orgId: string | undefined, serviceIds: string[]) {
+  return useQueries({
+    queries: serviceIds.map((serviceId) => ({
+      queryKey: queryKeys.deployRequests(orgId ?? '', serviceId),
+      queryFn: () =>
+        unwrap(
+          api.GET('/api/v1/orgs/{org_id}/services/{service_id}/deploy-requests', {
+            params: {
+              path: { org_id: orgId ?? '', service_id: serviceId },
+              query: { page: 0, size: 20 },
+            },
+          }),
+        ),
+      enabled: Boolean(orgId),
+    })),
+    combine: (results) => results.flatMap((result) => result.data?.items ?? []),
+  });
+}
+
 export function useCreateService(orgId: string) {
   const queryClient = useQueryClient();
   return useMutation({

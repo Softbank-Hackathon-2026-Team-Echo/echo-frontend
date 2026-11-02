@@ -60,7 +60,7 @@ export function RegisterServiceDialog({
       {
         onSuccess: (service) => {
           onOpenChange(false);
-          navigate(`/o/${orgSlug}/services/${service.id}`);
+          navigate(`/o/${orgSlug}/services?service=${service.id}`);
         },
       },
     );
