@@ -1,0 +1,204 @@
+/* EchoPort design tokens — exported from Figma (Team Echo 본선 파일, EchoPort / Color · Size · Type), 2026-11-02.
+ * Modes: :root = Light, [data-theme=dark] = Dark, [data-theme=projector] = Light · Projector (+ Projector type scale).
+ * Do not edit by hand; re-export when Figma variables change. */
+
+:root {
+  color-scheme: light;
+  /* color */
+  --ep-color-bg-canvas: #f5f6f8;
+  --ep-color-bg-surface: #ffffff;
+  --ep-color-bg-raised: #ffffff;
+  --ep-color-bg-subtle: #edeff3;
+  --ep-color-bg-inverse: #12151c;
+  --ep-color-bg-overlay: #0a0a1773;
+  --ep-color-border-default: #e1e4ea;
+  --ep-color-border-strong: #c9ced8;
+  --ep-color-text-primary: #12151c;
+  --ep-color-text-secondary: #4b5262;
+  --ep-color-text-muted: #6b7280;
+  --ep-color-text-inverse: #ffffff;
+  --ep-color-text-on-brand: #ffffff;
+  --ep-color-brand-default: #4a47e0;
+  --ep-color-brand-hover: #3d39be;
+  --ep-color-brand-subtle: #eef0ff;
+  --ep-color-brand-on-subtle: #3d39be;
+  --ep-color-focus-ring: #a3abff;
+  --ep-color-globe-sphere: #eef0ff;
+  --ep-color-globe-grid: #e0e4ff;
+  --ep-color-globe-land: #c6ccff;
+  --ep-color-globe-land-far: #9aa1af;
+  --ep-color-globe-coast: #a3abff;
+  --ep-color-globe-arc: #5b5ef4;
+  --ep-color-globe-arc-soft: #7f86fb;
+  --ep-color-chart-1: #5b5ef4;
+  --ep-color-chart-2: #16a34a;
+  --ep-color-chart-3: #f97316;
+  --ep-color-chart-4: #eab308;
+  --ep-color-chart-5: #ec4899;
+  --ep-color-chart-6: #14b8a6;
+  --ep-color-status-success-fg: #166534;
+  --ep-color-status-success-bg: #eaf8f0;
+  --ep-color-status-success-solid: #16a34a;
+  --ep-color-status-warning-fg: #b45309;
+  --ep-color-status-warning-bg: #fff7e6;
+  --ep-color-status-warning-solid: #f59e0b;
+  --ep-color-status-danger-fg: #b91c1c;
+  --ep-color-status-danger-bg: #feeeee;
+  --ep-color-status-danger-solid: #ef4444;
+  --ep-color-status-migrating-fg: #3d39be;
+  --ep-color-status-migrating-bg: #eef0ff;
+  --ep-color-status-migrating-solid: #5b5ef4;
+  --ep-color-status-ai-fg: #962787;
+  --ep-color-status-ai-bg: #fdf0fc;
+  --ep-color-status-ai-solid: #d946c8;
+  --ep-color-provider-aws: #f97316;
+  --ep-color-provider-gcp: #14b8a6;
+  --ep-color-provider-onprem: #6b7280;
+  /* space */
+  --ep-space-0: 0px;
+  --ep-space-2: 2px;
+  --ep-space-4: 4px;
+  --ep-space-6: 6px;
+  --ep-space-8: 8px;
+  --ep-space-10: 10px;
+  --ep-space-12: 12px;
+  --ep-space-16: 16px;
+  --ep-space-20: 20px;
+  --ep-space-24: 24px;
+  --ep-space-32: 32px;
+  --ep-space-40: 40px;
+  --ep-space-48: 48px;
+  --ep-space-64: 64px;
+  --ep-space-80: 80px;
+  /* radius */
+  --ep-radius-none: 0px;
+  --ep-radius-xs: 4px;
+  --ep-radius-sm: 6px;
+  --ep-radius-md: 8px;
+  --ep-radius-lg: 12px;
+  --ep-radius-xl: 16px;
+  --ep-radius-2xl: 24px;
+  --ep-radius-full: 999px;
+  /* layout */
+  --ep-layout-sidebar: 220px;
+  --ep-layout-sidebar-collapsed: 64px;
+  --ep-layout-topbar: 48px;
+  --ep-layout-content-max: 1280px;
+  --ep-layout-gutter: 24px;
+  --ep-layout-gutter-compact: 16px;
+  --ep-layout-bp-compact: 1024px;
+  --ep-layout-bp-wide: 1280px;
+  /* shadow */
+  --ep-shadow-xs: 0 1px 2px 0 rgba(15,18,41,.05);
+  --ep-shadow-sm: 0 1px 3px 0 rgba(15,18,41,.08), 0 1px 2px -1px rgba(15,18,41,.06);
+  --ep-shadow-md: 0 4px 8px -2px rgba(15,18,41,.08), 0 2px 4px -2px rgba(15,18,41,.05);
+  --ep-shadow-lg: 0 12px 24px -6px rgba(15,18,41,.12), 0 4px 8px -4px rgba(15,18,41,.06);
+  --ep-shadow-xl: 0 24px 48px -12px rgba(15,18,41,.18), 0 8px 16px -8px rgba(15,18,41,.08);
+  /* type (Default) */
+  --ep-font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --ep-font-mono: 'Geist Mono', ui-monospace, SFMono-Regular, monospace;
+  --ep-type-h1-size: 26px; --ep-type-h1-line: 34px; --ep-type-h1-weight: 600; --ep-type-h1-tracking: -0.02em;
+  --ep-type-h2-size: 20px; --ep-type-h2-line: 28px; --ep-type-h2-weight: 600; --ep-type-h2-tracking: -0.01em;
+  --ep-type-h3-size: 16px; --ep-type-h3-line: 24px; --ep-type-h3-weight: 600; --ep-type-h3-tracking: -0.005em;
+  --ep-type-title-size: 14px; --ep-type-title-line: 20px; --ep-type-title-weight: 600; --ep-type-title-tracking: 0;
+  --ep-type-body-size: 13px; --ep-type-body-line: 20px; --ep-type-body-weight: 400; --ep-type-body-tracking: 0;
+  --ep-type-body-medium-size: 13px; --ep-type-body-medium-line: 20px; --ep-type-body-medium-weight: 500; --ep-type-body-medium-tracking: 0;
+  --ep-type-small-size: 12px; --ep-type-small-line: 18px; --ep-type-small-weight: 400; --ep-type-small-tracking: 0;
+  --ep-type-caption-size: 11px; --ep-type-caption-line: 16px; --ep-type-caption-weight: 400; --ep-type-caption-tracking: 0;
+  --ep-type-label-size: 12px; --ep-type-label-line: 16px; --ep-type-label-weight: 500; --ep-type-label-tracking: 0;
+  --ep-type-overline-size: 10px; --ep-type-overline-line: 14px; --ep-type-overline-weight: 600; --ep-type-overline-tracking: 0.08em;
+  --ep-type-metric-xl-size: 24px; --ep-type-metric-xl-line: 32px; --ep-type-metric-xl-weight: 600; --ep-type-metric-xl-tracking: -0.02em;
+  --ep-type-metric-size: 18px; --ep-type-metric-line: 24px; --ep-type-metric-weight: 600; --ep-type-metric-tracking: -0.01em;
+  --ep-type-mono-size: 11px; --ep-type-mono-line: 16px; --ep-type-mono-weight: 400; --ep-type-mono-tracking: 0;
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+  --ep-color-bg-canvas: #0a0c11;
+  --ep-color-bg-surface: #12151c;
+  --ep-color-bg-raised: #1f2430;
+  --ep-color-bg-subtle: #1f2430;
+  --ep-color-bg-inverse: #f5f6f8;
+  --ep-color-bg-overlay: #000000a6;
+  --ep-color-border-default: #1f2430;
+  --ep-color-border-strong: #343a46;
+  --ep-color-text-primary: #f5f6f8;
+  --ep-color-text-secondary: #c9ced8;
+  --ep-color-text-muted: #9aa1af;
+  --ep-color-text-inverse: #12151c;
+  --ep-color-brand-default: #7f86fb;
+  --ep-color-brand-hover: #a3abff;
+  --ep-color-brand-subtle: #262472;
+  --ep-color-brand-on-subtle: #c6ccff;
+  --ep-color-focus-ring: #7f86fb;
+  --ep-color-globe-sphere: #12151c;
+  --ep-color-globe-grid: #1f2430;
+  --ep-color-globe-land: #343a46;
+  --ep-color-globe-land-far: #4b5262;
+  --ep-color-globe-coast: #4b5262;
+  --ep-color-globe-arc: #7f86fb;
+  --ep-color-globe-arc-soft: #a3abff;
+  --ep-color-chart-1: #7f86fb;
+  --ep-color-chart-2: #6fd39a;
+  --ep-color-status-success-fg: #6fd39a;
+  --ep-color-status-success-bg: #0b3d20;
+  --ep-color-status-warning-fg: #ffc85c;
+  --ep-color-status-warning-bg: #4a2604;
+  --ep-color-status-danger-fg: #f68c8c;
+  --ep-color-status-danger-bg: #4c0f0f;
+  --ep-color-status-migrating-fg: #a3abff;
+  --ep-color-status-migrating-bg: #262472;
+  --ep-color-status-migrating-solid: #7f86fb;
+  --ep-color-status-ai-fg: #ee9be6;
+  --ep-color-status-ai-bg: #4a1043;
+}
+
+/* Projector = Light · Projector colors + Projector type scale. Use for the demo screen. */
+[data-theme='projector'] {
+  --ep-color-bg-canvas: #e1e4ea;
+  --ep-color-bg-subtle: #c9ced8;
+  --ep-color-bg-overlay: #0a0a178c;
+  --ep-color-border-default: #9aa1af;
+  --ep-color-border-strong: #6b7280;
+  --ep-color-text-primary: #0a0c11;
+  --ep-color-text-secondary: #343a46;
+  --ep-color-text-muted: #4b5262;
+  --ep-color-brand-default: #3d39be;
+  --ep-color-brand-hover: #322f98;
+  --ep-color-brand-subtle: #e0e4ff;
+  --ep-color-brand-on-subtle: #322f98;
+  --ep-color-focus-ring: #5b5ef4;
+  --ep-color-globe-sphere: #e0e4ff;
+  --ep-color-globe-grid: #c6ccff;
+  --ep-color-globe-land: #7f86fb;
+  --ep-color-globe-coast: #4a47e0;
+  --ep-color-globe-arc: #3d39be;
+  --ep-color-globe-arc-soft: #5b5ef4;
+  --ep-color-chart-1: #4a47e0;
+  --ep-color-chart-2: #15803d;
+  --ep-color-status-success-bg: #cdefdb;
+  --ep-color-status-success-solid: #15803d;
+  --ep-color-status-warning-bg: #ffebc2;
+  --ep-color-status-warning-solid: #d97706;
+  --ep-color-status-danger-bg: #fdd5d5;
+  --ep-color-status-danger-solid: #dc2626;
+  --ep-color-status-migrating-fg: #322f98;
+  --ep-color-status-migrating-bg: #e0e4ff;
+  --ep-color-status-migrating-solid: #4a47e0;
+  --ep-color-status-ai-bg: #faddf7;
+  --ep-color-status-ai-solid: #b832a8;
+  --ep-type-h1-size: 30px; --ep-type-h1-line: 38px;
+  --ep-type-h2-size: 24px; --ep-type-h2-line: 32px;
+  --ep-type-h3-size: 18px; --ep-type-h3-line: 26px;
+  --ep-type-title-size: 16px; --ep-type-title-line: 22px;
+  --ep-type-body-size: 15px; --ep-type-body-line: 22px;
+  --ep-type-body-medium-size: 15px; --ep-type-body-medium-line: 22px;
+  --ep-type-small-size: 14px; --ep-type-small-line: 20px;
+  --ep-type-caption-size: 13px; --ep-type-caption-line: 18px;
+  --ep-type-label-size: 13px; --ep-type-label-line: 18px;
+  --ep-type-overline-size: 12px; --ep-type-overline-line: 16px;
+  --ep-type-metric-xl-size: 30px; --ep-type-metric-xl-line: 38px;
+  --ep-type-metric-size: 22px; --ep-type-metric-line: 28px;
+  --ep-type-mono-size: 13px; --ep-type-mono-line: 18px;
+}
+

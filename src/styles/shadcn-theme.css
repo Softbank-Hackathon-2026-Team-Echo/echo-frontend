@@ -1,0 +1,35 @@
+/* shadcn/ui variable bridge — maps shadcn's names to EchoPort tokens. Import after tokens.css. */
+:root, [data-theme] {
+  --background: var(--ep-color-bg-canvas);
+  --foreground: var(--ep-color-text-primary);
+  --card: var(--ep-color-bg-surface);
+  --card-foreground: var(--ep-color-text-primary);
+  --popover: var(--ep-color-bg-raised);
+  --popover-foreground: var(--ep-color-text-primary);
+  --primary: var(--ep-color-brand-default);
+  --primary-foreground: var(--ep-color-text-on-brand);
+  --secondary: var(--ep-color-bg-subtle);
+  --secondary-foreground: var(--ep-color-text-primary);
+  --muted: var(--ep-color-bg-subtle);
+  --muted-foreground: var(--ep-color-text-muted);
+  --accent: var(--ep-color-brand-subtle);
+  --accent-foreground: var(--ep-color-brand-on-subtle);
+  --destructive: var(--ep-color-status-danger-solid);
+  --border: var(--ep-color-border-default);
+  --input: var(--ep-color-border-strong);
+  --ring: var(--ep-color-focus-ring);
+  --radius: var(--ep-radius-md);
+  --chart-1: var(--ep-color-chart-1);
+  --chart-2: var(--ep-color-chart-2);
+  --chart-3: var(--ep-color-chart-3);
+  --chart-4: var(--ep-color-chart-4);
+  --chart-5: var(--ep-color-chart-5);
+  --sidebar: var(--ep-color-bg-surface);
+  --sidebar-foreground: var(--ep-color-text-secondary);
+  --sidebar-primary: var(--ep-color-brand-default);
+  --sidebar-primary-foreground: var(--ep-color-text-on-brand);
+  --sidebar-accent: var(--ep-color-brand-subtle);
+  --sidebar-accent-foreground: var(--ep-color-brand-on-subtle);
+  --sidebar-border: var(--ep-color-border-default);
+  --sidebar-ring: var(--ep-color-focus-ring);
+}
