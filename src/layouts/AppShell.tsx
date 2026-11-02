@@ -16,6 +16,7 @@ import {
   Siren,
   Sun,
 } from 'lucide-react';
+import { useState } from 'react';
 import {
   Link,
   NavLink,
@@ -25,10 +26,13 @@ import {
   useNavigate,
   useParams,
 } from 'react-router';
+import { DisasterBanner } from '@/components/disaster/DisasterBanner';
+import { DisasterDialog } from '@/components/disaster/DisasterDialog';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorState } from '@/components/ErrorState';
 import { Logo } from '@/components/Logo';
 import { MockDataBadge } from '@/components/MockDataBadge';
+import { RoleButton } from '@/components/RoleButton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -225,42 +229,40 @@ function Topbar({
   organization: Organization;
 }) {
   const logout = useLogout();
+  const [disasterOpen, setDisasterOpen] = useState(false);
   return (
-    <header className="flex h-topbar shrink-0 items-center gap-3 border-b border-line bg-surface px-gutter max-compact:px-gutter-compact">
-      <Breadcrumb organization={organization} />
-      <div className="ml-auto flex items-center gap-2">
-        <MockDataBadge />
-        <OrgSwitcher organizations={organizations} current={organization} />
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              size="sm"
-              variant="destructive"
-              aria-disabled="true"
-              className="cursor-not-allowed opacity-50"
-              onClick={(event) => event.preventDefault()}
-            >
-              <Siren aria-hidden />
-              <span className="max-compact:sr-only">Simulate disaster</span>
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Coming soon</TooltipContent>
-        </Tooltip>
-        <Button variant="ghost" size="icon" aria-label="Notifications">
-          <Bell aria-hidden />
-        </Button>
-        <ThemeMenu />
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label="Sign out"
-          disabled={logout.isPending}
-          onClick={() => logout.mutate()}
-        >
-          <LogOut aria-hidden />
-        </Button>
-      </div>
-    </header>
+    <>
+      <header className="flex h-topbar shrink-0 items-center gap-3 border-b border-line bg-surface px-gutter max-compact:px-gutter-compact">
+        <Breadcrumb organization={organization} />
+        <div className="ml-auto flex items-center gap-2">
+          <MockDataBadge />
+          <OrgSwitcher organizations={organizations} current={organization} />
+          <RoleButton
+            requires="DEVELOPER"
+            size="sm"
+            variant="destructive"
+            onClick={() => setDisasterOpen(true)}
+          >
+            <Siren aria-hidden />
+            <span className="max-compact:sr-only">Simulate disaster</span>
+          </RoleButton>
+          <Button variant="ghost" size="icon" aria-label="Notifications">
+            <Bell aria-hidden />
+          </Button>
+          <ThemeMenu />
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Sign out"
+            disabled={logout.isPending}
+            onClick={() => logout.mutate()}
+          >
+            <LogOut aria-hidden />
+          </Button>
+        </div>
+      </header>
+      <DisasterDialog open={disasterOpen} onOpenChange={setDisasterOpen} orgId={organization.id} />
+    </>
   );
 }
 
@@ -311,6 +313,7 @@ export function AppShell() {
       <Sidebar user={me.user} organization={organization} />
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar organizations={me.organizations} organization={organization} />
+        <DisasterBanner orgId={organization.id} orgSlug={organization.slug} />
         <main className="flex-1 overflow-y-auto">
           <div className="mx-auto flex max-w-content flex-col gap-6 p-gutter max-compact:p-gutter-compact">
             <Outlet />
