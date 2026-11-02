@@ -32,7 +32,20 @@ async function startMocks() {
     return;
   }
   const { worker } = await import('@/mocks/browser');
-  await worker.start({ onUnhandledFrame: 'bypass', quiet: true });
+  const options = { onUnhandledFrame: 'bypass', quiet: true } as const;
+  await worker.start(options);
+  // 탭을 오래 숨겨 두면 브라우저가 서비스 워커를 멈췄다 깨우면서 MSW 가 이 탭을 놓칠 수 있다.
+  // 다시 보일 때 워커를 다시 붙여 목업 응답이 끊기지 않게 한다
+  let hiddenAt = 0;
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') {
+      hiddenAt = Date.now();
+      return;
+    }
+    if (Date.now() - hiddenAt < 20_000) return;
+    worker.stop();
+    void worker.start(options);
+  });
 }
 
 initTheme();

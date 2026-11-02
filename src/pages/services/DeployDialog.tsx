@@ -1,5 +1,5 @@
 import { type FormEvent, useState } from 'react';
-import { useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { FormError, FormField } from '@/components/FormField';
 import { ProviderLabel } from '@/components/ProviderLabel';
 import { Button } from '@/components/ui/button';
@@ -57,6 +57,9 @@ export function DeployDialog({
   const [ref, setRef] = useState('main');
   const [failAt, setFailAt] = useState<string>(NO_FAILURE);
   const errors = fieldErrors(deploy.error);
+  const items = environments.data?.items ?? [];
+  const noEnvironments = environments.isSuccess && items.length === 0;
+  const allFailed = items.length > 0 && items.every((item) => item.connectionStatus === 'FAILED');
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -97,26 +100,54 @@ export function DeployDialog({
 
           <FormError message={errors._form} />
 
-          <FormField id="deploy-env" label="Environment" error={errors.environmentId}>
-            <Select value={environmentId} onValueChange={setEnvironmentId}>
-              <SelectTrigger id="deploy-env" className="w-full">
-                <SelectValue placeholder="Choose an environment" />
-              </SelectTrigger>
-              <SelectContent>
-                {environments.data?.items.map((environment) => (
-                  <SelectItem
-                    key={environment.id}
-                    value={environment.id}
-                    // 마지막 접속 확인이 실패한 환경은 서버가 409 ENVIRONMENT_UNHEALTHY 로 막는다
-                    disabled={environment.connectionStatus === 'FAILED'}
-                  >
-                    <ProviderLabel kind={environment.kind} showLocation={false} />
-                    <span>{environment.name}</span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </FormField>
+          {noEnvironments ? (
+            <div className="flex flex-col items-start gap-2 rounded-md bg-subtle p-3 text-body">
+              <span>There are no environments to deploy to yet.</span>
+              <Link
+                to={`/o/${orgSlug}/settings/environments`}
+                className="text-brand hover:underline"
+                onClick={() => onOpenChange(false)}
+              >
+                Add an environment first →
+              </Link>
+            </div>
+          ) : (
+            <FormField
+              id="deploy-env"
+              label="Environment"
+              error={errors.environmentId}
+              hint={
+                allFailed
+                  ? 'Every environment failed its last connection check. Fix one in Settings first.'
+                  : undefined
+              }
+            >
+              <Select value={environmentId} onValueChange={setEnvironmentId}>
+                <SelectTrigger id="deploy-env" className="w-full">
+                  <SelectValue placeholder="Choose an environment" />
+                </SelectTrigger>
+                <SelectContent>
+                  {items.map((environment) => {
+                    const failed = environment.connectionStatus === 'FAILED';
+                    return (
+                      <SelectItem
+                        key={environment.id}
+                        value={environment.id}
+                        // 마지막 접속 확인이 실패한 환경은 서버가 409 ENVIRONMENT_UNHEALTHY 로 막는다
+                        disabled={failed}
+                      >
+                        <ProviderLabel kind={environment.kind} showLocation={false} />
+                        <span>{environment.name}</span>
+                        {failed && (
+                          <span className="text-caption text-danger-fg">connection failed</span>
+                        )}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </FormField>
+          )}
 
           <FormField
             id="deploy-ref"

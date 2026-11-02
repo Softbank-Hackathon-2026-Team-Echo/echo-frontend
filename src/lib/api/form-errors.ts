@@ -1,4 +1,4 @@
-import { isApiError } from './errors';
+import { describeApiError, isApiError } from './errors';
 
 // 422 details[].reason → 칸 아래 문구. 모르는 이유는 코드를 사람이 읽게 바꿔 보여 준다
 const REASONS: Record<string, string> = {
@@ -22,7 +22,8 @@ function humanize(reason: string): string {
  * 칸에 붙지 않는 오류는 `_form` 에 담는다.
  */
 export function fieldErrors(error: unknown): Record<string, string> {
-  if (!isApiError(error)) return {};
+  if (!error) return {};
+  if (!isApiError(error)) return { _form: describeApiError(error) };
   const errors: Record<string, string> = {};
   for (const detail of error.details) {
     if (detail.field === 'installUrl') continue;
@@ -30,7 +31,7 @@ export function fieldErrors(error: unknown): Record<string, string> {
     errors[field] = REASONS[detail.reason] ?? humanize(detail.reason);
   }
   if (Object.keys(errors).length === 0) {
-    errors._form = REASONS[error.code] ?? error.message;
+    errors._form = REASONS[error.code] ?? describeApiError(error);
   }
   return errors;
 }

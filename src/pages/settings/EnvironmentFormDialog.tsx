@@ -206,8 +206,8 @@ export function EnvironmentFormDialog({
           <SheetHeader className="p-0">
             <SheetTitle>{isEdit ? `Edit ${environment?.name}` : 'Add environment'}</SheetTitle>
             <SheetDescription>
-              Each environment is one cloud region or one on-prem site. Any registered environment
-              can become an evacuation target.
+              Each environment is one cloud region or one on-prem site. EchoPort checks the
+              connection as soon as you save.
             </SheetDescription>
           </SheetHeader>
 
@@ -314,7 +314,7 @@ export function EnvironmentFormDialog({
               Cancel
             </Button>
             <Button type="submit" disabled={!kind || mutation.isPending}>
-              {mutation.isPending ? 'Saving…' : isEdit ? 'Save' : 'Add environment'}
+              {mutation.isPending ? 'Checking connection…' : isEdit ? 'Save' : 'Add environment'}
             </Button>
           </SheetFooter>
         </form>

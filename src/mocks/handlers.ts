@@ -1,5 +1,5 @@
 // MOCK: echo-was 응답을 흉내 내는 MSW 핸들러. 서버 API 가 열리면 해당 핸들러를 지운다.
-// 목업 상태는 메모리에만 있고 새로고침하면 처음으로 돌아간다.
+// 목업 상태는 탭 단위(sessionStorage)로 남아 새로고침해도 유지되고, 탭을 닫으면 처음으로 돌아간다.
 import { HttpResponse, http } from 'msw';
 import type {
   CreateDeploy,
@@ -23,9 +23,43 @@ import {
 
 const API = '*/api/v1';
 
-const environments = [...mockEnvironments];
-const services = [...mockServices];
-const deployRequests = [...mockDeployRequests];
+const STORAGE_KEY = 'echoport.mock.v1';
+
+type MockState = {
+  environments: EnvironmentSummary[];
+  services: ServiceDetail[];
+  deployRequests: MockDeployRequest[];
+};
+
+function initialState(): MockState {
+  return structuredClone({
+    environments: mockEnvironments,
+    services: mockServices,
+    deployRequests: mockDeployRequests,
+  });
+}
+
+function loadState(): MockState {
+  try {
+    const raw = window.sessionStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw) as MockState;
+  } catch {
+    // 저장소를 못 쓰면 메모리 상태로 시작한다
+  }
+  return initialState();
+}
+
+const state = loadState();
+const { environments, services, deployRequests } = state;
+
+/** 바뀐 목업 상태를 탭 저장소에 남긴다 (시연 중 새로고침해도 만든 서비스·환경이 남게) */
+function save() {
+  try {
+    window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    // 저장하지 못해도 이번 화면에서는 동작한다
+  }
+}
 
 function headers() {
   return { 'X-Request-ID': crypto.randomUUID() };
@@ -64,6 +98,12 @@ function hasOrganization(orgId: string | readonly string[] | undefined) {
 }
 
 const orgNotFound = () => fail(404, 'ORGANIZATION_NOT_FOUND', 'organization not found');
+
+/** 뷰어 조직의 변경 요청은 echo-was 처럼 403 ROLE_FORBIDDEN 으로 막는다 */
+function forbiddenForViewer(orgId: string | readonly string[] | undefined) {
+  const org = mockOrganizations.find((item) => item.id === orgId);
+  return org?.role === 'VIEWER' ? fail(403, 'ROLE_FORBIDDEN', 'role forbidden') : null;
+}
 const NAME_PATTERN = /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/;
 
 // 배포 단계 시간(초). 데모에서 지켜보기 좋게 짧게 둔다
@@ -94,8 +134,11 @@ function advance(request: MockDeployRequest, now = Date.now()) {
     const startsAt = cursor;
     const endsAt = cursor + STAGE_SECONDS[stage] * 1000;
     if (now < startsAt) return;
-    request.status = stage;
-    request.stageTimes[STAGE_TIME_KEY[stage]] = new Date(startsAt).toISOString();
+    if (request.status !== stage) {
+      request.status = stage;
+      request.stageTimes[STAGE_TIME_KEY[stage]] = new Date(startsAt).toISOString();
+      save();
+    }
     if (request.failAt === stage && now >= startsAt + (endsAt - startsAt) / 2) {
       request.status = 'FAILED';
       request.errorCode = FAILURE_CODES[stage as keyof typeof FAILURE_CODES];
@@ -122,19 +165,35 @@ function settle(request: MockDeployRequest) {
   );
   if (!service || !link) return;
   link.activeRequestId = null;
-  if (request.status !== 'SUCCEEDED') return;
-  link.currentDeployment = {
-    id: `d-${request.id}`,
-    commitSha: request.commitSha,
-    imageDigest: `sha256:${'b'.repeat(64)}`,
-    finishedAt: request.stageTimes.finishedAt,
-  };
-  // 첫 성공 연결이 서비스 중이 된다. 나머지는 예비로 같은 버전을 따라간다
-  if (!service.environments.some((item) => item.role === 'SERVING')) {
-    link.role = 'SERVING';
-    link.trafficWeight = 100;
-  } else if (link.role !== 'SERVING') {
-    link.role = 'STANDBY';
+  if (request.status === 'SUCCEEDED') {
+    link.currentDeployment = {
+      id: `d-${request.id}`,
+      commitSha: request.commitSha,
+      imageDigest: `sha256:${'b'.repeat(64)}`,
+      finishedAt: request.stageTimes.finishedAt,
+    };
+    // 첫 성공 연결이 서비스 중이 된다. 나머지는 예비로 같은 버전을 따라간다
+    if (!service.environments.some((item) => item.role === 'SERVING')) {
+      link.role = 'SERVING';
+      link.trafficWeight = 100;
+    } else if (link.role !== 'SERVING') {
+      link.role = 'STANDBY';
+    }
+    // 서비스 중 연결이 성공하면 예비 연결이 같은 빌드로 자동 배포된다 (echo-was STANDBY_SYNC)
+    if (link.role === 'SERVING') {
+      for (const other of service.environments) {
+        if (other === link || !other.currentDeployment || other.activeRequestId) continue;
+        if (other.currentDeployment.commitSha === request.commitSha) continue;
+        const sync = createRequest(service, other, {
+          ref: request.ref,
+          commitSha: request.commitSha,
+          trigger: 'STANDBY_SYNC',
+          sourceRequestId: request.id,
+          failAt: null,
+        });
+        deployRequests.unshift(sync);
+      }
+    }
   }
   const serving = service.environments.find((item) => item.role === 'SERVING');
   for (const item of service.environments) {
@@ -145,6 +204,74 @@ function settle(request: MockDeployRequest) {
           : 'OUT_OF_SYNC'
         : null;
   }
+  save();
+}
+
+/** 배포 요청 하나를 만들고 연결에 "진행 중"으로 건다 */
+function createRequest(
+  service: ServiceDetail,
+  link: ServiceDetail['environments'][number],
+  options: {
+    ref: MockDeployRequest['ref'];
+    commitSha: string;
+    trigger: MockDeployRequest['trigger'];
+    sourceRequestId: string | null;
+    failAt: MockDeployRequest['failAt'];
+  },
+): MockDeployRequest {
+  const acceptedAt = Date.now();
+  const request: MockDeployRequest = {
+    id: crypto.randomUUID(),
+    serviceId: service.id,
+    environment: link.environment,
+    serviceEnvironmentId: link.serviceEnvironmentId,
+    trigger: options.trigger,
+    sourceRequestId: options.sourceRequestId,
+    ref: options.ref,
+    commitSha: options.commitSha,
+    status: 'QUEUED',
+    cancelReason: null,
+    errorCode: null,
+    revertStatus: null,
+    stageTimes: {
+      queuedAt: new Date(acceptedAt).toISOString(),
+      buildingAt: null,
+      deployingAt: null,
+      verifyingAt: null,
+      finishedAt: null,
+    },
+    simulated: true,
+    repoUrl: service.repoUrl,
+    supersededById: null,
+    errorMessage: null,
+    // 같은 커밋을 이미 빌드했으면 이미지를 다시 쓴다
+    build: {
+      id: crypto.randomUUID(),
+      status: 'RUNNING',
+      imageRepository: null,
+      imageDigest: null,
+      reused: deployRequests.some(
+        (item) => item.commitSha === options.commitSha && item.status === 'SUCCEEDED',
+      ),
+    },
+    deploymentId: null,
+    urls: { main: service.url, environment: link.url },
+    acceptedAt,
+    failAt: options.failAt,
+  };
+  link.activeRequestId = request.id;
+  return request;
+}
+
+/**
+ * 접속 확인 흉내. echo-was 는 등록·설정 변경 때 바로 확인한다.
+ * 비밀 참조 이름에 MISSING 이 들어가면 서버에 비밀값이 없는 경우(SECRET_NOT_FOUND)를 흉내 낸다
+ */
+function checkConnection(environment: EnvironmentSummary) {
+  const missing = /MISSING/i.test(environment.secretRef ?? '');
+  environment.connectionStatus = missing ? 'FAILED' : 'CONNECTED';
+  environment.connectionError = missing ? 'SECRET_NOT_FOUND' : null;
+  environment.connectionCheckedAt = new Date().toISOString();
 }
 
 function serviceView(service: ServiceDetail) {
@@ -188,6 +315,8 @@ export const handlers = [
   }),
 
   http.post(`${API}/orgs/:orgId/environments`, async ({ params, request }) => {
+    const denied = forbiddenForViewer(params.orgId);
+    if (denied) return denied;
     if (!hasOrganization(params.orgId)) return orgNotFound();
     const body = (await request.json()) as CreateEnvironment;
     if (!NAME_PATTERN.test(body.name)) {
@@ -214,7 +343,9 @@ export const handlers = [
       config: body.config,
       secretRef: body.secretRef,
     });
+    checkConnection(environment);
     environments.push(environment);
+    save();
     return ok(mockEnvironmentDetail(environment), 201);
   }),
 
@@ -226,6 +357,8 @@ export const handlers = [
   }),
 
   http.patch(`${API}/orgs/:orgId/environments/:environmentId`, async ({ params, request }) => {
+    const denied = forbiddenForViewer(params.orgId);
+    if (denied) return denied;
     const environment = environments.find((env) => env.id === params.environmentId);
     if (!environment) return fail(404, 'ENVIRONMENT_NOT_FOUND', 'environment not found');
     const body = (await request.json()) as UpdateEnvironment;
@@ -238,25 +371,27 @@ export const handlers = [
           }
         : {}),
       ...(body.secretRef ? { secretRef: body.secretRef } : {}),
-      // 설정이 바뀌면 다시 확인해야 한다
-      connectionStatus: 'UNCHECKED',
-      connectionCheckedAt: null,
-      connectionError: null,
       updatedAt: new Date().toISOString(),
     } satisfies Partial<EnvironmentSummary>);
+    // 설정이 바뀌면 echo-was 가 그 자리에서 다시 확인한다
+    if (body.config || body.secretRef) checkConnection(environment);
+    save();
     return ok(mockEnvironmentDetail(environment));
   }),
 
   http.post(`${API}/orgs/:orgId/environments/:environmentId/connection-check`, ({ params }) => {
+    const denied = forbiddenForViewer(params.orgId);
+    if (denied) return denied;
     const environment = environments.find((env) => env.id === params.environmentId);
     if (!environment) return fail(404, 'ENVIRONMENT_NOT_FOUND', 'environment not found');
-    environment.connectionStatus = 'CONNECTED';
-    environment.connectionCheckedAt = new Date().toISOString();
-    environment.connectionError = null;
+    checkConnection(environment);
+    save();
     return ok(mockEnvironmentDetail(environment));
   }),
 
   http.delete(`${API}/orgs/:orgId/environments/:environmentId`, ({ params }) => {
+    const denied = forbiddenForViewer(params.orgId);
+    if (denied) return denied;
     const index = environments.findIndex((env) => env.id === params.environmentId);
     if (index < 0) return fail(404, 'ENVIRONMENT_NOT_FOUND', 'environment not found');
     const inUse = services.some((service) =>
@@ -264,6 +399,7 @@ export const handlers = [
     );
     if (inUse) return fail(409, 'ENVIRONMENT_IN_USE', 'environment has services');
     environments.splice(index, 1);
+    save();
     return new HttpResponse(null, { status: 204, headers: headers() });
   }),
 
@@ -279,6 +415,8 @@ export const handlers = [
   }),
 
   http.post(`${API}/orgs/:orgId/services`, async ({ params, request }) => {
+    const denied = forbiddenForViewer(params.orgId);
+    if (denied) return denied;
     if (!hasOrganization(params.orgId)) return orgNotFound();
     const body = (await request.json()) as CreateService;
     if (!NAME_PATTERN.test(body.name)) {
@@ -327,6 +465,7 @@ export const handlers = [
       environments: [],
     };
     services.push(service);
+    save();
     return ok(service, 201);
   }),
 
@@ -337,9 +476,12 @@ export const handlers = [
   }),
 
   http.delete(`${API}/orgs/:orgId/services/:serviceId`, ({ params }) => {
+    const denied = forbiddenForViewer(params.orgId);
+    if (denied) return denied;
     const index = services.findIndex((item) => item.id === params.serviceId);
     if (index < 0) return fail(404, 'SERVICE_NOT_FOUND', 'service not found');
     const [service] = services.splice(index, 1);
+    save();
     return ok({ ...service, status: 'DELETING' }, 202);
   }),
 
@@ -347,6 +489,8 @@ export const handlers = [
   http.post(
     `${API}/orgs/:orgId/services/:serviceId/deploy-requests`,
     async ({ params, request }) => {
+      const denied = forbiddenForViewer(params.orgId);
+      if (denied) return denied;
       const service = services.find((item) => item.id === params.serviceId);
       if (!service) return fail(404, 'SERVICE_NOT_FOUND', 'service not found');
       const body = (await request.json()) as CreateDeploy;
@@ -384,50 +528,17 @@ export const handlers = [
       const commitSha =
         body.commitSha ??
         Array.from({ length: 40 }, () => Math.floor(Math.random() * 16).toString(16)).join('');
-      const acceptedAt = Date.now();
-      const created: MockDeployRequest = {
-        id: crypto.randomUUID(),
-        serviceId: service.id,
-        environment: link.environment,
-        serviceEnvironmentId: link.serviceEnvironmentId,
-        trigger: 'MANUAL',
-        sourceRequestId: null,
+      const created = createRequest(service, link, {
         ref: body.branch
           ? { type: 'BRANCH', value: body.branch }
           : { type: 'COMMIT', value: commitSha },
         commitSha,
-        status: 'QUEUED',
-        cancelReason: null,
-        errorCode: null,
-        revertStatus: null,
-        stageTimes: {
-          queuedAt: new Date(acceptedAt).toISOString(),
-          buildingAt: null,
-          deployingAt: null,
-          verifyingAt: null,
-          finishedAt: null,
-        },
-        simulated: true,
-        repoUrl: service.repoUrl,
-        supersededById: null,
-        errorMessage: null,
-        // 같은 커밋을 이미 빌드했으면 이미지를 다시 쓴다
-        build: {
-          id: crypto.randomUUID(),
-          status: 'RUNNING',
-          imageRepository: null,
-          imageDigest: null,
-          reused: deployRequests.some(
-            (item) => item.commitSha === commitSha && item.status === 'SUCCEEDED',
-          ),
-        },
-        deploymentId: null,
-        urls: { main: service.url, environment: link.url },
-        acceptedAt,
+        trigger: 'MANUAL',
+        sourceRequestId: null,
         failAt: body.simulate?.failAt ?? null,
-      };
-      link.activeRequestId = created.id;
+      });
       deployRequests.unshift(created);
+      save();
       return ok(detail(created), 202);
     },
   ),
