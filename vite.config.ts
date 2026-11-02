@@ -37,6 +37,6 @@ export default defineConfig(({ mode }) => ({
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
     css: false,
-    env: { VITE_API_BASE_URL: 'http://api.test' },
+    env: { VITE_API_BASE_URL: 'http://api.test', VITE_USE_MOCKS: 'false' },
   },
 }));

@@ -196,4 +196,20 @@
   body {
     @apply bg-canvas font-sans text-body text-fg antialiased;
   }
+  /* Tailwind v4 기본값은 버튼 커서가 화살표다. 누를 수 있는 것은 손가락 커서로 */
+  button:not(:disabled),
+  [role="button"],
+  [role="menuitem"],
+  [role="menuitemradio"],
+  [role="option"],
+  [role="tab"],
+  [role="combobox"],
+  summary,
+  label:has(input[type="radio"]:not(:disabled)) {
+    cursor: pointer;
+  }
+  [aria-disabled="true"],
+  [data-disabled] {
+    cursor: not-allowed;
+  }
 }
