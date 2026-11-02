@@ -79,3 +79,21 @@ export function deployErrorLabel(code: string): string {
 export function shortSha(sha: string | null | undefined): string {
   return sha ? sha.slice(0, 7) : '—';
 }
+
+// 접속 실패 이유 (echo-was docs/api/environments.md, ConnectionErrorCode)
+const CONNECTION_ERRORS: Record<string, string> = {
+  TIMEOUT: 'The cluster did not answer in time.',
+  SECRET_REF_MISSING: 'No secret reference is set.',
+  SECRET_REF_INVALID: 'The secret reference is not valid.',
+  SECRET_NOT_FOUND: 'The secret was not found on the API server.',
+  SECRET_STORE_UNSUPPORTED: 'This secret store is not supported yet. Use env:.',
+  CONFIG_INVALID: 'The saved settings are not valid for this provider.',
+  AUTH_FAILED: 'The cluster rejected the credentials.',
+  UNREACHABLE: 'The cluster could not be reached.',
+  UNKNOWN: 'The connection check failed.',
+};
+
+export function connectionErrorLabel(code: string | null | undefined): string | null {
+  if (!code) return null;
+  return CONNECTION_ERRORS[code] ?? code;
+}

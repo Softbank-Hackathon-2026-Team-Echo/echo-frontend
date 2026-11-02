@@ -36,7 +36,7 @@ import {
 import { useCurrentOrg } from '@/lib/api/me';
 import type { EnvironmentSummary } from '@/lib/api/types';
 import { hasRole } from '@/lib/roles';
-import { connectionStatusView } from '@/lib/status';
+import { connectionErrorLabel, connectionStatusView } from '@/lib/status';
 import { EnvironmentFormDialog } from './EnvironmentFormDialog';
 import { SettingsTabs } from './SettingsTabs';
 
@@ -64,7 +64,7 @@ function ClusterCell({ orgId, environment }: { orgId: string; environment: Envir
         </span>
       ) : (
         <span className="text-caption text-fg-muted">
-          {data?.clusterInfoError ? `Unavailable (${data.clusterInfoError})` : '—'}
+          {connectionErrorLabel(data?.clusterInfoError) ?? '—'}
         </span>
       )}
     </div>
@@ -133,10 +133,14 @@ function EnvironmentRow({
         <ClusterCell orgId={orgId} environment={environment} />
       </TableCell>
       <TableCell>
-        <StatusBadge
-          {...status}
-          title={environment.connectionError ? `Reason: ${environment.connectionError}` : undefined}
-        />
+        <span className="flex flex-col items-start gap-1">
+          <StatusBadge {...status} />
+          {environment.connectionError && (
+            <span className="text-caption text-danger-fg">
+              {connectionErrorLabel(environment.connectionError)}
+            </span>
+          )}
+        </span>
       </TableCell>
       <TableCell className="w-10 text-right">{actions}</TableCell>
     </TableRow>

@@ -36,6 +36,7 @@ export const UNAVAILABLE_MESSAGE = 'External service (GitHub, etc.) is not respo
 
 // 409 이유 코드. 서버 message 는 개발용 문장이라 화면 문구는 code 로 고른다
 const CONFLICT_MESSAGES: Record<string, string> = {
+  ENVIRONMENT_UNHEALTHY: "This environment's last connection check failed. Fix it and check again.",
   ENVIRONMENT_IN_USE: 'This environment still has services on it.',
   SERVICE_DELETING: 'This service is being deleted.',
   LAST_ADMIN: 'An organization needs at least one admin.',
@@ -46,6 +47,7 @@ export function describeApiError(error: unknown): string {
   if (!isApiError(error)) return 'Something went wrong. Please try again.';
   if (error.status === 403) return PERMISSION_MESSAGE;
   if (error.status === 502 || error.status === 503) return UNAVAILABLE_MESSAGE;
+  if (error.code === 'MOCK_UNAVAILABLE') return 'Mock data stopped responding. Reload the page.';
   if (error.status === 0) return 'Cannot reach the server. Check your connection.';
   return CONFLICT_MESSAGES[error.code] ?? error.message;
 }
