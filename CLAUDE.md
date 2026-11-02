@@ -44,9 +44,9 @@ src/
 ├─ styles/               # tokens.css → shadcn-theme.css → index.css(Tailwind @theme 연결) 순서
 ├─ components/
 │  ├─ ui/                # shadcn/ui 생성 파일. 토큰 글자 스타일·32px 밀도로 고쳤다
-│  ├─ disaster/          # 재난 시뮬레이션 다이얼로그(S01-D) · 경보 배너
-│  └─ *.tsx              # 두 화면 이상에서 쓰는 앱 컴포넌트 (RoleButton, StatusBadge, SimulatedBadge, ProviderLabel, FormField, ConfirmDeleteDialog, ExternalLink, EmptyState, ErrorState …)
-├─ layouts/AppShell.tsx  # 사이드바 + 상단 바(브레드크럼·조직 선택·재난 버튼·테마·로그아웃) + 재난 배너. 라우트 handle.crumb 로 브레드크럼
+│  ├─ disaster/          # 재난 시뮬레이션 다이얼로그(S01-D) · 지도(DisasterMap)
+│  └─ *.tsx              # 두 화면 이상에서 쓰는 앱 컴포넌트 (Panel, RoleButton, StatusBadge, SimulatedBadge, ProviderLabel, FormField, ConfirmDeleteDialog, ExternalLink, EmptyState, ErrorState, Logo …)
+├─ layouts/AppShell.tsx  # 사이드바(워드마크 · Operate/Resilience/Govern 묶음 · 사용자 메뉴=테마·로그아웃) + 상단 바(브레드크럼 · Org 선택 · Simulate disaster · 알림)
 ├─ pages/                # 화면 단위 폴더 (login/, root/, dashboard/, services/, settings/, dev/). 한 화면에서만 쓰는 컴포넌트는 그 폴더 안에
 ├─ hooks/                # useTheme(테마 3개, localStorage), useRole(현재 조직 역할), useNow(경과 시간)
 ├─ lib/
@@ -142,3 +142,8 @@ docs/                    # api-contract.md, PR.md(커밋 안 함)
 | 11/2 | 되돌리기 API(API 서버 4) 전까지 배포 이력의 "Redeploy" 는 그 커밋으로 새 배포 요청을 만든다 | 같은 결과(예전 커밋으로 새 배포)를 지금 API 로 낼 수 있다. 되돌리기 API 가 생기면 `rollback_of_id` 를 남기는 쪽으로 바꾼다 |
 | 11/2 | 환경 카드의 Hot/Warm 은 예비 + 버전 일치를 Warm 으로만 보이고, 복제 지연은 `—` | 복제 지연·Hot 상태는 아직 API 에 없다(인프라·API 서버 8) |
 | 11/2 | 테마 기본값은 light(시스템 설정을 따르지 않음) | 시연 화면이 사용자 OS 설정에 따라 바뀌지 않게 |
+| 11/2 | 화면 배치는 Figma 「Wire Frame」 v2(조밀한 밀도)를 따른다: 묶음 사이드바, S01 벤토, SVC 목록+오른쪽 패널, 가로 스테퍼, SET 탭+등록 시트, 지도 재난 다이얼로그 | 노션 IA v2 와 와이어프레임이 화면 구성의 기준이다. 디자인(색·모양)은 토큰을 따른다 |
+| 11/2 | 재난은 전역 배너 대신 대시보드 제목 옆 칩 + Active disaster 칸 + 사이드바 Dashboard 숫자로 알린다 | 와이어프레임 v2 배치. 다른 화면을 가리지 않는다 |
+| 11/2 | 지표가 없는 KPI(성공률·p95·복제 지연·에러 버짓)·요청 그래프·최근 활동은 값을 지어내지 않고 비워 둔다 | 지표(4-2)·감사 로그(4-8) API 가 아직 없다. 가짜 숫자는 심사 규칙상 목업 표시가 필요하고 실데이터로 오해될 수 있다 |
+| 11/2 | 토폴로지는 지역 묶음 + 노드 카드로 먼저 그리고, 연결선·확대는 React Flow 로 옮길 때 | 데이터 모양부터 확정하고 라이브러리는 다음 작업에서 |
+| 11/2 | 재난 지도는 해안선 없는 격자 지도(정거원통)로 진원지를 찍는다 | 지도 데이터·라이브러리 없이 영향 반경 시연이 된다. 실제 지도는 다음 작업 |

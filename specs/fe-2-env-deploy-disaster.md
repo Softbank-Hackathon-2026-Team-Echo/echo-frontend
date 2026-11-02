@@ -28,8 +28,15 @@
 - 배포 로그(API 서버 4): 자리만 두고 "아직 없음" 안내
 - 되돌리기 API(`rollback_of_id`, API 서버 4): 지금은 같은 커밋으로 새 배포
 - 복제 지연 · Hot standby(인프라·API 서버 8): 카드에 `—`
-- 토폴로지 캔버스(React Flow), 지도에서 진원지 찍기, 휴대폰 리모컨(S01-R)
+- 토폴로지 연결선·확대(React Flow), 실제 지도(해안선) · 휴대폰 리모컨(S01-R), 배포 진행의 QR
 - 대피 마법사(E01) — 배너의 "Plan evacuation" 은 빈 Evacuation 화면으로 간다
+
+### 배치 (Figma Wire Frame v2 맞춤)
+- 앱 껍데기: ECHOPORT 워드마크, Operate · Resilience · Govern 묶음, Dashboard 위험 숫자, 사용자 메뉴(테마·로그아웃), 상단 바 Org 선택 · Simulate disaster · 알림
+- S01: 제목 칩 · KPI 5칸 · 토폴로지(지역 묶음) · Active disaster · Live events · Requests A vs B · Environments · Recent activity
+- SVC: 요약 숫자 줄 · 목록 + 오른쪽 상세 패널(환경 · 고정 주소 · 이력 · Roll back) · 배포 진행 가로 스테퍼 + 로그 터미널 + Public URL
+- SET: Environments · Members 탭, 등록은 오른쪽 시트(프로바이더 카드)
+- S01-D: 종류 카드 · 지도 진원지 · 규모 선택 · 영향 요약
 
 ## 3. 완료 기준
 
