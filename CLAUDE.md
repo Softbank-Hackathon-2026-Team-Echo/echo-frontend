@@ -34,26 +34,33 @@ Team Echo 멀티 클라우드 관리 플랫폼 **EchoPort**의 웹 프론트다.
 
 ## 구조
 
-골격 작업(fe-1) 기준의 목표 구조다. 실제와 달라지면 `write-pr` 스킬이 이 절을 맞춘다.
+실제와 달라지면 `write-pr` 스킬이 이 절을 맞춘다.
 
 ```text
 src/
-├─ main.tsx              # 진입점. VITE_USE_MOCKS=true면 MSW 워커를 먼저 켠 뒤 렌더
-├─ router.tsx            # 라우트 표 (/login, /, /o/:slug/*, 404)
+├─ main.tsx              # 진입점. 테마 적용 → (VITE_USE_MOCKS=true면) MSW 워커 시작 → 렌더
+├─ App.tsx               # QueryClient · Tooltip · Toaster · Router 공급자
+├─ router.tsx            # 라우트 표 (/login, /, /o/:slug/*, /dev/tokens(개발만), 404). 메뉴 경로는 ui-terms §3
 ├─ styles/               # tokens.css → shadcn-theme.css → index.css(Tailwind @theme 연결) 순서
 ├─ components/
-│  ├─ ui/                # shadcn/ui 생성 파일. 직접 고치되 고친 이유를 주석으로 남긴다
-│  └─ *.tsx              # 두 화면 이상에서 쓰는 앱 컴포넌트 (RoleButton, StatusBadge, SimulatedBadge, EmptyState …)
-├─ layouts/              # AppShell(사이드바 + 상단 바)
-├─ pages/                # 화면 단위 폴더. 한 화면에서만 쓰는 컴포넌트는 그 폴더 안에
-├─ hooks/                # useTheme, useRole, useCurrentOrg …
+│  ├─ ui/                # shadcn/ui 생성 파일. 토큰 글자 스타일·32px 밀도로 고쳤다
+│  └─ *.tsx              # 두 화면 이상에서 쓰는 앱 컴포넌트 (RoleButton, StatusBadge, SimulatedBadge, MockDataBadge, EmptyState, ErrorState, PageHeader, Logo)
+├─ layouts/AppShell.tsx  # 사이드바 + 상단 바(브레드크럼·조직 선택·테마·로그아웃). 라우트 handle.crumb 로 브레드크럼
+├─ pages/                # 화면 단위 폴더 (login/, root/, settings/, dev/). 한 화면에서만 쓰는 컴포넌트는 그 폴더 안에
+├─ hooks/                # useTheme(테마 3개, localStorage), useRole(현재 조직 역할)
 ├─ lib/
-│  ├─ api/               # client(fetch 래퍼) · errors(ApiError) · query-client · query-keys · schema.d.ts(생성) · 리소스별 쿼리 훅
-│  └─ utils.ts           # cn() 등
-├─ mocks/                # MSW 핸들러와 목업 데이터만
-└─ test/                 # Vitest 설정, 테스트 도우미
+│  ├─ api/               # client(fetch 래퍼) · errors(ApiError·문구) · notify(오류 토스트) · query-client · query-keys
+│  │                     #   types(손으로 쓴 타입, gen:api 전까지) · me · environments · auth(로그인 주소·로그아웃)
+│  ├─ roles.ts           # hasRole · 역할 표기
+│  ├─ status.ts          # 서버 상태 값 → 화면 문구·색 (StatusBadge 와 짝)
+│  ├─ env.ts             # USE_MOCKS
+│  └─ utils.ts           # cn() (커스텀 글자 스타일을 아는 tailwind-merge)
+├─ mocks/                # MSW: browser · handlers · data (전부 // MOCK:)
+└─ test/                 # setup(MSW 서버·ResizeObserver) · msw-server · render(renderRoute)
+public/mockServiceWorker.js  # MSW 워커. 목업 아닌 빌드에서는 vite.config 가 dist 에서 지운다
 specs/                   # 태스크 명세
 docs/                    # api-contract.md, PR.md(커밋 안 함)
+.claude/launch.json      # 브라우저 미리보기용 개발 서버 설정
 ```
 
 - 데이터 흐름은 `pages/` → `lib/api/`의 쿼리 훅 → fetch 래퍼 → echo-was 한 방향이다. 화면은 `fetch`를 직접 부르지 않는다.
@@ -98,7 +105,7 @@ docs/                    # api-contract.md, PR.md(커밋 안 함)
 ## 도구
 
 - **패키지·실행**: `pnpm`(Node 22, `.nvmrc`). `npm`·`yarn`을 쓰지 않고 lock 파일은 `pnpm-lock.yaml` 하나만 커밋한다.
-- **명령**: 개발 서버 `pnpm dev` / 빌드 `pnpm build` / 린트·포맷 검사 `pnpm lint` / 타입 `pnpm typecheck` / 테스트 `pnpm test`(한 번 실행, 감시 모드 아님) / API 타입 생성 `pnpm gen:api`(`OPENAPI_URL`, 없으면 로컬 `openapi.json`).
+- **명령**: 개발 서버 `pnpm dev`(5173 고정) / 빌드 `pnpm build` / 린트·포맷 검사 `pnpm lint`(고치기 `pnpm format`) / 타입 `pnpm typecheck` / 테스트 `pnpm test`(한 번 실행, 감시는 `pnpm test:watch`) / API 타입 생성 `pnpm gen:api`(`OPENAPI_URL`, 없으면 로컬 `openapi.json`).
 - **환경변수**: `.env.example`을 `.env.local`로 복사한다. `VITE_API_BASE_URL`(API 주소), `VITE_USE_MOCKS`(`true`면 MSW).
 - **품질 게이트**: Claude Code PreToolUse 훅(`.claude/settings.json`)이 `git add`·`git commit` 전에 `pnpm lint`·`pnpm typecheck`·`pnpm test`, `git push` 전에 `pnpm lint`를 돌려 실패하면 막는다(180초 제한). `package.json`이 없으면 건너뛴다.
 - **화면 확인**: 화면을 바꿨으면 `pnpm dev`로 띄워 브라우저에서 라이트·다크·projector를 확인한다. 테스트 통과만으로 화면이 맞다고 보고하지 않는다.
@@ -121,3 +128,8 @@ docs/                    # api-contract.md, PR.md(커밋 안 함)
 | 11/2 | 컨트롤 높이 32px(버튼 기본 `h-8`, 입력칸 `h-8`). shadcn 기본보다 한 단계 낮춤 | 노션 IA 와이어프레임 v2의 조밀한 밀도(본문 13px · 컨트롤 32px) |
 | 11/2 | 로컬 개발은 Vite 프록시 없이 `localhost:5173` → `localhost:8000`을 직접 부른다 | echo-was가 CORS·Origin 허용 목록을 이미 지원하고, 5173은 echo-was #12로 요청했다. 운영(`app` → `api`)과 같은 구조라 CORS 문제를 개발 때 잡는다 |
 | 11/2 | 글자색은 `text-fg`·`text-fg-secondary`·`text-fg-muted` | Tailwind v4는 색 이름 하나가 `bg-`·`text-`에 같이 쓰여서, shadcn의 `primary`(브랜드색)와 토큰의 `text-primary`(글자색)가 부딪힌다. shadcn 이름을 그대로 두고 글자색 이름을 바꿨다 |
+| 11/2 | 버전: Vite 8 · React 19 · React Router 8 · Tailwind 4 · TypeScript 5.9 | TypeScript 7 은 openapi-typescript 가 아직 받지 않는다(peer `^5`) |
+| 11/2 | 권한·준비 안 된 버튼은 `disabled` 대신 `aria-disabled` + 누름 무시 | `disabled` 버튼은 호버·포커스를 받지 못해 "Requires Developer" 툴팁이 뜨지 않는다 |
+| 11/2 | 환경 표의 클러스터 칸은 행마다 상세(`GET …/environments/{id}`)를 불러 채운다 | 목록 응답(`EnvironmentSummary`)에 `clusterInfo`가 없다. 환경 수가 적어 데모에 문제없고, 목록 요약 칸은 echo-was에 요청 후보(계약 §2) |
+| 11/2 | openapi-fetch 는 `schema.d.ts`가 생긴 뒤 더한다. 그전에는 fetch 래퍼 + 손으로 쓴 타입 | 생성 타입 없이 openapi-fetch 를 쓰면 타입 이점이 없다 |
+| 11/2 | 테마 기본값은 light(시스템 설정을 따르지 않음) | 시연 화면이 사용자 OS 설정에 따라 바뀌지 않게 |

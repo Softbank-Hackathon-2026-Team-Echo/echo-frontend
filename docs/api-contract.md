@@ -51,7 +51,7 @@
 | L01-b 로그인 | `GET /auth/github/login?next=` (페이지 이동) | ✅ |
 | 앱 껍데기 (상단 조직 선택·사용자) | `GET /me` · `POST /auth/logout` · `POST /orgs` | ✅ |
 | O01~O03 온보딩 | 환경 등록과 같은 API + 서비스 등록·배포 API + 재난 시뮬레이션(4-3) | ✅ / 🆕 |
-| SET 환경 탭 | `GET /environment-kinds`(종류별 입력칸) · `GET·POST·PATCH·DELETE /orgs/{orgId}/environments…` · `POST …/connection-check` | ✅ / 🔁 좌표(4-1) |
+| SET 환경 탭 | `GET /environment-kinds`(종류별 입력칸) · `GET·POST·PATCH·DELETE /orgs/{orgId}/environments…` · `POST …/connection-check` | ✅ / 🔁 좌표(4-1) · 🔁 목록 클러스터 요약(아래) |
 | SET 멤버 탭 | `GET·PATCH·DELETE …/members` · `GET·POST·DELETE …/invitations` · `GET·POST·DELETE …/agent-tokens` | ✅ |
 | SVC 서비스 목록 | `GET /orgs/{orgId}/services` | ✅ / 🔁 목록 요약(아래) |
 | SVC 서비스 상세 | `GET …/services/{id}` (환경별 연결: `role`·`trafficWeight`·`versionStatus`·`url`) · `GET …/services/{id}/deploy-requests` | ✅ |
@@ -69,6 +69,8 @@
 | AUD 감사 로그 | 감사 로그 조회(4-8) | 🆕 (지금은 거부 기록만 저장, 조회는 API 서버 7) |
 
 🔁 서비스 목록 요약: 목록 표에 "어디서 서비스 중인지 · 버전"을 보여 주므로, `ServiceSummary`에 `servingEnvironment {id, name, kind}`와 `currentCommitSha`가 있으면 상세를 서비스마다 부르지 않아도 된다. 없으면 프론트가 상세를 따로 부른다(서비스 수가 적어서 데모에는 문제없음).
+
+🔁 환경 목록 클러스터 요약: 환경 표의 "클러스터" 칸(버전 · 노드 수 · `simulated`)은 지금 행마다 상세를 불러 채운다. 목록은 어댑터를 부르지 않는다는 원칙(장애 환경이 있어도 목록이 뜬다)은 지키되, 마지막 접속 확인 때 읽은 `clusterInfo`를 저장해 목록에 실어 주면 상세 호출을 없앨 수 있다. 환경 수가 적어 데모에는 문제없다.
 
 ## 3. 실시간
 

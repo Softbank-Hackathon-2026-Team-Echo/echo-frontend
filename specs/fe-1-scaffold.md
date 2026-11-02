@@ -1,6 +1,6 @@
 # 프론트 1: 골격 (스택 · 토큰 · API 계층 · 목업 · 앱 껍데기) SPEC
 
-- 상태: Ready
+- 상태: Done (feat/scaffold)
 - 작성일: 2026-11-02 · 김도영
 - GitHub 이슈: (GitHub Projects 이슈 링크)
 - 노션 태스크: (노션 태스크 링크)
@@ -62,7 +62,7 @@ EchoPort 웹 프론트의 골격을 만든다. 이 작업이 끝나면:
 
 ### 3.4 API 계층 — `feat: API 클라이언트와 쿼리 기본값`
 [frontend-conventions.md](../.claude/rules/frontend-conventions.md) §4·§5대로 `src/lib/api/`에 만든다.
-- `client.ts`: fetch 래퍼(`credentials: 'include'`, 봉투 풀기, `ApiError` throw, `X-Request-ID`, 401 → `/login?next=현재경로`), openapi-fetch 클라이언트.
+- `client.ts`: fetch 래퍼(`credentials: 'include'`, 봉투 풀기, `ApiError` throw, `X-Request-ID`, 401 → `/login?next=현재경로`). openapi-fetch 는 `schema.d.ts`가 생긴 뒤에 더한다(CLAUDE.md 결정 기록).
 - `errors.ts`: `ApiError`, 상태 코드별 공통 처리, 로그인 실패 코드 문구(계약 1-3장, 영어 화면 문구로).
 - `query-client.ts`: `staleTime` 10초, 4xx 재시도 없음.
 - `query-keys.ts`: `me`, `environments(orgId)`, `environment(orgId, id)`.
@@ -134,3 +134,5 @@ EchoPort 웹 프론트의 골격을 만든다. 이 작업이 끝나면:
 | 커밋 메시지 예 `feat:`, `chore:` | 같음 + 한국어 설명 | echo-was git 규칙과 같게 |
 | (없음) | `/dev/tokens` 확인 페이지, `Mock data` 배지, 테마 전환 버튼 | 토큰 확인 · 목업 표시 규칙 · 테마 수동 확인용 |
 | (없음) | 버튼·입력칸 32px | 노션 IA v2 조밀한 밀도 |
+| openapi-fetch 클라이언트 | 생성 타입이 생긴 뒤로 미룸 | OpenAPI 가 아직 열리지 않았다 |
+| 환경 표 클러스터 칸 | 행마다 상세 호출 | 목록 응답에 `clusterInfo`가 없다 |
