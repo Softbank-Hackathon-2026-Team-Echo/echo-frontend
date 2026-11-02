@@ -48,6 +48,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { type Theme, useTheme } from '@/hooks/useTheme';
 import { useLogout } from '@/lib/api/auth';
 import { useActiveDisasters } from '@/lib/api/disasters';
+import { useOrgEvents } from '@/lib/api/events';
 import { useCurrentOrg } from '@/lib/api/me';
 import type { Organization, User } from '@/lib/api/types';
 import { roleLabel } from '@/lib/roles';
@@ -300,6 +301,7 @@ export function AppShell() {
   const { slug } = useParams();
   const { data: me, organization, isPending, isError, error, refetch } = useCurrentOrg(slug);
   const disasters = useActiveDisasters(organization?.id);
+  useOrgEvents(organization?.id);
   const atRiskCount = new Set(disasters.data?.flatMap((item) => item.affectedEnvironmentIds)).size;
 
   if (isPending) return <ShellSkeleton />;
