@@ -40,19 +40,19 @@ Team Echo 멀티 클라우드 관리 플랫폼 **EchoPort**의 웹 프론트다.
 src/
 ├─ main.tsx              # 진입점. 테마 적용 → 예전 목업 서비스 워커가 남았으면 지움 → 렌더
 ├─ App.tsx               # QueryClient · Tooltip · Toaster · Router 공급자
-├─ router.tsx            # 라우트 표 (/login, /, /o/:slug/*, /dev/tokens(개발만), 404). 메뉴 경로는 ui-terms §3
+├─ router.tsx            # 라우트 표 (/login, /(로그인 전 L01 소개 · 로그인 후 조직으로), /o/:slug/*, /dev/tokens(개발만), 404). 메뉴 경로는 ui-terms §3
 ├─ styles/               # tokens.css → shadcn-theme.css → index.css(Tailwind @theme 연결) 순서
 ├─ components/
 │  ├─ ui/                # shadcn/ui 생성 파일. 토큰 글자 스타일·32px 밀도로 고쳤다
 │  ├─ disaster/          # 재난 시뮬레이션 다이얼로그(S01-D) · 지도(DisasterMap, d3-geo + world-atlas 50m 지연 로드)
 │  └─ *.tsx              # 두 화면 이상에서 쓰는 앱 컴포넌트 (Panel, RoleButton, StatusBadge, SimulatedBadge, ProviderLabel, FormField, ConfirmDeleteDialog, ExternalLink, EmptyState, ErrorState, ScreenErrorBoundary, Logo …)
 ├─ layouts/AppShell.tsx  # 사이드바(워드마크 · Operate/Resilience/Govern 묶음 · 사용자 메뉴=테마·로그아웃) + 상단 바(브레드크럼 · Org 선택 · Simulate disaster · 알림)
-├─ pages/                # 화면 단위 폴더 (login/, root/, dashboard/, services/, evacuation/, migrations/, settings/, dev/). 한 화면에서만 쓰는 컴포넌트는 그 폴더 안에
+├─ pages/                # 화면 단위 폴더 (login/, root/, landing/(L01 소개 · cobe 지구본 지연 로드), dashboard/, services/, evacuation/, migrations/, settings/, dev/). 한 화면에서만 쓰는 컴포넌트는 그 폴더 안에
 ├─ hooks/                # useTheme(테마 3개, localStorage), useRole(현재 조직 역할), useNow(경과 시간)
 ├─ lib/
 │  ├─ api/               # client(api = openapi-fetch + unwrap, 스키마 밖 경로는 apiFetch) · errors · notify · form-errors(422 → 칸 오류)
 │  │                     #   query-client · query-keys · schema.d.ts(gen:api 생성) · types(스키마 별칭)
-│  │                     #   me · environments · services(서비스·배포 요청) · disasters(🆕 API 전까지 브라우저 시뮬레이션) · auth
+│  │                     #   me(useMe · 로그인 전에도 쓰는 조용한 useSession) · environments · services(서비스·배포 요청) · disasters(🆕 API 전까지 브라우저 시뮬레이션) · auth
 │  │                     #   events(실시간 채널 → 쿼리 무효화) · evacuation(🆕 대피 후보 규칙 점수, API 전까지 브라우저 계산)
 │  ├─ roles.ts           # hasRole · 역할 표기
 │  ├─ status.ts          # 서버 상태 값 → 화면 문구·색 (StatusBadge 와 짝)
@@ -167,3 +167,7 @@ docs/                    # api-contract.md, PR.md(커밋 안 함)
 | 11/3 | M02 "Abort"·"Roll back" 은 확인 다이얼로그가 붙은 Roll back 하나다(`POST …/abort`) | 서버 중단은 곧 출발 100% 로 되돌리기다. 버튼 둘이 같은 일을 하면 시연 중 헷갈린다 |
 | 11/3 | M02 Result 의 쓰기 정지 시간·누락/중복 행·RPO 는 `—` + 측정 출처로 둔다. 실패 요청·총 시간·최대 복제 지연은 단계 지표로 채운다 | 데이터 이전 엔진(인프라 #7)이 아직 서버에 값을 주지 않는다. PoC 숫자(로컬)를 운영 결과처럼 보이게 쓰지 않는다 |
 | 11/3 | 복귀(Start failback)는 출발·도착을 바꾼 새 계획(E01-3)으로 보낸다. 출발 환경이 진행 중 재난 반경 안이면 버튼을 막는다 | API 서버 8: 되돌아가기는 바꾼 새 계획이다. ADR 11/2: 재난이 끝나지 않은 지역으로는 복귀하지 않는다 |
+| 11/3 | `/` 는 `/me` 를 조용히(401 에도 로그인 이동 없이, 재시도 없이) 불러 로그인 전·API 불통이면 L01 소개, 로그인했으면 조직으로 보낸다(`useSession`, `unwrap(…, { redirectOnUnauthorized: false })`) | 로그인 전 방문자가 첫 화면에서 바로 /login 으로 튕기지 않게. 다른 화면의 401 → 로그인 이동은 그대로 둔다 |
+| 11/3 | L01 지구본은 cobe 0.6.5(정확한 버전 고정, 동적 import 로 소개 화면 청크에서도 분리). 색은 `--ep-color-globe-*`·상태 solid 를 런타임에 읽고, 움직임 줄이기면 회전·숫자 세기·지역 띠를 멈춘다 | 2.x 는 API 가 달라 검증된 0.6 을 쓴다. 로그인한 사람의 첫 번들에 넣지 않는다 |
+| 11/3 | L01 큰 글자(Display 60 · 제목 44 · 숫자 64 · Body L 17 · 15)는 `index.css` 의 소개 화면 전용 `text-display`·`text-headline`·`text-stat`·`text-lead`·`text-lead-sm` 로 둔다 | Figma 텍스트 스타일(EchoPort/Display · Body L)과 L01 프레임 값이고 아직 변수(tokens.css)가 아니다. 변수가 생기면 `var(--ep-type-*)` 로 바꾼다 |
+| 11/3 | L01 ⑥ 숫자(0 · 0 · ≤ 90 s · 3m 17s)는 "Demo targets · to be replaced with rehearsal measurements" 로 밝히고, 미니 UI·제품 화면 그림에는 `Illustration` 캡션을 단다 | 아직 잰 값이 아니다. 예시 값을 실데이터로 오해하지 않게(심사 규칙) |

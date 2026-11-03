@@ -180,6 +180,44 @@
   --text-mono--letter-spacing: var(--ep-type-mono-tracking);
 }
 
+/*
+ * L01 소개 화면 전용 글자 스타일. Figma 텍스트 스타일 EchoPort/Display · Body L 과 L01 프레임의 값을 옮겼다.
+ * 아직 Figma 변수(tokens.css)가 아니라서 여기에만 둔다. 변수가 생기면 var(--ep-type-*) 로 바꾼다
+ */
+@theme {
+  --text-display: 60px;
+  --text-display--line-height: 68px;
+  --text-display--font-weight: 600;
+  --text-display--letter-spacing: -0.05em;
+  --text-headline: 44px;
+  --text-headline--line-height: 56px;
+  --text-headline--font-weight: 600;
+  --text-headline--letter-spacing: -0.025em;
+  --text-stat: 64px;
+  --text-stat--line-height: 72px;
+  --text-stat--font-weight: 600;
+  --text-stat--letter-spacing: -0.04em;
+  --text-lead: 17px;
+  --text-lead--line-height: 28px;
+  --text-lead--font-weight: 400;
+  --text-lead--letter-spacing: 0;
+  --text-lead-sm: 15px;
+  --text-lead-sm--line-height: 24px;
+  --text-lead-sm--font-weight: 400;
+  --text-lead-sm--letter-spacing: 0;
+
+  /* 지역 띠: 같은 목록을 두 번 이어 붙여 절반만큼 흘린다 */
+  --animate-marquee: landing-marquee 60s linear infinite;
+  @keyframes landing-marquee {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+}
+
 /* 화면 너비: 미디어 쿼리는 변수를 못 읽어서 토큰(--ep-layout-bp-*)과 같은 숫자를 적는다 */
 @theme {
   --breakpoint-compact: 1024px;

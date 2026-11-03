@@ -28,10 +28,19 @@ function isEnvelope(body: unknown): body is ApiEnvelope<unknown> {
   return typeof body === 'object' && body !== null && 'success' in body;
 }
 
+type EnvelopeOptions = {
+  /** false 면 401 에도 로그인 화면으로 보내지 않는다(로그인 전에도 보이는 화면의 조용한 확인용) */
+  redirectOnUnauthorized?: boolean;
+};
+
 /** 응답 본문을 봉투 규칙으로 해석한다. 성공이면 data, 아니면 ApiError 를 던진다 */
-function readEnvelope<T>(response: Response, body: unknown): T {
+function readEnvelope<T>(
+  response: Response,
+  body: unknown,
+  { redirectOnUnauthorized = true }: EnvelopeOptions = {},
+): T {
   const requestId = response.headers.get('X-Request-ID');
-  if (response.status === 401) redirectToLogin();
+  if (response.status === 401 && redirectOnUnauthorized) redirectToLogin();
   if (response.status === 204) return undefined as T;
 
   if (!isEnvelope(body)) {
@@ -79,6 +88,7 @@ type Unwrapped<D> = D extends { data?: infer T } ? Exclude<T, null | undefined> 
 
 export async function unwrap<D>(
   request: Promise<{ data?: D; error?: unknown; response: Response }>,
+  options?: EnvelopeOptions,
 ): Promise<Unwrapped<D>> {
   let result: Awaited<typeof request>;
   try {
@@ -87,7 +97,7 @@ export async function unwrap<D>(
     throw networkError(cause);
   }
   const body = result.response.ok ? result.data : result.error;
-  return readEnvelope<Unwrapped<D>>(result.response, body);
+  return readEnvelope<Unwrapped<D>>(result.response, body, options);
 }
 
 /**

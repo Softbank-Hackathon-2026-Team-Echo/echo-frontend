@@ -21,6 +21,12 @@ const twMerge = extendTailwindMerge({
             'metric-xl',
             'metric',
             'mono',
+            // L01 소개 화면 전용
+            'display',
+            'headline',
+            'stat',
+            'lead',
+            'lead-sm',
           ],
         },
       ],
