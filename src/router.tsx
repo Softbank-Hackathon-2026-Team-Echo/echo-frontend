@@ -1,5 +1,6 @@
-import { createBrowserRouter, Navigate } from 'react-router';
+import { createBrowserRouter, Navigate, type RouteObject } from 'react-router';
 import { AppShell, type RouteHandle } from '@/layouts/AppShell';
+import { registerPrefetchRoutes } from '@/lib/route-prefetch';
 import NotFoundPage from '@/pages/NotFoundPage';
 import { PlaceholderPage } from '@/pages/PlaceholderPage';
 import { RouteErrorPage } from '@/pages/RouteErrorPage';
@@ -9,7 +10,7 @@ function crumb(name: string): RouteHandle {
 }
 
 // 경로 이름은 ui-terms §3 표를 따른다. 화면이 생기면 PlaceholderPage 를 실제 페이지로 바꾼다
-export const router = createBrowserRouter([
+const routes: RouteObject[] = [
   {
     path: '/login',
     lazy: () => import('@/pages/login/LoginPage').then((m) => ({ Component: m.default })),
@@ -144,4 +145,7 @@ export const router = createBrowserRouter([
       ]
     : []),
   { path: '*', element: <NotFoundPage /> },
-]);
+];
+
+export const router = createBrowserRouter(routes);
+registerPrefetchRoutes(routes);
