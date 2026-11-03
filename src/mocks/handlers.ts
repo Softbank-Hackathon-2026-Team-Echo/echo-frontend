@@ -1,6 +1,7 @@
 // MOCK: echo-was 응답을 흉내 내는 MSW 핸들러. 서버 API 가 열리면 해당 핸들러를 지운다.
 // 목업 상태는 탭 단위(sessionStorage)로 남아 새로고침해도 유지되고, 탭을 닫으면 처음으로 돌아간다.
-import { HttpResponse, http } from 'msw';
+import { HttpResponse, http, sse } from 'msw';
+import type { OrgEventType } from '@/lib/api/events';
 import type {
   CreateDeploy,
   CreateEnvironment,
@@ -301,8 +302,75 @@ function detail(request: MockDeployRequest) {
   return rest;
 }
 
+// 실시간 채널 (계약 3장). 붙은 탭마다 조직 id 를 기억해 두고, 목업 상태가 바뀌면 알림 이벤트를 보낸다
+type EventClient = {
+  orgId: string;
+  send: (message: { id: string; event: string; data: string }) => void;
+};
+const eventClients = new Set<EventClient>();
+let eventSeq = 0;
+let ticker: ReturnType<typeof setInterval> | undefined;
+
+function emit(
+  type: OrgEventType | 'heartbeat',
+  resource: { type: string; id: string; name?: string } | null,
+) {
+  const ts = new Date().toISOString();
+  for (const client of eventClients) {
+    eventSeq += 1;
+    try {
+      client.send({
+        id: String(eventSeq),
+        event: type,
+        data: JSON.stringify({ seq: eventSeq, ts, orgId: client.orgId, resource, data: null }),
+      });
+    } catch {
+      // 탭이 채널을 닫았다
+      eventClients.delete(client);
+    }
+  }
+}
+
+/** 붙은 탭이 있는 동안 배포 요청을 1초마다 진행시켜, 폴링 없이도 단계가 바뀌면 알린다 */
+function startTicker() {
+  if (ticker) return;
+  let beats = 0;
+  ticker = setInterval(() => {
+    if (eventClients.size === 0) {
+      clearInterval(ticker);
+      ticker = undefined;
+      return;
+    }
+    for (const request of deployRequests) {
+      const before = request.status;
+      advance(request);
+      if (request.status === before) continue;
+      const name = services.find((item) => item.id === request.serviceId)?.name;
+      emit('deploy_request.updated', { type: 'deploy_request', id: request.id, name });
+      if (request.status === 'SUCCEEDED' || request.status === 'FAILED') {
+        emit('service.updated', { type: 'service', id: request.serviceId, name });
+      }
+    }
+    beats += 1;
+    if (beats % 15 === 0) emit('heartbeat', null);
+  }, 1000);
+}
+
 export const handlers = [
   http.get(`${API}/me`, () => ok(mockMe)),
+
+  sse<Record<OrgEventType | 'heartbeat', string>>(
+    `${API}/orgs/:orgId/events`,
+    ({ client, params }) => {
+      const entry: EventClient = {
+        orgId: String(params.orgId),
+        send: (message) =>
+          client.send(message as { id: string; event: OrgEventType; data: string }),
+      };
+      eventClients.add(entry);
+      startTicker();
+    },
+  ),
 
   http.post(`${API}/auth/logout`, () => new HttpResponse(null, { status: 204 })),
 
@@ -346,6 +414,11 @@ export const handlers = [
     checkConnection(environment);
     environments.push(environment);
     save();
+    emit('environment.updated', {
+      type: 'environment',
+      id: environment.id,
+      name: environment.name,
+    });
     return ok(mockEnvironmentDetail(environment), 201);
   }),
 
@@ -376,6 +449,11 @@ export const handlers = [
     // 설정이 바뀌면 echo-was 가 그 자리에서 다시 확인한다
     if (body.config || body.secretRef) checkConnection(environment);
     save();
+    emit('environment.updated', {
+      type: 'environment',
+      id: environment.id,
+      name: environment.name,
+    });
     return ok(mockEnvironmentDetail(environment));
   }),
 
@@ -386,6 +464,11 @@ export const handlers = [
     if (!environment) return fail(404, 'ENVIRONMENT_NOT_FOUND', 'environment not found');
     checkConnection(environment);
     save();
+    emit('environment.updated', {
+      type: 'environment',
+      id: environment.id,
+      name: environment.name,
+    });
     return ok(mockEnvironmentDetail(environment));
   }),
 
@@ -400,6 +483,7 @@ export const handlers = [
     if (inUse) return fail(409, 'ENVIRONMENT_IN_USE', 'environment has services');
     environments.splice(index, 1);
     save();
+    emit('environment.updated', { type: 'environment', id: String(params.environmentId) });
     return new HttpResponse(null, { status: 204, headers: headers() });
   }),
 
@@ -466,6 +550,7 @@ export const handlers = [
     };
     services.push(service);
     save();
+    emit('service.updated', { type: 'service', id: service.id, name: service.name });
     return ok(service, 201);
   }),
 
@@ -482,6 +567,7 @@ export const handlers = [
     if (index < 0) return fail(404, 'SERVICE_NOT_FOUND', 'service not found');
     const [service] = services.splice(index, 1);
     save();
+    emit('service.updated', { type: 'service', id: String(params.serviceId), name: service?.name });
     return ok({ ...service, status: 'DELETING' }, 202);
   }),
 
@@ -539,6 +625,11 @@ export const handlers = [
       });
       deployRequests.unshift(created);
       save();
+      emit('deploy_request.updated', {
+        type: 'deploy_request',
+        id: created.id,
+        name: service.name,
+      });
       return ok(detail(created), 202);
     },
   ),

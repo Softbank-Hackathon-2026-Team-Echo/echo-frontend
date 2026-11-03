@@ -32,6 +32,7 @@ import { ErrorState } from '@/components/ErrorState';
 import { Logo } from '@/components/Logo';
 import { MockDataBadge } from '@/components/MockDataBadge';
 import { RoleButton } from '@/components/RoleButton';
+import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -47,6 +48,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { type Theme, useTheme } from '@/hooks/useTheme';
 import { useLogout } from '@/lib/api/auth';
 import { useActiveDisasters } from '@/lib/api/disasters';
+import { useOrgEvents } from '@/lib/api/events';
 import { useCurrentOrg } from '@/lib/api/me';
 import type { Organization, User } from '@/lib/api/types';
 import { roleLabel } from '@/lib/roles';
@@ -177,7 +179,7 @@ function Sidebar({
       <div className="flex h-16 items-center px-5 max-compact:justify-center max-compact:px-0">
         <Link to={`/o/${organization.slug}`} aria-label="EchoPort home">
           <Logo className="max-compact:hidden" />
-          <Logo variant="mark" className="compact:hidden" />
+          <Logo variant="app-icon" className="compact:hidden" />
         </Link>
       </div>
       <nav aria-label="Main" className="flex flex-1 flex-col gap-1 px-3">
@@ -299,6 +301,7 @@ export function AppShell() {
   const { slug } = useParams();
   const { data: me, organization, isPending, isError, error, refetch } = useCurrentOrg(slug);
   const disasters = useActiveDisasters(organization?.id);
+  useOrgEvents(organization?.id);
   const atRiskCount = new Set(disasters.data?.flatMap((item) => item.affectedEnvironmentIds)).size;
 
   if (isPending) return <ShellSkeleton />;
@@ -334,7 +337,9 @@ export function AppShell() {
         <Topbar organizations={me.organizations} organization={organization} />
         <main className="flex-1 overflow-y-auto">
           <div className="mx-auto flex max-w-content flex-col gap-6 p-gutter max-compact:p-gutter-compact">
-            <Outlet />
+            <ScreenErrorBoundary>
+              <Outlet />
+            </ScreenErrorBoundary>
           </div>
         </main>
       </div>

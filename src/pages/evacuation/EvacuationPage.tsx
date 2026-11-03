@@ -1,0 +1,272 @@
+import { ArrowRight, MapPinOff, ShieldCheck, TriangleAlert } from 'lucide-react';
+import { useState } from 'react';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
+import { EmptyState } from '@/components/EmptyState';
+import { ErrorState } from '@/components/ErrorState';
+import { PageHeader } from '@/components/PageHeader';
+import { RoleButton } from '@/components/RoleButton';
+import { SimulatedBadge } from '@/components/SimulatedBadge';
+import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useActiveDisasters } from '@/lib/api/disasters';
+import { useEnvironments } from '@/lib/api/environments';
+import {
+  type ExcludedReason,
+  estimatedMigrationSeconds,
+  rankEvacuationTargets,
+  SCORE_RULES,
+  servingEnvironmentId,
+} from '@/lib/api/evacuation';
+import { useCurrentOrg } from '@/lib/api/me';
+import { useServiceDetails, useServices } from '@/lib/api/services';
+import { providerLabel } from '@/lib/status';
+import { CandidateCard } from './CandidateCard';
+import { WizardSteps } from './WizardSteps';
+
+const EXCLUDED_TEXT: Record<ExcludedReason, (km: number | null) => string> = {
+  INSIDE_RADIUS: (km) => `Inside impact radius (${km} km from the epicenter).`,
+  UNHEALTHY: () => 'Connection check failed. Fix the environment to use it as a target.',
+  UNKNOWN_LOCATION: () => 'Location unknown, so distance from the epicenter cannot be checked.',
+};
+
+function duration(seconds: number) {
+  const minutes = Math.floor(seconds / 60);
+  return `${minutes}m ${String(seconds % 60).padStart(2, '0')}s`;
+}
+
+/** E01-1 대피 마법사 1단계: 재난 반경 밖 후보 환경을 규칙 점수로 비교해 고른다 */
+export default function EvacuationPage() {
+  const { slug } = useParams();
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { organization } = useCurrentOrg(slug);
+  const orgId = organization?.id;
+  const environments = useEnvironments(orgId);
+  const services = useServices(orgId);
+  const details = useServiceDetails(orgId, services.data?.items.map((service) => service.id) ?? []);
+  const disasters = useActiveDisasters(orgId);
+  const [picked, setPicked] = useState<string>();
+
+  if (environments.isError) {
+    return <ErrorState error={environments.error} onRetry={() => environments.refetch()} />;
+  }
+  if (services.isError) {
+    return <ErrorState error={services.error} onRetry={() => services.refetch()} />;
+  }
+  if (!organization || environments.isPending || services.isPending || disasters.isPending) {
+    return (
+      <div className="flex flex-col gap-4">
+        <Skeleton className="h-8 w-72" />
+        <Skeleton className="h-16" />
+        <Skeleton className="h-80" />
+      </div>
+    );
+  }
+
+  const disaster = disasters.data?.at(-1);
+  if (!disaster) {
+    return (
+      <>
+        <PageHeader title="Evacuation" />
+        <EmptyState
+          icon={ShieldCheck}
+          title="No active disaster"
+          description="Evacuation targets appear when a disaster puts an environment at risk. Use Simulate disaster in the top bar to try it."
+        />
+      </>
+    );
+  }
+
+  const envList = environments.data.items;
+  const byId = new Map(envList.map((item) => [item.id, item]));
+  const affected = new Set(disaster.affectedEnvironmentIds);
+  const atRisk = details.data.filter((service) => {
+    const serving = servingEnvironmentId(service);
+    return serving !== null && affected.has(serving);
+  });
+  const disasterTitle = `M${disaster.magnitude.toFixed(1)} ${disaster.epicenterLabel.replace(/^near /, '')}`;
+
+  if (atRisk.length === 0) {
+    return (
+      <>
+        <PageHeader title="Evacuation" description={`${disasterTitle} · simulated`} />
+        <EmptyState
+          icon={ShieldCheck}
+          title={details.isPending ? 'Checking services…' : 'No services at risk'}
+          description="No service is serving from an environment inside the impact radius."
+        />
+      </>
+    );
+  }
+
+  const service = atRisk.find((item) => item.id === searchParams.get('service')) ?? atRisk[0];
+  if (!service) return null;
+  const ranking = rankEvacuationTargets(disaster, service, envList);
+  const source = ranking.source ? byId.get(ranking.source.environmentId) : undefined;
+  const selected =
+    ranking.candidates.find((item) => item.environmentId === picked) ?? ranking.candidates[0];
+  const selectedEnv = selected ? byId.get(selected.environmentId) : undefined;
+
+  function startPrecheck() {
+    if (!selected || !service) return;
+    const params = new URLSearchParams({ service: service.id, target: selected.environmentId });
+    navigate(`pre-check?${params}`);
+  }
+
+  return (
+    <>
+      <PageHeader
+        title="Choose an evacuation target"
+        description={`${source?.name ?? service.name} is at risk. Candidates are registered environments outside the ${disaster.radiusKm} km radius.`}
+        actions={
+          <>
+            <Button asChild variant="outline">
+              <Link to={`/o/${organization.slug}`}>Back to dashboard</Link>
+            </Button>
+            <RoleButton requires="DEVELOPER" disabled={!selected} onClick={startPrecheck}>
+              Run AI pre-check
+            </RoleButton>
+          </>
+        }
+      />
+
+      <WizardSteps current={0} />
+
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-small text-fg-secondary">{disasterTitle}</span>
+        <SimulatedBadge />
+        {atRisk.length > 1 && (
+          <Select
+            value={service.id}
+            onValueChange={(value) => {
+              setPicked(undefined);
+              setSearchParams({ service: value });
+            }}
+          >
+            <SelectTrigger className="ml-auto w-56" aria-label="Service">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {atRisk.map((item) => (
+                <SelectItem key={item.id} value={item.id}>
+                  {item.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
+      </div>
+
+      {source && ranking.source && (
+        <div
+          role="alert"
+          className="flex items-start gap-3 rounded-lg bg-warning-bg p-3 text-warning-fg"
+        >
+          <TriangleAlert aria-hidden className="mt-0.5 size-4 shrink-0" />
+          <div className="flex flex-col gap-0.5">
+            <p className="text-body-medium">
+              Source: {source.name} ({providerLabel(source.kind)}
+              {source.location && ` · ${source.location}`})
+            </p>
+            <p className="text-small">
+              Inside the impact radius ({ranking.source.distanceKm} km from the epicenter). Traffic
+              and writes must move before the disaster escalates.
+            </p>
+          </div>
+        </div>
+      )}
+
+      <div className="flex items-start gap-3 max-wide:flex-col">
+        <fieldset className="grid flex-1 grid-cols-2 gap-3 max-compact:grid-cols-1 max-wide:w-full">
+          <legend className="sr-only">Evacuation target</legend>
+          {ranking.candidates.length === 0 ? (
+            <EmptyState
+              className="col-span-full"
+              icon={MapPinOff}
+              title="No safe environment"
+              description="Every registered environment is inside the radius or unavailable. Register an environment in another region."
+              action={
+                <Button asChild variant="outline" size="sm">
+                  <Link to={`/o/${organization.slug}/settings/environments`}>Add environment</Link>
+                </Button>
+              }
+            />
+          ) : (
+            ranking.candidates.map((candidate) => {
+              const environment = byId.get(candidate.environmentId);
+              if (!environment) return null;
+              return (
+                <CandidateCard
+                  key={candidate.environmentId}
+                  candidate={candidate}
+                  environment={environment}
+                  selected={candidate.environmentId === selected?.environmentId}
+                  onSelect={() => setPicked(candidate.environmentId)}
+                />
+              );
+            })
+          )}
+        </fieldset>
+
+        <aside className="flex w-80 shrink-0 flex-col gap-3 max-wide:w-full">
+          {ranking.excluded.length > 0 && (
+            <section className="flex flex-col gap-2 rounded-xl border border-dashed border-line-strong bg-subtle p-4">
+              <h2 className="text-label text-fg-secondary">Excluded</h2>
+              {ranking.excluded.map((item) => (
+                <div key={item.environmentId} className="flex flex-col gap-0.5">
+                  <span className="font-mono text-mono">
+                    {byId.get(item.environmentId)?.name ?? item.environmentId}
+                  </span>
+                  <span className="text-small text-fg-secondary">
+                    {EXCLUDED_TEXT[item.reason](item.distanceKm)}
+                    {item.environmentId === ranking.source?.environmentId &&
+                      ' Source of this migration.'}
+                  </span>
+                </div>
+              ))}
+            </section>
+          )}
+          <section className="flex flex-col gap-2.5 rounded-xl border border-line bg-surface p-4">
+            <h2 className="text-title">Why this ranking</h2>
+            <dl className="flex flex-col gap-2.5">
+              {SCORE_RULES.map((rule) => (
+                <div key={rule.key} className="flex flex-col gap-0.5">
+                  <dt className="text-body-medium">
+                    {rule.label}{' '}
+                    <span className="font-mono text-mono text-fg-muted">
+                      ×{rule.weight.toFixed(2)}
+                    </span>
+                  </dt>
+                  <dd className="text-small text-fg-secondary">{rule.rule}</dd>
+                </div>
+              ))}
+            </dl>
+            <p className="text-caption text-fg-muted">
+              Scores are rule-based. The AI pre-check (next) tests the chosen target in a sandbox.
+            </p>
+          </section>
+        </aside>
+      </div>
+
+      {selected && selectedEnv && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line bg-surface px-4 py-3">
+          <p className="text-body-medium">
+            Selected: {selectedEnv.name} · score {selected.score} · est. migration{' '}
+            {duration(estimatedMigrationSeconds(selected))}
+          </p>
+          <RoleButton requires="DEVELOPER" onClick={startPrecheck}>
+            Run AI pre-check on {selectedEnv.name}
+            <ArrowRight aria-hidden />
+          </RoleButton>
+        </div>
+      )}
+    </>
+  );
+}

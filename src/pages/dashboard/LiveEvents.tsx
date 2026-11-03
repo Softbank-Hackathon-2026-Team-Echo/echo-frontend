@@ -1,5 +1,6 @@
 import { Panel } from '@/components/Panel';
 import type { Disaster } from '@/lib/api/disasters';
+import { useRecentOrgEvents } from '@/lib/api/events';
 import type { EnvironmentSummary } from '@/lib/api/types';
 import { cn } from '@/lib/utils';
 
@@ -10,7 +11,7 @@ function clock(iso: string) {
 }
 
 /**
- * 최근 이벤트. 실시간 채널(계약 3장 🆕)이 생기기 전까지는 지금 가진 데이터(재난 · 접속 확인)로 만든다
+ * 최근 이벤트. 실시간 채널(계약 3장 🆕)에서 받은 이벤트에 지금 가진 데이터(재난 · 접속 확인)를 더한다
  */
 export function LiveEvents({
   disasters,
@@ -20,7 +21,13 @@ export function LiveEvents({
   environments: EnvironmentSummary[];
 }) {
   const names = new Map(environments.map((item) => [item.id, item.name]));
-  const events: LiveEvent[] = [];
+  const events: LiveEvent[] = useRecentOrgEvents().map((event) => ({
+    at: event.ts,
+    text: event.resource
+      ? `${event.type} · ${event.resource.name ?? names.get(event.resource.id) ?? event.resource.id.slice(0, 8)}`
+      : event.type,
+    tone: event.type.startsWith('disaster.') ? 'danger' : 'neutral',
+  }));
   for (const disaster of disasters) {
     events.push({
       at: disaster.startedAt,

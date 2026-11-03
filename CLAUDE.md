@@ -44,15 +44,16 @@ src/
 ├─ styles/               # tokens.css → shadcn-theme.css → index.css(Tailwind @theme 연결) 순서
 ├─ components/
 │  ├─ ui/                # shadcn/ui 생성 파일. 토큰 글자 스타일·32px 밀도로 고쳤다
-│  ├─ disaster/          # 재난 시뮬레이션 다이얼로그(S01-D) · 지도(DisasterMap)
-│  └─ *.tsx              # 두 화면 이상에서 쓰는 앱 컴포넌트 (Panel, RoleButton, StatusBadge, SimulatedBadge, ProviderLabel, FormField, ConfirmDeleteDialog, ExternalLink, EmptyState, ErrorState, Logo …)
+│  ├─ disaster/          # 재난 시뮬레이션 다이얼로그(S01-D) · 지도(DisasterMap, d3-geo + world-atlas 50m 지연 로드)
+│  └─ *.tsx              # 두 화면 이상에서 쓰는 앱 컴포넌트 (Panel, RoleButton, StatusBadge, SimulatedBadge, ProviderLabel, FormField, ConfirmDeleteDialog, ExternalLink, EmptyState, ErrorState, ScreenErrorBoundary, Logo …)
 ├─ layouts/AppShell.tsx  # 사이드바(워드마크 · Operate/Resilience/Govern 묶음 · 사용자 메뉴=테마·로그아웃) + 상단 바(브레드크럼 · Org 선택 · Simulate disaster · 알림)
-├─ pages/                # 화면 단위 폴더 (login/, root/, dashboard/, services/, settings/, dev/). 한 화면에서만 쓰는 컴포넌트는 그 폴더 안에
+├─ pages/                # 화면 단위 폴더 (login/, root/, dashboard/, services/, evacuation/, settings/, dev/). 한 화면에서만 쓰는 컴포넌트는 그 폴더 안에
 ├─ hooks/                # useTheme(테마 3개, localStorage), useRole(현재 조직 역할), useNow(경과 시간)
 ├─ lib/
 │  ├─ api/               # client(api = openapi-fetch + unwrap, 스키마 밖 경로는 apiFetch) · errors · notify · form-errors(422 → 칸 오류)
 │  │                     #   query-client · query-keys · schema.d.ts(gen:api 생성) · types(스키마 별칭)
 │  │                     #   me · environments · services(서비스·배포 요청) · disasters(🆕 API 전까지 브라우저 시뮬레이션) · auth
+│  │                     #   events(실시간 채널 → 쿼리 무효화) · evacuation(🆕 대피 후보 규칙 점수, API 전까지 브라우저 계산)
 │  ├─ roles.ts           # hasRole · 역할 표기
 │  ├─ status.ts          # 서버 상태 값 → 화면 문구·색 (StatusBadge 와 짝)
 │  ├─ geo.ts             # 리전·도시 → 좌표(계약 4-1 🆕 전까지), 거리 계산
@@ -145,5 +146,11 @@ docs/                    # api-contract.md, PR.md(커밋 안 함)
 | 11/2 | 화면 배치는 Figma 「Wire Frame」 v2(조밀한 밀도)를 따른다: 묶음 사이드바, S01 벤토, SVC 목록+오른쪽 패널, 가로 스테퍼, SET 탭+등록 시트, 지도 재난 다이얼로그 | 노션 IA v2 와 와이어프레임이 화면 구성의 기준이다. 디자인(색·모양)은 토큰을 따른다 |
 | 11/2 | 재난은 전역 배너 대신 대시보드 제목 옆 칩 + Active disaster 칸 + 사이드바 Dashboard 숫자로 알린다 | 와이어프레임 v2 배치. 다른 화면을 가리지 않는다 |
 | 11/2 | 지표가 없는 KPI(성공률·p95·복제 지연·에러 버짓)·요청 그래프·최근 활동은 값을 지어내지 않고 비워 둔다 | 지표(4-2)·감사 로그(4-8) API 가 아직 없다. 가짜 숫자는 심사 규칙상 목업 표시가 필요하고 실데이터로 오해될 수 있다 |
-| 11/2 | 토폴로지는 지역 묶음 + 노드 카드로 먼저 그리고, 연결선·확대는 React Flow 로 옮길 때 | 데이터 모양부터 확정하고 라이브러리는 다음 작업에서 |
-| 11/2 | 재난 지도는 해안선 없는 격자 지도(정거원통)로 진원지를 찍는다 | 지도 데이터·라이브러리 없이 영향 반경 시연이 된다. 실제 지도는 다음 작업 |
+| 11/2 | ~~토폴로지는 지역 묶음 + 노드 카드로 먼저 그리고, 연결선·확대는 React Flow 로 옮길 때~~ | 데이터 모양부터 확정하고 라이브러리는 다음 작업에서 |
+| 11/2 | ~~재난 지도는 해안선 없는 격자 지도(정거원통)로 진원지를 찍는다~~ | 지도 데이터·라이브러리 없이 영향 반경 시연이 된다. 실제 지도는 다음 작업 |
+| 11/3 | 토폴로지는 React Flow + elkjs(layered, 지역 묶음 = 부모 노드). 배치용 선(프록시 → 모든 환경)은 그리지 않는다 | ADR 11/2. 서비스가 없는 환경도 프록시 오른쪽에 놓인다. 캔버스 너비가 바뀌면 다시 맞춘다 |
+| 11/3 | 재난 지도는 d3-geo 메르카토르 + world-atlas `countries-50m`(다이얼로그를 처음 열 때 지연 로드), 반경은 `geoCircle` | ADR 11/2. 110m 은 일본·한국 확대에 거칠고, 50m 은 gzip 240KB 라 첫 화면 번들에서 뺀다 |
+| 11/3 | 화면마다 Error Boundary(`ScreenErrorBoundary`, 경로가 바뀌면 초기화) + 라우트 `errorElement` | 한 화면 오류가 사이드바·상단 바까지 지우지 않게 |
+| 11/3 | 실시간(계약 3장)은 EventSource 하나 → 이벤트별 `invalidateQueries`, `resync` 면 조직 쿼리 전부. 서버 채널 전까지 목업 모드에서만 붙는다(`EVENTS_API_READY`) | 응답 모양을 REST 에만 둔다. 운영에서 없는 경로에 재연결을 반복하지 않게 |
+| 11/3 | 대피 후보(4-4)는 API 전까지 브라우저에서 규칙 점수로 계산한다(안전 .35 · 용량 .25 · 비용 .1 · 복귀 .15 · 데이터 위치 .15, 가칭) | 응답 모양은 계약 초안 그대로. 점수 근거를 화면 오른쪽에 보여 심사 질문에 답한다 |
+| 11/3 | 로고·파비콘은 Figma 「Logo」 Direction B SVG 를 그대로 쓴다(워드마크의 두 번째 O = 마크) | Figma 설명: 글자를 다시 치지 말고 인스턴스를 그대로 쓴다 |

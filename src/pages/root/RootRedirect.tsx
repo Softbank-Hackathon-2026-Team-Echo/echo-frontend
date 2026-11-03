@@ -12,6 +12,8 @@ export default function RootRedirect() {
   if (isPending) {
     return (
       <main className="flex min-h-dvh flex-col items-center justify-center gap-3" aria-busy>
+        {/* L00 앱 첫 진입 로딩: 마크 72 + 워드마크 (와이어프레임) */}
+        <Logo variant="mark" className="size-18" />
         <Logo />
         <p className="text-small text-fg-muted">Loading your organizations…</p>
       </main>

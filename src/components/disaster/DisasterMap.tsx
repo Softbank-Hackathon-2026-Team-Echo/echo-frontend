@@ -1,29 +1,72 @@
-import type { MouseEvent } from 'react';
+import { geoCircle, geoGraticule10, geoMercator, geoPath } from 'd3-geo';
+import type { Feature, FeatureCollection, MultiLineString } from 'geojson';
+import { type MouseEvent, useEffect, useMemo, useState } from 'react';
+import { feature, mesh } from 'topojson-client';
+import type { GeometryCollection, Topology } from 'topojson-specification';
 import type { EnvironmentSummary } from '@/lib/api/types';
 import { environmentCoordinates, type LatLng, MAP_CITIES } from '@/lib/geo';
 
-// 일본·한국을 덮는 단순 지도(정거원통 투영). 해안선 없이 격자와 도시만 그린다.
-// 실제 지도 타일은 S01-D 화면 작업에서 붙인다
+// 일본·한국을 덮는 지도(메르카토르). 해안선은 world-atlas 50m 를 처음 열 때 불러온다
 const BOUNDS = { north: 42, south: 30, west: 124, east: 146 };
 const WIDTH = 440;
-const KM_PER_DEG = 111;
-const MID_LAT = (BOUNDS.north + BOUNDS.south) / 2;
-const PX_PER_KM =
-  WIDTH / ((BOUNDS.east - BOUNDS.west) * KM_PER_DEG * Math.cos((MID_LAT * Math.PI) / 180));
-const HEIGHT = Math.round((BOUNDS.north - BOUNDS.south) * KM_PER_DEG * PX_PER_KM);
+const HEIGHT = 320;
+
+const projection = geoMercator().fitExtent(
+  [
+    [0, 0],
+    [WIDTH, HEIGHT],
+  ],
+  // 폴리곤은 감는 방향에 따라 지구 전체로 읽히므로 네 모서리 점에 맞춘다
+  {
+    type: 'MultiPoint',
+    coordinates: [
+      [BOUNDS.west, BOUNDS.south],
+      [BOUNDS.east, BOUNDS.south],
+      [BOUNDS.east, BOUNDS.north],
+      [BOUNDS.west, BOUNDS.north],
+    ],
+  },
+);
+const path = geoPath(projection);
+const graticule = path(geoGraticule10()) ?? '';
 
 function project(point: LatLng) {
-  return {
-    x: (point.lng - BOUNDS.west) * KM_PER_DEG * Math.cos((MID_LAT * Math.PI) / 180) * PX_PER_KM,
-    y: (BOUNDS.north - point.lat) * KM_PER_DEG * PX_PER_KM,
-  };
+  const [x, y] = projection([point.lng, point.lat]) ?? [0, 0];
+  return { x, y };
 }
 
-function unproject(x: number, y: number): LatLng {
-  return {
-    lat: BOUNDS.north - y / (KM_PER_DEG * PX_PER_KM),
-    lng: BOUNDS.west + x / (KM_PER_DEG * Math.cos((MID_LAT * Math.PI) / 180) * PX_PER_KM),
-  };
+type Land = { countries: FeatureCollection; borders: MultiLineString };
+
+let landCache: Promise<Land> | undefined;
+
+/** 해안선·국경. 크기가 커서 지도를 처음 열 때 한 번만 불러온다 */
+function loadLand(): Promise<Land> {
+  landCache ??= import('world-atlas/countries-50m.json').then((module) => {
+    const topology = module.default as unknown as Topology<{ countries: GeometryCollection }>;
+    return {
+      countries: feature(topology, topology.objects.countries) as FeatureCollection,
+      borders: mesh(topology, topology.objects.countries, (a, b) => a !== b),
+    };
+  });
+  return landCache;
+}
+
+function useLand() {
+  const [land, setLand] = useState<Land>();
+  useEffect(() => {
+    let alive = true;
+    loadLand()
+      .then((next) => {
+        if (alive) setLand(next);
+      })
+      .catch(() => {
+        // 해안선이 없어도 격자·도시·반경으로 진원지를 고를 수 있다
+      });
+    return () => {
+      alive = false;
+    };
+  }, []);
+  return land;
 }
 
 type DisasterMapProps = {
@@ -34,6 +77,8 @@ type DisasterMapProps = {
   onPick: (point: LatLng) => void;
 };
 
+const EARTH_RADIUS_KM = 6371;
+
 /** 지도를 눌러 진원지를 정한다. 반경 안의 환경 점은 빨간색 */
 export function DisasterMap({
   epicenter,
@@ -42,13 +87,25 @@ export function DisasterMap({
   affected,
   onPick,
 }: DisasterMapProps) {
+  const land = useLand();
   const center = project(epicenter);
+  // 반경은 지구 표면 위의 원이라 메르카토르에서는 위도에 따라 살짝 늘어난다
+  const radiusPath = useMemo(
+    () =>
+      path(
+        geoCircle()
+          .center([epicenter.lng, epicenter.lat])
+          .radius((radiusKm / EARTH_RADIUS_KM) * (180 / Math.PI))() as Feature['geometry'],
+      ) ?? '',
+    [epicenter.lat, epicenter.lng, radiusKm],
+  );
 
   function handleClick(event: MouseEvent<SVGSVGElement>) {
     const rect = event.currentTarget.getBoundingClientRect();
     const x = ((event.clientX - rect.left) / rect.width) * WIDTH;
     const y = ((event.clientY - rect.top) / rect.height) * HEIGHT;
-    onPick(unproject(x, y));
+    const picked = projection.invert?.([x, y]);
+    if (picked) onPick({ lat: picked[1], lng: picked[0] });
   }
 
   return (
@@ -61,36 +118,17 @@ export function DisasterMap({
       onClick={handleClick}
     >
       <title>Disaster map</title>
-      {Array.from({ length: BOUNDS.east - BOUNDS.west + 1 }, (_, index) => BOUNDS.west + index)
-        .filter((lng) => lng % 2 === 0)
-        .map((lng) => {
-          const { x } = project({ lat: BOUNDS.north, lng });
-          return (
-            <line
-              key={`lng-${lng}`}
-              x1={x}
-              x2={x}
-              y1={0}
-              y2={HEIGHT}
-              className="stroke-globe-grid"
-            />
-          );
-        })}
-      {Array.from({ length: BOUNDS.north - BOUNDS.south + 1 }, (_, index) => BOUNDS.south + index)
-        .filter((lat) => lat % 2 === 0)
-        .map((lat) => {
-          const { y } = project({ lat, lng: BOUNDS.west });
-          return (
-            <line
-              key={`lat-${lat}`}
-              x1={0}
-              x2={WIDTH}
-              y1={y}
-              y2={y}
-              className="stroke-globe-grid"
-            />
-          );
-        })}
+      <path d={graticule} className="fill-none stroke-globe-grid" />
+      {land && (
+        <>
+          <path d={path(land.countries) ?? ''} className="fill-globe-land stroke-globe-coast" />
+          <path
+            d={path(land.borders) ?? ''}
+            className="fill-none stroke-globe-coast"
+            strokeDasharray="2 2"
+          />
+        </>
+      )}
       {MAP_CITIES.map((city) => {
         const point = project(city.coordinates);
         return (
@@ -102,10 +140,8 @@ export function DisasterMap({
           </g>
         );
       })}
-      <circle
-        cx={center.x}
-        cy={center.y}
-        r={radiusKm * PX_PER_KM}
+      <path
+        d={radiusPath}
         className="fill-danger-bg stroke-danger-solid"
         fillOpacity={0.6}
         strokeDasharray="4 3"

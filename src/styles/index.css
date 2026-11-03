@@ -213,3 +213,17 @@
     cursor: not-allowed;
   }
 }
+
+/* React Flow(토폴로지)를 토큰 색으로 맞춘다 */
+.echo-flow {
+  --xy-background-color: transparent;
+  --xy-node-border-radius: var(--ep-radius-md);
+  --xy-controls-button-background-color: var(--ep-color-bg-surface);
+  --xy-controls-button-background-color-hover: var(--ep-color-bg-subtle);
+  --xy-controls-button-color: var(--ep-color-text-secondary);
+  --xy-controls-button-border-color: var(--ep-color-border-default);
+  --xy-attribution-background-color: transparent;
+}
+.echo-flow .react-flow__node {
+  font-family: inherit;
+}

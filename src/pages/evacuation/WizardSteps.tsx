@@ -1,0 +1,64 @@
+import { Check, LoaderCircle } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+const STEPS = [
+  { title: 'Choose target', meta: 'rule score' },
+  { title: 'AI pre-check', meta: 'sandbox test' },
+  { title: 'Approve plan', meta: 'Developer+' },
+] as const;
+
+/** E01 대피 마법사 단계 표시. current 는 0부터 */
+export function WizardSteps({ current }: { current: number }) {
+  return (
+    <ol className="flex items-center gap-3 rounded-lg max-compact:flex-col max-compact:items-start border border-line bg-surface px-4 py-3">
+      {STEPS.map((step, index) => {
+        const state = index < current ? 'done' : index === current ? 'current' : 'pending';
+        return (
+          <li key={step.title} className="flex items-center gap-3">
+            {index > 0 && <span aria-hidden className="h-0.5 w-12 bg-line max-compact:hidden" />}
+            <span
+              className="flex items-start gap-2.5"
+              aria-current={state === 'current' ? 'step' : undefined}
+            >
+              <span
+                className={cn(
+                  'flex size-6 shrink-0 items-center justify-center rounded-full text-label',
+                  state === 'current' &&
+                    'bg-migrating-solid text-fg-on-brand ring-4 ring-migrating-solid/25 motion-safe:animate-pulse',
+                  state === 'done' && 'bg-success-solid text-fg-on-brand',
+                  state === 'pending' && 'border border-line-strong bg-subtle text-fg-muted',
+                )}
+              >
+                {state === 'current' ? (
+                  <LoaderCircle aria-hidden className="size-3.5" />
+                ) : state === 'done' ? (
+                  <Check aria-hidden className="size-3.5" />
+                ) : (
+                  index + 1
+                )}
+              </span>
+              <span className="flex flex-col gap-0.5">
+                <span
+                  className={cn(
+                    'text-body-medium',
+                    state === 'pending' ? 'text-fg-secondary' : 'text-fg',
+                  )}
+                >
+                  {step.title}
+                </span>
+                <span
+                  className={cn(
+                    'text-caption',
+                    state === 'current' ? 'text-migrating-fg' : 'text-fg-muted',
+                  )}
+                >
+                  {step.meta}
+                </span>
+              </span>
+            </span>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
