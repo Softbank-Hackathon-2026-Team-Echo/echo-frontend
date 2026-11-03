@@ -1,0 +1,48 @@
+# PR 과 main 에서 lint · 타입 · 테스트 · 빌드 · 번들 크기를 본다. 배포는 Cloudflare Pages 가 따로 한다
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      # pnpm 버전은 package.json packageManager 를 따른다
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
+        env:
+          VITE_API_BASE_URL: https://api.echoport.uk
+
+      - name: Bundle budget
+        run: node scripts/check-bundle.mjs
