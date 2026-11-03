@@ -66,6 +66,7 @@ src/
 └─ test/                 # setup(MSW 서버·ResizeObserver) · msw-server · render(renderRoute)
 scripts/                # gen-api.mjs(API 타입) · trim-atlas.mjs(지도 데이터) · check-bundle.mjs(번들 예산)
 .github/workflows/ci.yml # PR · main 에서 lint · typecheck · test · build · 번들 예산
+public/_headers          # Cloudflare Pages 응답 헤더(클릭재킹 방지 · 권한 끔 · /assets 1년 캐시)
 specs/                   # 태스크 명세
 docs/                    # api-contract.md, perf.md(성능 측정 방법 · 기준선), PR.md(커밋 안 함)
 .claude/launch.json      # 브라우저 미리보기용 개발 서버 설정
@@ -197,3 +198,4 @@ docs/                    # api-contract.md, perf.md(성능 측정 방법 · 기�
 | 11/3 | Sentry 개인정보: 자동 수집(IP · 쿠키 · 헤더 · 본문 · 쿼리)은 끄고 사용자는 GitHub 아이디만. 리플레이는 오류 난 세션만, 글자 · 입력 · 이미지 전부 가림. API 요청에 추적 헤더를 붙이지 않는다(`tracePropagationTargets: []`) | 비밀값 · 개인정보가 외부로 나가지 않게. sentry-trace · baggage 헤더는 echo-was CORS 허용 목록에 없어 붙이면 요청이 막힌다 |
 | 11/3 | 소스맵은 Cloudflare Pages 빌드에서 만들어 Sentry 에 올리고 dist 에서 지운다(`hidden`). 릴리스 이름은 커밋 SHA | 운영 파일은 GitHub Actions 가 아니라 Cloudflare 가 빌드해서, 같은 빌드의 소스맵이어야 줄 번호가 맞는다. 원본 코드를 공개하지 않는다 |
 | 11/3 | 성능은 같은 방법으로 전후를 잰다(`docs/perf.md`): Sentry Web Vitals(화면 이름 = 경로 패턴), 대시보드 다시 불러오기 1번의 칸별 렌더 수(Profiler 테스트), 번들 예산. 기준선은 '같은 응답에도 모든 칸이 1번씩 다시 그려짐' | 최적화(React Compiler · 화면 밖 멈추기 · 미리 받기)의 효과를 숫자로 보이려면 바꾸기 전 값이 있어야 한다. 주소 그대로면 같은 화면이 조직 · id 마다 따로 묶인다 |
+| 11/3 | `public/_headers` 로 iframe 금지(`X-Frame-Options: DENY` + `frame-ancestors 'none'`) · `Permissions-Policy`(카메라 · 마이크 · 위치 · 결제 · USB 끔) · `/assets/*` 1년 immutable 캐시. CSP 는 frame-ancestors 만 | 관리 화면이 로그인 세션으로 승인 · 배포를 하므로 클릭재킹을 막는다. Pages 기본값은 /assets 4시간 + 재검증이라, 해시 파일 이름을 믿고 재검증을 없앤다. 스크립트 출처 CSP 는 기능이 조용히 멈출 위험이 있어 보고 모드부터 따로 |
