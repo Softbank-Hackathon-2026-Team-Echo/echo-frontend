@@ -9,15 +9,19 @@ import { useCreateMigrationPlan } from '@/lib/api/migrations';
 import type { MigrationPlan } from '@/lib/api/types';
 import {
   DEFAULT_CONDITIONS,
-  DEFAULT_OBSERVE_SECONDS,
+  DEFAULT_MAX_WAIT_SECONDS,
+  DEFAULT_REQUIRED_REQUESTS,
   draftSteps,
   duration,
   planStages,
 } from '@/lib/migration-stages';
+import { FailureInjection, type Simulate } from './FailureInjection';
 import { WizardSteps } from './WizardSteps';
 
 const FIELDS = [
-  'observeSeconds',
+  'requiredRequests',
+  'maxWaitSeconds',
+  'simulate',
   'rollbackConditions.maxErrorRatePercent',
   'rollbackConditions.maxP95Ms',
   'rollbackConditions.maxReplicationLagSeconds',
@@ -29,6 +33,8 @@ type PlanDraftProps = {
   targetId: string;
   sourceName: string;
   targetName: string;
+  /** 재난 반경 안 등으로 만들 수 없을 때 이유 */
+  blockedReason?: string;
   onCreated: (plan: MigrationPlan) => void;
 };
 
@@ -70,19 +76,28 @@ export function PlanDraft({
   targetId,
   sourceName,
   targetName,
+  blockedReason,
   onCreated,
 }: PlanDraftProps) {
   const create = useCreateMigrationPlan(orgId, serviceId);
-  const [observeSeconds, setObserveSeconds] = useState(DEFAULT_OBSERVE_SECONDS);
+  const [required, setRequired] = useState<number[]>([...DEFAULT_REQUIRED_REQUESTS]);
+  const [maxWaitSeconds, setMaxWaitSeconds] = useState(DEFAULT_MAX_WAIT_SECONDS);
   const [conditions, setConditions] = useState(DEFAULT_CONDITIONS);
+  const [simulate, setSimulate] = useState<Simulate | null>(null);
   const errors = fieldErrors(create.error);
-  const steps = draftSteps(observeSeconds);
+  const steps = draftSteps(required, maxWaitSeconds);
   const total = steps.reduce((sum, step) => sum + step.expectedSeconds, 0);
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
     create.mutate(
-      { targetEnvironmentId: targetId, observeSeconds, rollbackConditions: conditions },
+      {
+        targetEnvironmentId: targetId,
+        requiredRequests: required,
+        maxWaitSeconds,
+        rollbackConditions: conditions,
+        ...(simulate ? { simulate } : {}),
+      },
       { onSuccess: onCreated },
     );
   }
@@ -93,7 +108,12 @@ export function PlanDraft({
         title="Plan the migration"
         description={`${sourceName} → ${targetName} · est. ${duration(total)} · approval needed within 24 hours`}
         actions={
-          <RoleButton requires="DEVELOPER" type="submit" disabled={create.isPending}>
+          <RoleButton
+            requires="DEVELOPER"
+            type="submit"
+            disabledReason={blockedReason}
+            disabled={create.isPending}
+          >
             Create plan
           </RoleButton>
         }
@@ -101,12 +121,38 @@ export function PlanDraft({
       <WizardSteps current={2} />
       <FormError message={formErrorMessage(create.error, FIELDS)} />
       <div className="flex items-start gap-3 max-wide:flex-col">
-        <section className="flex flex-1 flex-col gap-3.5 rounded-xl border border-line bg-surface p-4 max-wide:w-full">
+        <section className="flex flex-1 flex-col gap-3 rounded-xl border border-line bg-surface p-4 max-wide:w-full">
           <h2 className="text-title">Stages</h2>
           <StageList stages={planStages(steps, conditions, targetName)} />
         </section>
         <section className="flex w-96 shrink-0 flex-col gap-3 rounded-xl border border-line bg-surface p-4 max-wide:w-full">
-          <h2 className="text-title">Automatic rollback when</h2>
+          <h2 className="text-title">Each traffic step passes when</h2>
+          <div className="grid grid-cols-3 gap-2">
+            {(['10%', '50%', '100%'] as const).map((label, index) => (
+              <NumberField
+                key={label}
+                id={`plan-required-${index}`}
+                label={`${label} · requests`}
+                value={required[index] ?? 0}
+                error={index === 0 ? errors.requiredRequests : undefined}
+                onChange={(value) =>
+                  setRequired(required.map((item, at) => (at === index ? value : item)))
+                }
+              />
+            ))}
+          </div>
+          <NumberField
+            id="plan-max-wait"
+            label="Wait at most per step (s)"
+            value={maxWaitSeconds}
+            error={errors.maxWaitSeconds}
+            onChange={setMaxWaitSeconds}
+          />
+          <p className="text-caption text-fg-muted">
+            {targetName} has to handle that many requests. A quiet service passes as low traffic; if
+            only {sourceName} keeps receiving them, the step fails.
+          </p>
+          <h2 className="pt-2 text-title">Automatic rollback when</h2>
           <NumberField
             id="plan-error-rate"
             label="Error rate above (%)"
@@ -117,7 +163,7 @@ export function PlanDraft({
           />
           <NumberField
             id="plan-p95"
-            label="p95 latency above (ms)"
+            label="p95 latency above (ms, advisory)"
             value={conditions.maxP95Ms}
             error={errors['rollbackConditions.maxP95Ms']}
             onChange={(value) => setConditions({ ...conditions, maxP95Ms: value })}
@@ -130,14 +176,11 @@ export function PlanDraft({
             error={errors['rollbackConditions.maxReplicationLagSeconds']}
             onChange={(value) => setConditions({ ...conditions, maxReplicationLagSeconds: value })}
           />
-          <NumberField
-            id="plan-observe"
-            label="Watch each traffic step for (s)"
-            value={observeSeconds}
-            error={errors.observeSeconds}
-            onChange={setObserveSeconds}
-          />
-          <p className="text-caption text-fg-muted">A failed health check always rolls back.</p>
+          <p className="text-caption text-fg-muted">
+            A failed health check always rolls back. p95 is shown for reference and does not fail a
+            step.
+          </p>
+          <FailureInjection value={simulate} onChange={setSimulate} error={errors.simulate} />
         </section>
       </div>
     </form>

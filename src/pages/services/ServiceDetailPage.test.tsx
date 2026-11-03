@@ -146,3 +146,26 @@ describe('ServiceDetailPage 배포 이력', () => {
     );
   });
 });
+
+describe('ServiceDetailPage 설정 수정', () => {
+  it('바뀐 칸만 PATCH 로 보낸다', async () => {
+    const bodies: unknown[] = [];
+    serve('DEVELOPER');
+    server.use(
+      http.patch(`${API}/orgs/o1/services/s1`, async ({ request: req }) => {
+        bodies.push(await req.json());
+        return ok({ ...service, containerPort: 3000 });
+      }),
+    );
+    renderPage();
+
+    await userEvent.click(await screen.findByRole('button', { name: 'More actions' }));
+    await userEvent.click(await screen.findByRole('menuitem', { name: /edit settings/i }));
+    const port = await screen.findByLabelText('Container port');
+    await userEvent.clear(port);
+    await userEvent.type(port, '3000');
+    await userEvent.click(screen.getByRole('button', { name: 'Save changes' }));
+
+    await expect.poll(() => bodies).toEqual([{ containerPort: 3000 }]);
+  });
+});

@@ -172,7 +172,7 @@ KPI 타일 5개(성공률·p95·복제 지연·트래픽 비율·에러 버짓)�
 
 ### 4-6. 이전 계획·실행·결과·복귀 (F6~F10, F17)
 
-> 11/3: E01-3 은 운영 API 서버 8(`POST /services/{id}/migration-plans` · `GET/approve/reject/cancel/abort/logs`)에 붙였다. 서버 단계는 고정(PREFLIGHT · SHIFT 10/50/100 · DATA_SYNC_CHECK)이고 쓰기 전환 단계는 아직 없다. 건수 기준 판정(echo-frontend #6 댓글)은 칸이 정해지면 M02 에 붙인다.
+> 11/3: E01-3 은 운영 API 서버 8(`POST /services/{id}/migration-plans` · `GET/approve/reject/cancel/abort/logs`)에 붙였다. 서버 단계는 고정(PREFLIGHT · SHIFT 10/50/100 · DATA_SYNC_CHECK)이고 쓰기 전환 단계는 아직 없다. 건수 기준 판정(API 서버 8-1, echo-was #22)도 붙였다: 만들기 `requiredRequests`[10%·50%·100%] · `maxWaitSeconds`(`observeSeconds` 는 없어졌다), 실행 중 `progress`(건수·5xx·남은 초)를 1초마다, 데모 실패 주입 `simulate{reason, failAtStep}`, 승인 409 `PLAN_STALE` 의 `details[].field` 로 바뀐 항목 표시. 복귀(FAILBACK) 표시는 서버 `mode` 가 없어 같은 서비스의 앞선 성공 이전을 거꾸로 되짚는지로 가린다(`lib/migration-mode.ts`).
 
 | 동작 | 제안 |
 |---|---|

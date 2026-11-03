@@ -16,6 +16,7 @@ import {
   totalSeconds,
 } from '@/lib/migration-metrics';
 import { duration } from '@/lib/migration-stages';
+import { migrationErrorLabel } from '@/lib/status';
 import { Kpi } from './Kpi';
 
 const clock = (iso: string | null | undefined) =>
@@ -30,15 +31,22 @@ function stepName(step: MigrationStep) {
 function stepResult(step: MigrationStep) {
   const result = step.result;
   if (!result) return '—';
-  if (result.failureCode) return `${result.status.toLowerCase()} · ${result.failureCode}`;
+  const status = result.status.toLowerCase();
+  if (result.failureCode) return `${status} · ${migrationErrorLabel(result.failureCode)}`;
   const metrics = result.metrics;
   if (step.kind === 'DATA_SYNC_CHECK' && metrics?.replicationLagSeconds != null) {
-    return `${result.status.toLowerCase()} · lag ${metrics.replicationLagSeconds} s`;
+    return `${status} · lag ${metrics.replicationLagSeconds} s`;
   }
+  if (metrics?.lowTraffic)
+    return `${status} · low traffic, health ${metrics.healthStatus ?? 'checked'}`;
   if (metrics?.requestCount != null) {
-    return `${result.status.toLowerCase()} · ${metrics.requestCount} req · ${metrics.errorRatePercent ?? 0}% errors · p95 ${metrics.p95Ms ?? '—'} ms`;
+    const errors =
+      metrics.errors5xx != null
+        ? `${metrics.errors5xx}/${metrics.allowedErrors5xx ?? '—'} 5xx`
+        : `${metrics.errorRatePercent ?? 0}% errors`;
+    return `${status} · ${metrics.requestCount} req · ${errors} · p95 ${metrics.p95Ms ?? '—'} ms`;
   }
-  return result.status.toLowerCase();
+  return status;
 }
 
 /** M02 Result: 끝난 이전의 숫자 표(F17). 서버가 아직 주지 않는 값은 — 와 측정 출처를 적는다 */
@@ -68,7 +76,7 @@ export function ResultTab({ plan }: { plan: MigrationPlan }) {
           <CircleAlert aria-hidden className="mt-0.5 size-4 shrink-0" />
           <p className="text-body-medium">
             {plan.status === 'ROLLED_BACK'
-              ? `Rolled back to the source (${plan.errorCode ?? 'stopped'}). ${plan.errorMessage ?? ''}`
+              ? `Rolled back to the source (${plan.errorCode ? migrationErrorLabel(plan.errorCode) : 'stopped'}). ${plan.errorMessage ?? ''}`
               : `This run ended as ${plan.status.toLowerCase()}. ${plan.errorMessage ?? ''}`}
           </p>
         </div>

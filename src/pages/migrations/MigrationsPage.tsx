@@ -19,8 +19,13 @@ import { useEnvironments } from '@/lib/api/environments';
 import { useCurrentOrg } from '@/lib/api/me';
 import { useOrgMigrationPlans } from '@/lib/api/migrations';
 import { useServices } from '@/lib/api/services';
+import { isFailback } from '@/lib/migration-mode';
 import { duration } from '@/lib/migration-stages';
-import { migrationPlanStatusView } from '@/lib/status';
+import { migrationErrorLabel, migrationPlanStatusView } from '@/lib/status';
+
+function FailbackBadge() {
+  return <span className="rounded-sm bg-subtle px-1.5 text-label text-fg-secondary">Failback</span>;
+}
 
 function Summary({
   icon: Icon,
@@ -152,9 +157,14 @@ export default function MigrationsPage() {
                         </span>
                       </TableCell>
                       <TableCell>{serviceNames.get(plan.serviceId) ?? '—'}</TableCell>
-                      <TableCell className="font-mono text-mono">
-                        {envNames.get(plan.sourceEnvironmentId) ?? '?'} →{' '}
-                        {envNames.get(plan.targetEnvironmentId) ?? '?'}
+                      <TableCell>
+                        <span className="flex flex-wrap items-center gap-1.5">
+                          <span className="font-mono text-mono">
+                            {envNames.get(plan.sourceEnvironmentId) ?? '?'} →{' '}
+                            {envNames.get(plan.targetEnvironmentId) ?? '?'}
+                          </span>
+                          {isFailback(plan, runs) && <FailbackBadge />}
+                        </span>
                       </TableCell>
                       <TableCell>
                         <span className="flex items-center gap-1.5">
@@ -163,7 +173,11 @@ export default function MigrationsPage() {
                         </span>
                       </TableCell>
                       <TableCell className="text-fg-secondary">
-                        {plan.errorCode ?? (seconds === null ? '—' : `took ${duration(seconds)}`)}
+                        {plan.errorCode
+                          ? migrationErrorLabel(plan.errorCode)
+                          : seconds === null
+                            ? '—'
+                            : `took ${duration(seconds)}`}
                       </TableCell>
                     </TableRow>
                   );

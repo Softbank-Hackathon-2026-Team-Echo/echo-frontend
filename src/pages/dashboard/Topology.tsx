@@ -48,6 +48,13 @@ type TopologyNode =
   | Node<GroupNodeData, 'region'>
   | Node<ProxyNodeData, 'proxy'>;
 
+/** 예비 상태: 따라가기 실패 > 버전 일치(+ 마지막 따라가기에 걸린 초) > 뒤처짐 */
+function standbyText(link: ServiceOnEnvironment['link'] | undefined): string {
+  if (link?.lastSyncError) return 'Sync failed';
+  if (link?.versionStatus !== 'IN_SYNC') return 'Behind';
+  return link.lastSyncSeconds !== null ? `Warm · synced in ${link.lastSyncSeconds}s` : 'Warm';
+}
+
 /** 환경 노드: 역할 · 버전 · 트래픽 막대 · 위험 */
 function EnvironmentNode({ data }: NodeProps<Node<EnvNodeData, 'environment'>>) {
   const { environment, links, atRisk } = data;
@@ -58,7 +65,7 @@ function EnvironmentNode({ data }: NodeProps<Node<EnvNodeData, 'environment'>>) 
     role === 'SERVING'
       ? `Primary · ${shortSha(primary?.link.currentDeployment?.commitSha)}`
       : role === 'STANDBY'
-        ? `Standby · ${primary?.link.versionStatus === 'IN_SYNC' ? 'Warm' : 'Behind'}`
+        ? `Standby · ${standbyText(primary?.link)}`
         : 'No services';
   return (
     <div
@@ -107,7 +114,7 @@ function EnvironmentNode({ data }: NodeProps<Node<EnvNodeData, 'environment'>>) 
         )}
       </span>
       <span className="flex items-center justify-between gap-2 text-caption text-fg-muted">
-        <span>{roleText}</span>
+        <span className="truncate">{roleText}</span>
         <span className="font-mono">{environment.location ?? '—'}</span>
       </span>
       <span className="flex items-center gap-2">

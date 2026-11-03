@@ -40,6 +40,8 @@ const CONFLICT_MESSAGES: Record<string, string> = {
   ENVIRONMENT_IN_USE: 'This environment still has services on it.',
   SERVICE_DELETING: 'This service is being deleted.',
   LAST_ADMIN: 'An organization needs at least one admin.',
+  ORGANIZATION_SLUG_CONFLICT: 'This URL name is already taken.',
+  ORGANIZATION_SLUG_RESERVED: 'This URL name is reserved.',
   ALREADY_MEMBER: 'That GitHub user is already a member.',
   INVITATION_NOT_PENDING: 'This invitation was already accepted, expired or revoked.',
   NOT_ROLLBACKABLE: 'This deploy can no longer be rolled back to.',

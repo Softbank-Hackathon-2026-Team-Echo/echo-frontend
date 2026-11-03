@@ -27,12 +27,14 @@ import {
   isActivePlan,
   useMigrationLogs,
   useMigrationPlan,
+  useMigrationPlans,
   usePlanAction,
 } from '@/lib/api/migrations';
 import type { MigrationPlan } from '@/lib/api/types';
 import { totalSeconds } from '@/lib/migration-metrics';
+import { isFailback } from '@/lib/migration-mode';
 import { duration, planStages } from '@/lib/migration-stages';
-import { migrationPlanStatusView } from '@/lib/status';
+import { migrationErrorLabel, migrationPlanStatusView } from '@/lib/status';
 import { cn } from '@/lib/utils';
 import { LiveTab } from './LiveTab';
 import { ResultTab } from './ResultTab';
@@ -42,14 +44,23 @@ const clock = (iso: string | null | undefined) =>
 
 const FINISHED: MigrationPlan['status'][] = ['SUCCEEDED', 'ROLLED_BACK', 'FAILED'];
 
-function title(plan: MigrationPlan) {
+function title(plan: MigrationPlan, failback: boolean) {
   const id = plan.id.slice(0, 8);
+  if (failback) return failbackTitle(plan, id);
   if (plan.status === 'SUCCEEDED') return `Migration ${id} completed`;
   if (plan.status === 'ROLLED_BACK') return `Migration ${id} rolled back`;
   if (plan.status === 'FAILED') return `Migration ${id} failed`;
   if (plan.status === 'ROLLING_BACK') return `Rolling back · plan ${id}`;
   if (plan.status === 'PENDING_APPROVAL') return `Plan ${id} · waiting for approval`;
   return `Migrating · plan ${id}`;
+}
+
+function failbackTitle(plan: MigrationPlan, id: string) {
+  if (plan.status === 'SUCCEEDED') return `Failback ${id} completed`;
+  if (plan.status === 'ROLLED_BACK') return `Failback ${id} rolled back`;
+  if (plan.status === 'FAILED') return `Failback ${id} failed`;
+  if (plan.status === 'PENDING_APPROVAL') return `Failback ${id} · waiting for approval`;
+  return `Failing back · plan ${id}`;
 }
 
 /** 가로 단계 표시: 승인 → 사전 확인 → 10% → 50% → 데이터 확인 → 100% */
@@ -97,7 +108,7 @@ function LogsTab({ orgId, plan }: { orgId: string; plan: MigrationPlan }) {
   const lines = logs.data.pages.flatMap((page) => page.items);
   return (
     <div className="flex flex-col gap-2">
-      <ol className="flex max-h-[32rem] flex-col gap-1 overflow-y-auto rounded-xl border border-line bg-subtle p-4 font-mono text-mono">
+      <ol className="flex max-h-128 flex-col gap-1 overflow-y-auto rounded-xl border border-line bg-subtle p-4 font-mono text-mono">
         {lines.length === 0 && <li className="text-fg-muted">No log lines yet.</li>}
         {lines.map((line) => (
           <li key={line.seq} className="flex gap-4">
@@ -146,6 +157,7 @@ export default function MigrationPage() {
   const plan = useMigrationPlan(orgId, planId);
   const environments = useEnvironments(orgId);
   const disasters = useActiveDisasters(orgId);
+  const history = useMigrationPlans(orgId, plan.data?.serviceId);
   const abort = usePlanAction(orgId ?? '', plan.data?.serviceId ?? '', 'abort');
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [tab, setTab] = useState<string>();
@@ -193,7 +205,7 @@ export default function MigrationPage() {
   return (
     <>
       <PageHeader
-        title={title(current)}
+        title={title(current, isFailback(current, history.data?.items ?? []))}
         description={`${sourceName} → ${targetName} · started ${clock(current.startedAt)}${elapsed === null ? '' : ` · ${current.finishedAt ? 'took' : 'elapsed'} ${duration(elapsed)}`}${current.approvedBy ? ` · approved by ${current.approvedBy.login}` : ''}`}
         actions={
           active ? (
@@ -258,7 +270,8 @@ export default function MigrationPage() {
                   : 'Migration failed'}
             </p>
             <p className="text-small">
-              {current.errorCode ?? ''} {current.errorMessage ?? ''}
+              {current.errorCode ? `${migrationErrorLabel(current.errorCode)}.` : ''}{' '}
+              {current.errorMessage ?? ''}
               {current.rollbackStatus === 'FAILED' &&
                 ' The rollback itself did not finish. Check the logs.'}
             </p>
@@ -289,11 +302,11 @@ export default function MigrationPage() {
           )}
         </TabsContent>
         <TabsContent value="plan" className="mt-3">
-          <section className="flex flex-col gap-3.5 rounded-xl border border-line bg-surface p-4">
+          <section className="flex flex-col gap-3 rounded-xl border border-line bg-surface p-4">
             <h2 className="text-title">Stages · planned vs actual</h2>
             <StageList stages={planStages(current.steps, current.rollbackConditions, targetName)} />
             <p className="text-caption text-fg-muted">
-              Planned {duration(current.expectedSeconds)} · watch {current.observeSeconds}s per
+              Planned {duration(current.expectedSeconds)} · wait up to {current.maxWaitSeconds}s per
               traffic step · created by {current.createdBy.login}
               {current.selfApproved && ' · self-approved'}
             </p>

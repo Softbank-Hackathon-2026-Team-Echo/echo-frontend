@@ -1,8 +1,8 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, unwrap } from './client';
 import { ApiError } from './errors';
 import { queryKeys } from './query-keys';
-import type { Me, Organization } from './types';
+import type { CreateOrganization, Me, Organization } from './types';
 
 export function useMe() {
   return useQuery({
@@ -43,4 +43,19 @@ export function useCurrentOrg(slug: string | undefined) {
   const me = useMe();
   const organization = me.data?.organizations.find((org) => org.slug === slug);
   return { ...me, organization };
+}
+
+/** 조직 만들기. 만든 사람이 어드민이 된다. slug 는 나중에 바꿀 수 없다 */
+export function useCreateOrganization() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: CreateOrganization) => unwrap(api.POST('/api/v1/orgs', { body })),
+    // slug 충돌·형식 오류는 폼이 보여 준다
+    meta: { skipGlobalErrorToast: true },
+    onSuccess: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.me() }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.session() }),
+      ]),
+  });
 }

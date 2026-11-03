@@ -9,6 +9,7 @@ import {
   LogOut,
   MapPin,
   Moon,
+  Plus,
   Projector,
   Server,
   Settings,
@@ -51,6 +52,7 @@ import { useOrgEvents } from '@/lib/api/events';
 import { useCurrentOrg } from '@/lib/api/me';
 import type { Organization, User } from '@/lib/api/types';
 import { roleLabel } from '@/lib/roles';
+import { CreateOrgDialog } from './CreateOrgDialog';
 
 // 와이어프레임 v2 사이드바: 대시보드 + 묶음 3개, 설정은 아래 (노션 IA 1절)
 const NAV_GROUPS = [
@@ -230,28 +232,37 @@ function OrgSwitcher({
   const { pathname } = useLocation();
   // 조직을 바꿔도 같은 메뉴에 머문다
   const subPath = pathname.replace(/^\/o\/[^/]+/, '');
+  const [createOpen, setCreateOpen] = useState(false);
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline" className="w-48 justify-between max-compact:w-auto">
-          <span className="truncate">
-            <span className="text-fg-muted max-compact:hidden">Org · </span>
-            {current.name}
-          </span>
-          <ChevronDown aria-hidden className="text-fg-muted" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel>Organizations</DropdownMenuLabel>
-        {organizations.map((org) => (
-          <DropdownMenuItem key={org.id} onSelect={() => navigate(`/o/${org.slug}${subPath}`)}>
-            <span className="flex-1 truncate">{org.name}</span>
-            {org.personal && <span className="text-caption text-fg-muted">Personal</span>}
-            {org.id === current.id && <Check aria-hidden />}
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" className="w-48 justify-between max-compact:w-auto">
+            <span className="truncate">
+              <span className="text-fg-muted max-compact:hidden">Org · </span>
+              {current.name}
+            </span>
+            <ChevronDown aria-hidden className="text-fg-muted" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-56">
+          <DropdownMenuLabel>Organizations</DropdownMenuLabel>
+          {organizations.map((org) => (
+            <DropdownMenuItem key={org.id} onSelect={() => navigate(`/o/${org.slug}${subPath}`)}>
+              <span className="flex-1 truncate">{org.name}</span>
+              {org.personal && <span className="text-caption text-fg-muted">Personal</span>}
+              {org.id === current.id && <Check aria-hidden />}
+            </DropdownMenuItem>
+          ))}
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onSelect={() => setCreateOpen(true)}>
+            <Plus aria-hidden />
+            Create organization
           </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <CreateOrgDialog open={createOpen} onOpenChange={setCreateOpen} />
+    </>
   );
 }
 

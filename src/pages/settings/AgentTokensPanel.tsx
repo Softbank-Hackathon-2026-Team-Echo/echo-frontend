@@ -208,7 +208,8 @@ export function AgentTokensPanel({ orgId, canManage }: { orgId: string; canManag
                   {token.lastUsedAt ? timeAgo(token.lastUsedAt) : 'never'}
                 </span>
                 {state.label === 'Active' && (
-                  <Button
+                  <RoleButton
+                    requires="DEVELOPER"
                     variant="ghost"
                     size="sm"
                     className="ml-auto"
@@ -216,7 +217,7 @@ export function AgentTokensPanel({ orgId, canManage }: { orgId: string; canManag
                     onClick={() => revoke.mutate(token.id)}
                   >
                     Revoke
-                  </Button>
+                  </RoleButton>
                 )}
               </li>
             );

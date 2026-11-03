@@ -1,7 +1,7 @@
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HttpResponse, http } from 'msw';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import type { Me, MigrationPlan, ServiceDetail } from '@/lib/api/types';
 import { server } from '@/test/msw-server';
 import { renderRoute } from '@/test/render';
@@ -57,7 +57,8 @@ const step = (
   kind,
   sourceWeight: target === null ? null : 100 - target,
   targetWeight: target,
-  observeSeconds: kind === 'SHIFT' ? 5 : null,
+  requiredRequests: kind === 'SHIFT' ? 20 : null,
+  maxWaitSeconds: kind === 'SHIFT' ? 30 : null,
   expectedSeconds: kind === 'SHIFT' ? 7 : 2,
   result: {
     status: 'PENDING' as const,
@@ -94,8 +95,10 @@ const plan: MigrationPlan = {
     maxP95Ms: 800,
     maxReplicationLagSeconds: 1,
     healthCheck: true,
+    p95Advisory: true,
   },
-  observeSeconds: 5,
+  maxWaitSeconds: 30,
+  progress: null,
   steps: [
     step(0, 'PREFLIGHT', null),
     step(1, 'SHIFT', 10),
@@ -113,9 +116,11 @@ const plan: MigrationPlan = {
 function serve({
   allowSelfApproval,
   active,
+  stale = false,
 }: {
   allowSelfApproval: boolean;
   active: string | null;
+  stale?: boolean;
 }) {
   const calls: { path: string; body?: unknown }[] = [];
   server.use(
@@ -125,6 +130,17 @@ function serve({
     http.get(`${API}/orgs/o1/migration-plans/:id`, () => ok(plan)),
     http.post(`${API}/orgs/o1/migration-plans/:id/approve`, () => {
       calls.push({ path: 'approve' });
+      if (stale) {
+        return HttpResponse.json(
+          {
+            success: false,
+            code: 'PLAN_STALE',
+            message: 'plan is stale',
+            details: [{ field: 'connections', reason: 'CHANGED' }],
+          },
+          { status: 409 },
+        );
+      }
       return ok({ ...plan, status: 'APPROVED' }, 202);
     }),
     http.post(`${API}/orgs/o1/services/s1/migration-plans`, async ({ request }) => {
@@ -149,6 +165,8 @@ function renderPage() {
     url: '/o/echo-demo/evacuation/plan?service=s1&target=e2',
   });
 }
+
+afterEach(() => window.sessionStorage.clear());
 
 describe('PlanPage', () => {
   it('본인 승인이 꺼진 조직에서는 내가 만든 계획을 승인할 수 없다', async () => {
@@ -182,8 +200,48 @@ describe('PlanPage', () => {
     ).toBeInTheDocument();
     expect(calls[0]?.body).toMatchObject({
       targetEnvironmentId: 'e2',
-      observeSeconds: 5,
+      requiredRequests: [20, 50, 50],
+      maxWaitSeconds: 30,
       rollbackConditions: { maxErrorRatePercent: 1, maxP95Ms: 800, maxReplicationLagSeconds: 1 },
     });
+  });
+
+  it('승인이 PLAN_STALE 이면 무엇이 바뀌었는지 보여 준다', async () => {
+    serve({ allowSelfApproval: true, active: plan.id, stale: true });
+    renderPage();
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Approve plan' }));
+
+    expect(await screen.findByText('A deployment or traffic weight changed')).toBeInTheDocument();
+  });
+
+  it('도착 환경이 재난 반경 안이면 계획을 만들 수 없다', async () => {
+    window.sessionStorage.setItem(
+      'echoport.disasters.o1',
+      JSON.stringify([
+        {
+          id: 'd1',
+          type: 'EARTHQUAKE',
+          source: 'SIMULATED',
+          magnitude: 7.2,
+          epicenter: { lat: 35.2, lng: 139.4 },
+          epicenterLabel: 'near Tokyo',
+          radiusKm: 302,
+          status: 'ACTIVE',
+          affectedEnvironmentIds: ['e2'],
+          safeEnvironmentIds: ['e1'],
+          startedAt: AT,
+          endedAt: null,
+          simulated: true,
+        },
+      ]),
+    );
+    const calls = serve({ allowSelfApproval: false, active: null });
+    renderPage();
+
+    const create = await screen.findByRole('button', { name: 'Create plan' });
+    expect(create).toHaveAttribute('aria-disabled', 'true');
+    await userEvent.click(create);
+    expect(calls).toEqual([]);
   });
 });

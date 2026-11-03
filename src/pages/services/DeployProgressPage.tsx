@@ -196,7 +196,13 @@ const CANCEL_REASONS: Record<string, string> = {
   BASE_CHANGED: 'Cancelled because another version went live before this rollback started.',
 };
 
-function Outcome({ request }: { request: DeployRequestDetail }) {
+function Outcome({
+  request,
+  requestLink,
+}: {
+  request: DeployRequestDetail;
+  requestLink: (id: string) => string;
+}) {
   if (request.status === 'SUCCEEDED') {
     return (
       <div className="flex flex-col gap-2 rounded-lg border border-line bg-success-bg p-4">
@@ -225,6 +231,14 @@ function Outcome({ request }: { request: DeployRequestDetail }) {
     return (
       <p className="rounded-lg bg-subtle p-4 text-body text-fg-secondary">
         {CANCEL_REASONS[request.cancelReason ?? ''] ?? 'This deploy was cancelled.'}
+        {request.supersededById && (
+          <>
+            {' '}
+            <Link to={requestLink(request.supersededById)} className="text-brand hover:underline">
+              Open the newer deploy
+            </Link>
+          </>
+        )}
       </p>
     );
   }
@@ -306,7 +320,10 @@ export default function DeployProgressPage() {
         now={now}
         requestLink={(id) => `/o/${slug}/services/${serviceId}/deploys/${id}`}
       />
-      <Outcome request={request} />
+      <Outcome
+        request={request}
+        requestLink={(id) => `/o/${slug}/services/${serviceId}/deploys/${id}`}
+      />
 
       <div className="grid grid-cols-[1fr_20rem] items-start gap-4 max-wide:grid-cols-1">
         {organization && <DeployLogs orgId={organization.id} request={request} />}

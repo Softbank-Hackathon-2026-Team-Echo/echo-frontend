@@ -105,6 +105,35 @@ export function deployErrorLabel(code: string): string {
   return DEPLOY_ERRORS[code] ?? code;
 }
 
+// 이전 실패·되돌림 이유 (echo-was docs/api/migration-plans.md, MigrationErrorCode)
+const MIGRATION_ERRORS: Record<string, string> = {
+  PREFLIGHT_FAILED: 'Pre-check failed',
+  TRAFFIC_APPLY_FAILED: 'Traffic weight could not be applied',
+  HEALTH_CHECK_FAILED: 'Health check failed',
+  METRICS_UNAVAILABLE: 'Metrics were not available',
+  THRESHOLD_EXCEEDED: 'Too many 5xx on the target',
+  DATA_LAG_EXCEEDED: 'Replication lag too high',
+  TARGET_NOT_RECEIVING: 'Target received no traffic',
+  ABORTED: 'Stopped by a person',
+  WORKER_LOST: 'The worker stopped responding',
+  INTERNAL_ERROR: 'Internal error',
+};
+
+export function migrationErrorLabel(code: string): string {
+  return MIGRATION_ERRORS[code] ?? code;
+}
+
+// 연결 내리기 실패 이유 (echo-was docs/api/services.md, TeardownErrorCode)
+const TEARDOWN_ERRORS: Record<string, string> = {
+  TEARDOWN_FAILED: 'Removing it from this cluster failed.',
+  TEARDOWN_TIMEOUT: 'Removing it from this cluster timed out.',
+  WORKER_LOST: 'The worker stopped responding while removing it.',
+};
+
+export function teardownErrorLabel(code: string): string {
+  return TEARDOWN_ERRORS[code] ?? code;
+}
+
 /** 커밋 SHA 는 앞 7자만 보여 준다 (ui-terms §1) */
 export function shortSha(sha: string | null | undefined): string {
   return sha ? sha.slice(0, 7) : '—';

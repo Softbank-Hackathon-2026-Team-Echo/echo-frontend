@@ -9,26 +9,46 @@ export const DEFAULT_CONDITIONS = {
   maxP95Ms: 800,
   maxReplicationLagSeconds: 1,
 };
-export const DEFAULT_OBSERVE_SECONDS = 5;
+// API 서버 8-1: 비율 단계는 "도착에서 요청 N건 처리"로 판정한다. 기본 10%·50%·100% = 20·50·50건, 단계마다 최대 30초
+export const DEFAULT_REQUIRED_REQUESTS: [number, number, number] = [20, 50, 50];
+export const DEFAULT_MAX_WAIT_SECONDS = 30;
+// 서버가 예상 시간을 셀 때 쓰는 기준 요청률(MIGRATION_EXPECTED_RPS). 시연 합성 트래픽 약 50 rps
+const EXPECTED_RPS = 50;
 
 type StepLike = Pick<MigrationStep, 'index' | 'kind' | 'targetWeight' | 'expectedSeconds'> & {
+  requiredRequests?: number | null;
+  maxWaitSeconds?: number | null;
   result?: MigrationStep['result'] | null;
 };
 
-/** 계획을 만들기 전 미리 보는 단계 (서버가 만드는 것과 같은 표) */
-export function draftSteps(observeSeconds: number): StepLike[] {
-  const shift = STEP_OVERHEAD_SECONDS + observeSeconds;
+function shiftSeconds(required: number, weight: number, maxWait: number) {
+  return (
+    STEP_OVERHEAD_SECONDS + Math.min(maxWait, Math.ceil(required / ((EXPECTED_RPS * weight) / 100)))
+  );
+}
+
+/** 계획을 만들기 전 미리 보는 단계 (서버가 만드는 것과 같은 표·같은 예상 시간 식) */
+export function draftSteps(required: readonly number[], maxWait: number): StepLike[] {
+  const [first = 20, second = 50, last = 50] = required;
+  const shift = (index: number, weight: number, count: number): StepLike => ({
+    index,
+    kind: 'SHIFT',
+    targetWeight: weight,
+    requiredRequests: count,
+    maxWaitSeconds: maxWait,
+    expectedSeconds: shiftSeconds(count, weight, maxWait),
+  });
   return [
     { index: 0, kind: 'PREFLIGHT', targetWeight: null, expectedSeconds: STEP_OVERHEAD_SECONDS },
-    { index: 1, kind: 'SHIFT', targetWeight: 10, expectedSeconds: shift },
-    { index: 2, kind: 'SHIFT', targetWeight: 50, expectedSeconds: shift },
+    shift(1, 10, first),
+    shift(2, 50, second),
     {
       index: 3,
       kind: 'DATA_SYNC_CHECK',
       targetWeight: null,
       expectedSeconds: STEP_OVERHEAD_SECONDS,
     },
-    { index: 4, kind: 'SHIFT', targetWeight: 100, expectedSeconds: shift },
+    shift(4, 100, last),
   ];
 }
 
@@ -68,7 +88,7 @@ export function planStages(
     return {
       key: String(step.index),
       title: `Shift traffic → ${step.targetWeight}% on ${targetName}`,
-      meta: `${seconds} · judge error rate & p95${failure}`,
+      meta: `${seconds} · ${step.requiredRequests ?? '—'} requests on ${targetName}${step.maxWaitSeconds ? ` within ${step.maxWaitSeconds}s` : ''}${step.result?.metrics?.lowTraffic ? ' · low traffic' : ''}${failure}`,
       state,
     };
   });
