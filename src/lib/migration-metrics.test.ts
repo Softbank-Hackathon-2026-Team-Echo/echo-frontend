@@ -1,8 +1,13 @@
 import { describe, expect, it } from 'vitest';
+import {
+  currentWeights,
+  failedRequests,
+  maxReplicationLag,
+  weightTimeline,
+} from '@/lib/migration-metrics';
 import { migrationPlan, step } from '@/test/migration-fixtures';
-import { currentWeights, failedRequests, maxReplicationLag, weightTimeline } from './run-metrics';
 
-describe('run-metrics', () => {
+describe('migration-metrics', () => {
   it('지금 비율은 진행 중인 SHIFT 단계 값이다', () => {
     expect(currentWeights(migrationPlan())).toEqual({ source: 50, target: 50 });
   });

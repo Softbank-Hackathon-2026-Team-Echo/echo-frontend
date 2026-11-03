@@ -30,12 +30,12 @@ import {
   usePlanAction,
 } from '@/lib/api/migrations';
 import type { MigrationPlan } from '@/lib/api/types';
+import { totalSeconds } from '@/lib/migration-metrics';
 import { duration, planStages } from '@/lib/migration-stages';
 import { migrationPlanStatusView } from '@/lib/status';
 import { cn } from '@/lib/utils';
 import { LiveTab } from './LiveTab';
 import { ResultTab } from './ResultTab';
-import { totalSeconds } from './run-metrics';
 
 const clock = (iso: string | null | undefined) =>
   iso ? new Date(iso).toLocaleTimeString('en-GB') : '—';

@@ -171,3 +171,5 @@ docs/                    # api-contract.md, PR.md(커밋 안 함)
 | 11/3 | L01 지구본은 cobe 0.6.5(정확한 버전 고정, 동적 import 로 소개 화면 청크에서도 분리). 색은 `--ep-color-globe-*`·상태 solid 를 런타임에 읽고, 움직임 줄이기면 회전·숫자 세기·지역 띠를 멈춘다 | 2.x 는 API 가 달라 검증된 0.6 을 쓴다. 로그인한 사람의 첫 번들에 넣지 않는다 |
 | 11/3 | L01 큰 글자(Display 60 · 제목 44 · 숫자 64 · Body L 17 · 15)는 `index.css` 의 소개 화면 전용 `text-display`·`text-headline`·`text-stat`·`text-lead`·`text-lead-sm` 로 둔다 | Figma 텍스트 스타일(EchoPort/Display · Body L)과 L01 프레임 값이고 아직 변수(tokens.css)가 아니다. 변수가 생기면 `var(--ep-type-*)` 로 바꾼다 |
 | 11/3 | L01 ⑥ 숫자(0 · 0 · ≤ 90 s · 3m 17s)는 "Demo targets · to be replaced with rehearsal measurements" 로 밝히고, 미니 UI·제품 화면 그림에는 `Illustration` 캡션을 단다 | 아직 잰 값이 아니다. 예시 값을 실데이터로 오해하지 않게(심사 규칙) |
+| 11/3 | 대시보드 완료 카드는 30분 안에 성공한 이전이 있으면 한 번 뜬다(탭마다 닫은 것을 기억). "View full result" 를 눌러야 M02 Result 로 간다 | IA 11/2: 자동으로 넘어가지 않는다. 쓰기 정지 시간·RPO 는 API 전까지 `—` |
+| 11/3 | 대시보드 "Requests · A vs B" 는 실행 중인 이전이 있으면 그 A·B 비율선을 그린다. 실행 중 계획이 있으면 서비스별 계획 목록을 2초마다 다시 부른다 | 반분할 시연에서 대시보드만 보고 있어도 이전과 완료가 보이게 |
