@@ -79,6 +79,8 @@
 | `versionStatus` | `IN_SYNC` → In sync · success / `OUT_OF_SYNC` → Out of sync · warning |
 | `role`(연결) | `SERVING` → Serving · success / `STANDBY` → Standby · 중립 / `NONE` → — |
 | 보안 `result` 🆕 | `PASS` · success / `WARN` · warning / `FAIL` · danger / `NA` → N/A · 중립 |
+| 초대 `status` | `PENDING` → 대기(목록에 보임) / `ACCEPTED` · `EXPIRED` · `REVOKED` → 목록에서 뺀다 |
+| 에이전트 토큰 | `revokedAt` 있음 → Revoked · 중립 / `expiresAt` 지남 → Expired · 중립 / 그 밖 → Active · success |
 | 감사 `result` 🆕 | `SUCCEEDED` · success / `DENIED` · danger / `FAILED` · danger |
 | AI 관련 전부 🆕 | ai 색 |
 
