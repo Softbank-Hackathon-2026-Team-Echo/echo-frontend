@@ -6,6 +6,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from '@/App';
 import { initTheme } from '@/hooks/useTheme';
+import { initMonitoring } from '@/lib/monitoring';
 
 /**
  * 예전 목업 빌드가 등록한 MSW 서비스 워커가 브라우저에 남아 있으면 지운다.
@@ -34,4 +35,6 @@ removeMockWorker().then(() => {
       <App />
     </StrictMode>,
   );
+  // 첫 화면을 그린 뒤 오류 추적 SDK 를 불러온다
+  void initMonitoring();
 });

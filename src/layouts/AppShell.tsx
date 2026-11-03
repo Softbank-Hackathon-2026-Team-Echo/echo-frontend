@@ -17,7 +17,7 @@ import {
   Sun,
   Zap,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Link,
   NavLink,
@@ -51,6 +51,7 @@ import { useActiveDisasters } from '@/lib/api/disasters';
 import { useOrgEvents } from '@/lib/api/events';
 import { useCurrentOrg } from '@/lib/api/me';
 import type { Organization, User } from '@/lib/api/types';
+import { setMonitoringUser } from '@/lib/monitoring';
 import { roleLabel } from '@/lib/roles';
 import { CreateOrgDialog } from './CreateOrgDialog';
 
@@ -311,6 +312,10 @@ export function AppShell() {
   const { data: me, organization, isPending, isError, error, refetch } = useCurrentOrg(slug);
   const disasters = useActiveDisasters(organization?.id);
   useOrgEvents(organization?.id);
+  const githubLogin = me?.user.githubLogin;
+  useEffect(() => {
+    setMonitoringUser(githubLogin ? { githubLogin } : null, organization?.slug);
+  }, [githubLogin, organization?.slug]);
   const atRiskCount = new Set(disasters.data?.flatMap((item) => item.affectedEnvironmentIds)).size;
 
   if (isPending) return <ShellSkeleton />;
