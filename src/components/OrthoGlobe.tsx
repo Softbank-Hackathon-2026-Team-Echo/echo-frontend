@@ -9,8 +9,6 @@ export type GlobeRegion = {
   lng: number;
   /** 점 색: 환경 종류(provider 토큰). Azure 는 provider 토큰이 없어 chart-1 을 쓴다 */
   provider: GlobeProvider;
-  /** 시연 환경: 큰 점 + 테두리 */
-  highlight?: boolean;
 };
 
 export type GlobeProvider = 'aws' | 'gcp' | 'azure' | 'onprem';
@@ -212,7 +210,7 @@ export function OrthoGlobe({
         }
       });
 
-      // 리전 점: 환경 종류 색. 시연 환경은 크게 + 테두리(이름은 지구본 위 칩이 보여 준다)
+      // 리전 점: 모두 같은 크기 + 테두리, 색은 환경 종류(이름은 범례 칩이 보여 준다)
       for (const region of regions) {
         const point: [number, number] = [region.lng, region.lat];
         if (geoDistance(point, front) > Math.PI / 2 - 0.05) continue;
@@ -221,18 +219,16 @@ export function OrthoGlobe({
         const [x, y] = projected;
         const color = colors[region.provider];
         context.beginPath();
-        context.arc(x, y, region.highlight ? 4.2 : 2.8, 0, Math.PI * 2);
+        context.arc(x, y, 4.2, 0, Math.PI * 2);
         context.fillStyle = color;
         context.fill();
-        if (region.highlight) {
-          context.beginPath();
-          context.arc(x, y, 7.5, 0, Math.PI * 2);
-          context.strokeStyle = color;
-          context.globalAlpha = 0.35;
-          context.lineWidth = 2;
-          context.stroke();
-          context.globalAlpha = 1;
-        }
+        context.beginPath();
+        context.arc(x, y, 7.5, 0, Math.PI * 2);
+        context.strokeStyle = color;
+        context.globalAlpha = 0.35;
+        context.lineWidth = 2;
+        context.stroke();
+        context.globalAlpha = 1;
       }
 
       if (animate && !stopped) frame = requestAnimationFrame(draw);

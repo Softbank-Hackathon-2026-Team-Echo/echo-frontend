@@ -6,19 +6,18 @@ import {
 } from '@/components/OrthoGlobe';
 import { usePrefersReducedMotion } from './usePrefersReducedMotion';
 
-// 환경 종류별 리전(색 = provider). 한국 · 일본은 시연 3곳(서울 GCP · 도쿄 AWS · 후쿠오카 온프레)만 두고,
+// 환경 종류별 리전(색 = provider, 모두 같은 크기). 한국 · 일본은 시연 3곳(서울 GCP · 도쿄 AWS · 후쿠오카 온프레)만 두고,
 // 나머지는 세계 여러 나라에 퍼뜨린다
 const REGIONS: GlobeRegion[] = [
   // 시연
-  { key: 'tokyo', label: 'AWS · Tokyo', lat: 35.68, lng: 139.69, provider: 'aws', highlight: true },
-  { key: 'seoul', label: 'GCP · Seoul', lat: 37.57, lng: 126.98, provider: 'gcp', highlight: true },
+  { key: 'tokyo', label: 'AWS · Tokyo', lat: 35.68, lng: 139.69, provider: 'aws' },
+  { key: 'seoul', label: 'GCP · Seoul', lat: 37.57, lng: 126.98, provider: 'gcp' },
   {
     key: 'fukuoka',
     label: 'On-prem · Fukuoka',
     lat: 33.59,
     lng: 130.4,
     provider: 'onprem',
-    highlight: true,
   },
   // AWS
   { key: 'singapore', label: 'AWS · Singapore', lat: 1.35, lng: 103.82, provider: 'aws' },
@@ -45,7 +44,7 @@ const REGIONS: GlobeRegion[] = [
   { key: 'mexico', label: 'On-prem · Mexico City', lat: 19.43, lng: -99.13, provider: 'onprem' },
 ];
 
-// 대피 경로: 한국 · 일본에서 세계 여러 나라로 나가고 들어온다(방향을 섞는다)
+// 대피 경로: 한국 · 일본과 세계 여러 나라 사이, 그리고 다른 나라끼리도 오간다(방향을 섞는다)
 const ARCS: GlobeArc[] = [
   { from: 'tokyo', to: 'seoul' },
   { from: 'tokyo', to: 'oregon' },
@@ -62,6 +61,19 @@ const ARCS: GlobeArc[] = [
   { from: 'fukuoka', to: 'hongkong' },
   { from: 'netherlands', to: 'virginia' },
   { from: 'capetown', to: 'stockholm' },
+  // 다른 나라끼리
+  { from: 'oregon', to: 'london' },
+  { from: 'saopaulo', to: 'frankfurt' },
+  { from: 'iowa', to: 'santiago' },
+  { from: 'mumbai', to: 'dubai' },
+  { from: 'singapore', to: 'sydney' },
+  { from: 'jakarta', to: 'mumbai' },
+  { from: 'toronto', to: 'mexico' },
+  { from: 'london', to: 'capetown' },
+  { from: 'hongkong', to: 'singapore' },
+  { from: 'virginia', to: 'saopaulo' },
+  { from: 'stockholm', to: 'dubai' },
+  { from: 'taiwan', to: 'sydney' },
 ];
 
 // 110m 육지 데이터에 없는 섬. 실제 크기(°) 대로 그리되 화면에서 너무 작으면 최소 크기
