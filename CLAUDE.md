@@ -57,6 +57,7 @@ src/
 │  ├─ roles.ts           # hasRole · 역할 표기
 │  ├─ status.ts          # 서버 상태 값 → 화면 문구·색 (StatusBadge 와 짝), 오류 코드 → 문구
 │  ├─ migration-*.ts     # 이전 단계 시간(stages) · 결과 숫자(metrics) · Failback 판정(mode). 두 화면 이상에서 쓴다
+│  ├─ route-prefetch.ts  # 메뉴 의도(마우스 올림 · 포커스) 때 화면 청크 미리 받기 · route-pattern.ts(Sentry 화면 이름)
 │  ├─ geo.ts             # 리전·도시 → 좌표(계약 4-1 🆕 전까지), 거리 계산
 │  ├─ onboarding.ts      # 온보딩 단계 판단(환경·서비스 데이터로, 저장 없음). 온보딩 화면과 대시보드 안내가 같이 쓴다
 │  ├─ format.ts          # 상대 시각·경과 시간
@@ -199,3 +200,4 @@ docs/                    # api-contract.md, perf.md(성능 측정 방법 · 기�
 | 11/3 | 소스맵은 Cloudflare Pages 빌드에서 만들어 Sentry 에 올리고 dist 에서 지운다(`hidden`). 릴리스 이름은 커밋 SHA | 운영 파일은 GitHub Actions 가 아니라 Cloudflare 가 빌드해서, 같은 빌드의 소스맵이어야 줄 번호가 맞는다. 원본 코드를 공개하지 않는다 |
 | 11/3 | 성능은 같은 방법으로 전후를 잰다(`docs/perf.md`): Sentry Web Vitals(화면 이름 = 경로 패턴), 대시보드 다시 불러오기 1번의 칸별 렌더 수(Profiler 테스트), 번들 예산. 기준선은 '같은 응답에도 모든 칸이 1번씩 다시 그려짐' | 최적화(React Compiler · 화면 밖 멈추기 · 미리 받기)의 효과를 숫자로 보이려면 바꾸기 전 값이 있어야 한다. 주소 그대로면 같은 화면이 조직 · id 마다 따로 묶인다 |
 | 11/3 | `public/_headers` 로 iframe 금지(`X-Frame-Options: DENY` + `frame-ancestors 'none'`) · `Permissions-Policy`(카메라 · 마이크 · 위치 · 결제 · USB 끔) · `/assets/*` 1년 immutable 캐시. CSP 는 frame-ancestors 만 | 관리 화면이 로그인 세션으로 승인 · 배포를 하므로 클릭재킹을 막는다. Pages 기본값은 /assets 4시간 + 재검증이라, 해시 파일 이름을 믿고 재검증을 없앤다. 스크립트 출처 CSP 는 기능이 조용히 멈출 위험이 있어 보고 모드부터 따로 |
+| 11/3 | 사이드바 메뉴에 마우스를 올리거나 포커스 · 터치하면 그 경로의 지연 로드 청크를 미리 받는다(`lib/route-prefetch`, 라우터 표를 router.tsx 가 넘김). 첫 화면에서 전부 미리 받지는 않는다 | 메뉴를 누른 뒤 청크를 받는 동안 기다리지 않게. 전부 미리 받으면 첫 화면이 무거워진다. React Router 의 Link prefetch 는 framework 모드 전용이라 직접 만든다 |

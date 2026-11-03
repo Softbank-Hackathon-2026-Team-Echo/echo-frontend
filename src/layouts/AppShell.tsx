@@ -22,6 +22,7 @@ import {
   Link,
   NavLink,
   Outlet,
+  useHref,
   useLocation,
   useMatches,
   useNavigate,
@@ -53,6 +54,7 @@ import { useCurrentOrg } from '@/lib/api/me';
 import type { Organization, User } from '@/lib/api/types';
 import { setMonitoringUser } from '@/lib/monitoring';
 import { roleLabel } from '@/lib/roles';
+import { prefetchRoute } from '@/lib/route-prefetch';
 import { CreateOrgDialog } from './CreateOrgDialog';
 
 // 와이어프레임 v2 사이드바: 대시보드 + 묶음 3개, 설정은 아래 (노션 IA 1절)
@@ -96,6 +98,9 @@ function NavItem({
   end?: boolean;
   badge?: number;
 }) {
+  const href = useHref(to);
+  // 누르기 전에 화면 코드를 받아 둔다(마우스 올림 · 키보드 포커스 · 터치 시작)
+  const prefetch = () => prefetchRoute(href);
   return (
     <Tooltip>
       <TooltipTrigger asChild>
@@ -103,6 +108,9 @@ function NavItem({
         <NavLink
           to={to}
           end={end}
+          onMouseEnter={prefetch}
+          onFocus={prefetch}
+          onTouchStart={prefetch}
           className="relative flex h-9 items-center gap-3 rounded-md px-3 text-body-medium text-fg-secondary transition-colors hover:bg-subtle hover:text-fg aria-[current=page]:bg-brand-subtle aria-[current=page]:text-brand-on-subtle max-compact:justify-center max-compact:px-0"
         >
           <Icon aria-hidden className="size-4 shrink-0" />
