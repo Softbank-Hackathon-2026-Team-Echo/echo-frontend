@@ -1,84 +1,46 @@
-import { useEffect, useRef } from 'react';
-import { useTheme } from '@/hooks/useTheme';
-import { readTokenRgb } from './globe-colors';
+import { type GlobeArc, type GlobeRegion, OrthoGlobe } from '@/components/OrthoGlobe';
 import { usePrefersReducedMotion } from './usePrefersReducedMotion';
 
-// 시연 환경 3곳 (위도, 경도)
-const TOKYO: [number, number] = [35.68, 139.69];
-const SEOUL: [number, number] = [37.57, 126.98];
-const FUKUOKA: [number, number] = [33.59, 130.4];
+// 시연 3곳은 색으로, 나머지는 EchoPort 가 붙일 수 있는 주요 리전(작은 점)
+const REGIONS: GlobeRegion[] = [
+  { key: 'tokyo', label: 'AWS · Tokyo', lat: 35.68, lng: 139.69, tone: 'danger' },
+  { key: 'seoul', label: 'GCP · Seoul', lat: 37.57, lng: 126.98, tone: 'migrating' },
+  { key: 'fukuoka', label: 'On-prem · Fukuoka', lat: 33.59, lng: 130.4, tone: 'success' },
+  { key: 'osaka', label: 'Osaka', lat: 34.69, lng: 135.5 },
+  { key: 'taiwan', label: 'Taiwan', lat: 24.1, lng: 120.7 },
+  { key: 'singapore', label: 'Singapore', lat: 1.35, lng: 103.82 },
+  { key: 'sydney', label: 'Sydney', lat: -33.87, lng: 151.21 },
+  { key: 'mumbai', label: 'Mumbai', lat: 19.08, lng: 72.88 },
+  { key: 'frankfurt', label: 'Frankfurt', lat: 50.11, lng: 8.68 },
+  { key: 'ireland', label: 'Ireland', lat: 53.35, lng: -6.26 },
+  { key: 'virginia', label: 'N. Virginia', lat: 38.9, lng: -77.4 },
+  { key: 'oregon', label: 'Oregon', lat: 45.6, lng: -121.2 },
+  { key: 'saopaulo', label: 'São Paulo', lat: -23.55, lng: -46.63 },
+];
 
-// 동아시아가 정면에 오는 각도. cobe 는 경도 0 이 phi = -π/2 다
-const START_PHI = Math.PI - ((133 * Math.PI) / 180 - Math.PI / 2);
-// 지구본 아래쪽은 대시보드 그림이 덮으므로 북위 35° 근처(시연 3곳)가 윗부분에 오게 기울인다
-const THETA = -0.25;
-const SPIN_PER_FRAME = 0.0025;
+// 대피 경로: 시연(도쿄 → 서울 · 후쿠오카)과 다른 리전 사이 이동
+const ARCS: GlobeArc[] = [
+  { from: 'tokyo', to: 'seoul' },
+  { from: 'tokyo', to: 'fukuoka' },
+  { from: 'seoul', to: 'singapore' },
+  { from: 'osaka', to: 'oregon' },
+  { from: 'singapore', to: 'sydney' },
+  { from: 'taiwan', to: 'mumbai' },
+];
 
-/** 히어로 지구본(cobe). 항상 천천히 돈다. 움직임 줄이기면 동아시아에서 멈춘다 */
+// 동아시아가 정면 조금 위에 오게 (아래쪽은 대시보드 그림이 덮는다)
+const CENTER: [number, number] = [128, -4];
+
+/** 히어로 지구본. 육지는 면, 리전은 점, 대피 경로는 항로처럼 떠오르는 곡선. 움직임 줄이기면 멈춘다 */
 export function HeroGlobe({ className }: { className?: string }) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const { theme } = useTheme();
   const isReducedMotion = usePrefersReducedMotion();
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    // jsdom·WebGL 이 없는 브라우저에서는 그리지 않는다(바탕 원만 남는다)
-    if (!canvas || typeof WebGLRenderingContext === 'undefined') return;
-
-    let destroyed = false;
-    let globe: { destroy: () => void } | undefined;
-    let phi = START_PHI;
-
-    import('cobe').then(({ default: createGlobe }) => {
-      if (destroyed) return;
-      const size = canvas.offsetWidth;
-      const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
-      try {
-        globe = createGlobe(canvas, {
-          devicePixelRatio: pixelRatio,
-          width: size * pixelRatio,
-          height: size * pixelRatio,
-          phi,
-          theta: THETA,
-          dark: theme === 'dark' ? 1 : 0,
-          diffuse: 1.1,
-          mapSamples: 16_000,
-          // 밝은 테마는 바다가 baseColor, 육지 점이 그보다 어둡다. 밝기를 낮춰 점을 옅은 남색으로 둔다
-          mapBrightness: theme === 'dark' ? 6 : 0.7,
-          mapBaseBrightness: 0,
-          baseColor: readTokenRgb('--ep-color-globe-land'),
-          markerColor: readTokenRgb('--ep-color-globe-arc'),
-          glowColor: readTokenRgb('--ep-color-globe-sphere'),
-          markers: [
-            { location: TOKYO, size: 0.07, color: readTokenRgb('--ep-color-status-danger-solid') },
-            {
-              location: SEOUL,
-              size: 0.07,
-              color: readTokenRgb('--ep-color-status-migrating-solid'),
-            },
-            {
-              location: FUKUOKA,
-              size: 0.06,
-              color: readTokenRgb('--ep-color-status-success-solid'),
-            },
-          ],
-          onRender: (state) => {
-            if (!isReducedMotion) phi += SPIN_PER_FRAME;
-            state.phi = phi;
-            state.width = canvas.offsetWidth * pixelRatio;
-            state.height = canvas.offsetWidth * pixelRatio;
-          },
-        });
-      } catch {
-        // WebGL 컨텍스트를 못 얻으면 지구본 없이 둔다
-      }
-    });
-
-    return () => {
-      destroyed = true;
-      globe?.destroy();
-    };
-  }, [theme, isReducedMotion]);
-
-  return <canvas ref={canvasRef} aria-hidden className={className} />;
+  return (
+    <OrthoGlobe
+      regions={REGIONS}
+      arcs={ARCS}
+      center={CENTER}
+      animate={!isReducedMotion}
+      className={className}
+    />
+  );
 }

@@ -63,3 +63,24 @@ await writeFile(
   }),
 );
 console.warn(`countries ${countries.length}, border lines ${borderLines.length}`);
+
+// 소개·온보딩 지구본(정사영)용 세계 육지. 면으로 채우므로 국경 없이 land 만, 0.1° 로 반올림
+const landTopology = JSON.parse(
+  await readFile(require.resolve('world-atlas/land-110m.json'), 'utf8'),
+);
+const roundLine = (points) =>
+  points.map(([lng, lat]) => [Number(lng.toFixed(1)), Number(lat.toFixed(1))]);
+const land = feature(landTopology, landTopology.objects.land);
+const landGeometry = {
+  type: 'MultiPolygon',
+  coordinates: land.features.flatMap((item) =>
+    item.geometry.type === 'Polygon'
+      ? [item.geometry.coordinates.map(roundLine)]
+      : item.geometry.coordinates.map((polygon) => polygon.map(roundLine)),
+  ),
+};
+await writeFile(
+  new URL('../src/assets/geo/world-land-110m.json', import.meta.url),
+  JSON.stringify(landGeometry),
+);
+console.warn(`world land polygons ${landGeometry.coordinates.length}`);

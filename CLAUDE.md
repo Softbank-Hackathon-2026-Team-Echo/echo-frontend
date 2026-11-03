@@ -47,7 +47,7 @@ src/
 │  ├─ disaster/          # 재난 시뮬레이션 다이얼로그(S01-D) · 지도(DisasterMap, d3-geo + world-atlas 50m 지연 로드)
 │  └─ *.tsx              # 두 화면 이상에서 쓰는 앱 컴포넌트 (Panel, RoleButton, StatusBadge, SimulatedBadge, ProviderLabel, FormField, ConfirmDeleteDialog, ExternalLink, EmptyState, ErrorState, ScreenErrorBoundary, Logo …)
 ├─ layouts/AppShell.tsx  # 사이드바(워드마크 · Operate/Resilience/Govern 묶음 · 사용자 메뉴=테마·로그아웃) + 상단 바(브레드크럼 · Org 선택 · Simulate disaster · 알림)
-├─ pages/                # 화면 단위 폴더 (login/, root/, landing/(L01 소개 · cobe 지구본 지연 로드), dashboard/, services/, evacuation/, migrations/, settings/, dev/). 한 화면에서만 쓰는 컴포넌트는 그 폴더 안에
+├─ pages/                # 화면 단위 폴더 (login/, root/, landing/(L01 소개), dashboard/, services/, evacuation/, migrations/, settings/, dev/). 한 화면에서만 쓰는 컴포넌트는 그 폴더 안에
 ├─ hooks/                # useTheme(테마 3개, localStorage), useRole(현재 조직 역할), useNow(경과 시간)
 ├─ lib/
 │  ├─ api/               # client(api = openapi-fetch + unwrap, 스키마 밖 경로는 apiFetch) · errors · notify · form-errors(422 → 칸 오류)
@@ -168,7 +168,8 @@ docs/                    # api-contract.md, PR.md(커밋 안 함)
 | 11/3 | M02 Result 의 쓰기 정지 시간·누락/중복 행·RPO 는 `—` + 측정 출처로 둔다. 실패 요청·총 시간·최대 복제 지연은 단계 지표로 채운다 | 데이터 이전 엔진(인프라 #7)이 아직 서버에 값을 주지 않는다. PoC 숫자(로컬)를 운영 결과처럼 보이게 쓰지 않는다 |
 | 11/3 | 복귀(Start failback)는 출발·도착을 바꾼 새 계획(E01-3)으로 보낸다. 출발 환경이 진행 중 재난 반경 안이면 버튼을 막는다 | API 서버 8: 되돌아가기는 바꾼 새 계획이다. ADR 11/2: 재난이 끝나지 않은 지역으로는 복귀하지 않는다 |
 | 11/3 | `/` 는 `/me` 를 조용히(401 에도 로그인 이동 없이, 재시도 없이) 불러 로그인 전·API 불통이면 L01 소개, 로그인했으면 조직으로 보낸다(`useSession`, `unwrap(…, { redirectOnUnauthorized: false })`) | 로그인 전 방문자가 첫 화면에서 바로 /login 으로 튕기지 않게. 다른 화면의 401 → 로그인 이동은 그대로 둔다 |
-| 11/3 | L01 지구본은 cobe 0.6.5(정확한 버전 고정, 동적 import 로 소개 화면 청크에서도 분리). 색은 `--ep-color-globe-*`·상태 solid 를 런타임에 읽고, 움직임 줄이기면 회전·숫자 세기·지역 띠를 멈춘다 | 2.x 는 API 가 달라 검증된 0.6 을 쓴다. 로그인한 사람의 첫 번들에 넣지 않는다 |
+| ~~11/3~~ | ~~L01 지구본은 cobe 0.6.5(정확한 버전 고정, 동적 import 로 소개 화면 청크에서도 분리). 색은 `--ep-color-globe-*`·상태 solid 를 런타임에 읽고, 움직임 줄이기면 회전·숫자 세기·지역 띠를 멈춘다~~ → 11/3 번복 | |
+| 11/3 | 지구본은 d3-geo 정사영 + canvas(`components/OrthoGlobe`)로 그린다. 육지는 면(world-atlas land 110m, 0.1° 반올림, 20KB gzip), 리전은 점, 노드 사이는 대원 경로를 따라 떠오르는 곡선. cobe 는 지운다 | cobe 는 육지를 점으로만 그리고 곡선이 없다. react-globe.gl 은 three.js 라 무겁다(ADR 11/2 에서도 제외). 같은 컴포넌트를 O02 온보딩 지구본에 쓴다 |
 | 11/3 | L01 큰 글자(Display 60 · 제목 44 · 숫자 64 · Body L 17 · 15)는 `index.css` 의 소개 화면 전용 `text-display`·`text-headline`·`text-stat`·`text-lead`·`text-lead-sm` 로 둔다 | Figma 텍스트 스타일(EchoPort/Display · Body L)과 L01 프레임 값이고 아직 변수(tokens.css)가 아니다. 변수가 생기면 `var(--ep-type-*)` 로 바꾼다 |
 | 11/3 | L01 ⑥ 숫자(0 · 0 · ≤ 90 s · 3m 17s)는 "Demo targets · to be replaced with rehearsal measurements" 로 밝히고, 미니 UI·제품 화면 그림에는 `Illustration` 캡션을 단다 | 아직 잰 값이 아니다. 예시 값을 실데이터로 오해하지 않게(심사 규칙) |
 | 11/3 | 대시보드 완료 카드는 30분 안에 성공한 이전이 있으면 한 번 뜬다(탭마다 닫은 것을 기억). "View full result" 를 눌러야 M02 Result 로 간다 | IA 11/2: 자동으로 넘어가지 않는다. 쓰기 정지 시간·RPO 는 API 전까지 `—` |
