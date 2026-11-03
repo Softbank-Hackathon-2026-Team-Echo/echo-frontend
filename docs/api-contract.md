@@ -52,7 +52,7 @@
 | 앱 껍데기 (상단 조직 선택·사용자) | `GET /me` · `POST /auth/logout` · `POST /orgs` | ✅ |
 | O01~O03 온보딩 | 환경 등록과 같은 API + 서비스 등록·배포 API + 재난 시뮬레이션(4-3) | ✅ / 🆕 |
 | SET 환경 탭 | `GET /environment-kinds`(종류별 입력칸) · `GET·POST·PATCH·DELETE /orgs/{orgId}/environments…` · `POST …/connection-check` | ✅ / 🔁 좌표(4-1) · 🔁 목록 클러스터 요약(아래) |
-| SET 멤버 탭 | `GET·PATCH·DELETE …/members` · `GET·POST·DELETE …/invitations` · `GET·POST·DELETE …/agent-tokens` | ✅ |
+| SET 멤버 탭 | `GET·PATCH·DELETE …/members` · `GET·POST·DELETE …/invitations` · `GET·POST·DELETE …/agent-tokens` · `PATCH …/settings {allowSelfApproval}` | ✅ (11/3 연결) |
 | SVC 서비스 목록 | `GET /orgs/{orgId}/services` | ✅ / 🔁 목록 요약(아래) |
 | SVC 서비스 상세 | `GET …/services/{id}` (환경별 연결: `role`·`trafficWeight`·`versionStatus`·`url`) · `GET …/services/{id}/deploy-requests` | ✅ |
 | SVC 서비스 등록 | `POST …/services` (`REPO_NOT_ACCESSIBLE`이면 `details[].value`의 GitHub App 설치 주소 안내) | ✅ |

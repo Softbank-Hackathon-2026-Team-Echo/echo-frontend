@@ -10,6 +10,9 @@ const REASONS: Record<string, string> = {
   EXACTLY_ONE_OF_BRANCH_OR_COMMIT_SHA: 'Enter a branch or a commit, not both.',
   ENVIRONMENT_NAME_CONFLICT: 'This name is already used in this organization.',
   SERVICE_NAME_CONFLICT: 'This name is already used in this organization.',
+  GITHUB_USER_NOT_FOUND: 'No GitHub user has this username.',
+  ALREADY_MEMBER: 'That GitHub user is already a member.',
+  EXPIRES_IN_DAYS_TOO_LONG: 'Tokens can last at most 90 days.',
 };
 
 function humanize(reason: string): string {

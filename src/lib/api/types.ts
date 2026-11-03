@@ -28,6 +28,12 @@ export type MemberRole = Schemas['OrganizationRole'];
 
 export type User = Schemas['UserResponse'];
 export type Organization = Schemas['OrganizationResponse'];
+export type Member = Schemas['MemberResponse'];
+export type Invitation = Schemas['InvitationResponse'];
+export type AgentToken = Schemas['AgentTokenResponse'];
+export type IssuedAgentToken = Schemas['IssuedAgentTokenResponse'];
+export type CreateInvitation = Schemas['CreateInvitationRequest'];
+export type CreateAgentToken = Schemas['CreateAgentTokenRequest'];
 export type Me = Schemas['MeResponse'];
 
 export type ConnectionStatus = Schemas['EnvironmentSummaryResponse']['connectionStatus'];
