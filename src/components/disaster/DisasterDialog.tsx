@@ -23,6 +23,9 @@ import {
 import {
   type DisasterType,
   EPICENTER_PRESETS,
+  EVACUATION_MIN_MAGNITUDE,
+  LIVE_FEED,
+  meetsEvacuationThreshold,
   previewDisaster,
   useCreateDisaster,
 } from '@/lib/api/disasters';
@@ -64,6 +67,7 @@ export function DisasterDialog({
     [items, magnitude, epicenter],
   );
   const affected = new Set(preview.affected);
+  const triggers = meetsEvacuationThreshold({ type, magnitude });
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -143,6 +147,9 @@ export function DisasterDialog({
                 {MAGNITUDES.map((value) => (
                   <SelectItem key={value} value={String(value)}>
                     M{value.toFixed(1)}
+                    {type === 'EARTHQUAKE' && value === EVACUATION_MIN_MAGNITUDE && (
+                      <span className="text-caption text-fg-muted">evacuation threshold</span>
+                    )}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -154,6 +161,27 @@ export function DisasterDialog({
               Epicenter {nearLabel(epicenter)}
             </span>
           </div>
+
+          <dl className="flex flex-col gap-1 text-small">
+            <div className="flex flex-wrap items-center gap-2">
+              <dt className="text-fg-secondary">Evacuation rule</dt>
+              <dd>
+                {type === 'EARTHQUAKE'
+                  ? `Magnitude ${EVACUATION_MIN_MAGNITUDE.toFixed(1)} or above`
+                  : 'No threshold yet. Every typhoon counts.'}
+              </dd>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <dt className="text-fg-secondary">Source</dt>
+              <dd className="flex flex-wrap items-center gap-2">
+                <StatusBadge label="Manual (simulated)" tone="neutral" />
+                {/* 실제 지진 피드를 붙이면 이 자리에서 고른다 (11/2 2부: 시간이 되면 연동) */}
+                <span className="text-fg-muted">
+                  Live feed ({LIVE_FEED.name}) {LIVE_FEED.ready ? 'connected' : 'not connected yet'}
+                </span>
+              </dd>
+            </div>
+          </dl>
 
           <div
             className={cn(
@@ -171,6 +199,13 @@ export function DisasterDialog({
               {preview.affected.length} environment{preview.affected.length === 1 ? '' : 's'}{' '}
               affected · {preview.safe.length} safe target{preview.safe.length === 1 ? '' : 's'}
             </span>
+            {preview.affected.length > 0 && (
+              <span className="text-small text-fg-secondary">
+                {triggers
+                  ? 'Above the threshold. EchoPort proposes an evacuation for services on affected environments.'
+                  : `Below M${EVACUATION_MIN_MAGNITUDE.toFixed(1)}. Affected environments are flagged, but no evacuation is proposed.`}
+              </span>
+            )}
             <ul className="flex flex-col gap-1.5">
               {items.map((environment) => (
                 <li key={environment.id} className="flex items-center justify-between gap-2">

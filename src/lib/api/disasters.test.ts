@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { distanceKm } from '../geo';
-import { previewDisaster, radiusForMagnitude } from './disasters';
+import {
+  EVACUATION_MIN_MAGNITUDE,
+  meetsEvacuationThreshold,
+  previewDisaster,
+  radiusForMagnitude,
+} from './disasters';
 
 const environments = [
   { id: 'tokyo', location: 'ap-northeast-1' },
@@ -43,5 +48,20 @@ describe('distanceKm', () => {
     const km = distanceKm({ lat: 35.68, lng: 139.69 }, { lat: 37.57, lng: 126.98 });
     expect(km).toBeGreaterThan(1100);
     expect(km).toBeLessThan(1200);
+  });
+});
+
+describe('meetsEvacuationThreshold', () => {
+  it('지진은 기준 규모 이상일 때만 이전 대상이다', () => {
+    expect(
+      meetsEvacuationThreshold({ type: 'EARTHQUAKE', magnitude: EVACUATION_MIN_MAGNITUDE }),
+    ).toBe(true);
+    expect(
+      meetsEvacuationThreshold({ type: 'EARTHQUAKE', magnitude: EVACUATION_MIN_MAGNITUDE - 0.2 }),
+    ).toBe(false);
+  });
+
+  it('태풍은 기준이 아직 없어 항상 대상이다', () => {
+    expect(meetsEvacuationThreshold({ type: 'TYPHOON', magnitude: 1 })).toBe(true);
   });
 });

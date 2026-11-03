@@ -58,7 +58,7 @@
 | SVC 서비스 등록 | `POST …/services` (`REPO_NOT_ACCESSIBLE`이면 `details[].value`의 GitHub App 설치 주소 안내) | ✅ |
 | SVC 배포 | `POST …/services/{id}/deploy-requests` `{environmentId, branch \| commitSha}` | ✅ |
 | SVC 배포 진행 | `GET /orgs/{orgId}/deploy-requests/{id}` (`status`·`stageTimes`·`build.reused`·`errorCode`·`revertStatus`) | ✅ (실시간 전까지 2초 폴링) |
-| SVC 배포 로그 | 배포 로그 줄 | 🆕 (API 서버 4 예정) |
+| SVC 배포 이력 · 되돌리기 · 로그 | 이력 `rollbackable`·`isCurrent` · `POST /orgs/{orgId}/deploy-requests/{id}/rollback` · `GET …/deploy-requests/{id}/logs?source=DEPLOY_JOB\|BUILD\|RUNTIME&cursor&limit` | ✅ (11/3 운영) |
 | S01 대시보드 | 환경 목록 · 서비스 상세 · 지표(4-2) · 진행 중 재난(4-3) · 최근 이벤트·활동(4-8) | ✅ / 🆕 |
 | S01-D 재난 시뮬레이션 · S01-R 휴대폰 리모컨 | 재난 만들기·미리보기(4-3) | 🆕 |
 | E01-1 대피처 고르기 | 대피 후보·점수(4-4) | 🆕 |
@@ -129,6 +129,8 @@ data: {"seq": 1042, "ts": "2026-11-07T03:05:40Z", "orgId": "…", "resource": {"
 KPI 타일 5개(성공률·p95·복제 지연·트래픽 비율·에러 버짓)와 스파크라인, A/B 요청 그래프가 이 하나로 그려진다.
 
 ### 4-3. 재난 (2차 P1)
+
+> 11/3: 지진 이전 기준은 규모 M7.0 이상(가칭, 11/2 2부 "7 또는 8"). 프론트는 `EVACUATION_MIN_MAGNITUDE` 상수로 두고 다이얼로그·대시보드·대피 화면에 보인다. 서버가 판정하게 되면 응답에 `meetsThreshold`(가칭)를 실어 주면 그 값을 쓴다. 출처는 `source: SIMULATED | LIVE_FEED`(가칭).
 
 | 동작 | 제안 |
 |---|---|

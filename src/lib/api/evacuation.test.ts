@@ -71,6 +71,7 @@ const service: ServiceDetail = {
 const tokyoQuake: Disaster = {
   id: 'd-1',
   type: 'EARTHQUAKE',
+  source: 'SIMULATED',
   magnitude: 7.2,
   epicenter: { lat: 35.2, lng: 139.4 },
   epicenterLabel: 'near Tokyo',

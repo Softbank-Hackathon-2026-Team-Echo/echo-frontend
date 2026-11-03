@@ -1,6 +1,12 @@
 import { RoleButton } from '@/components/RoleButton';
 import { SimulatedBadge } from '@/components/SimulatedBadge';
-import { type Disaster, useEndDisaster } from '@/lib/api/disasters';
+import { StatusBadge } from '@/components/StatusBadge';
+import {
+  type Disaster,
+  EVACUATION_MIN_MAGNITUDE,
+  meetsEvacuationThreshold,
+  useEndDisaster,
+} from '@/lib/api/disasters';
 
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
@@ -43,6 +49,19 @@ export function ActiveDisasterCard({
         <Row
           label="Impact radius"
           value={<span className="tabular-nums">{disaster.radiusKm} km</span>}
+        />
+        <Row
+          label="Evacuation rule"
+          value={
+            disaster.type === 'EARTHQUAKE' ? (
+              <StatusBadge
+                label={`${meetsEvacuationThreshold(disaster) ? 'Met' : 'Not met'} · M${EVACUATION_MIN_MAGNITUDE.toFixed(1)}+`}
+                tone={meetsEvacuationThreshold(disaster) ? 'danger' : 'neutral'}
+              />
+            ) : (
+              'No threshold'
+            )
+          }
         />
         <Row label="Affected" value={list(disaster.affectedEnvironmentIds)} />
         <Row label="Safe targets" value={list(disaster.safeEnvironmentIds)} />

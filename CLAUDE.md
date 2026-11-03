@@ -2,7 +2,7 @@
 
 Team Echo 멀티 클라우드 관리 플랫폼 **EchoPort**의 웹 프론트다. AWS·GCP·온프레 클러스터를 환경으로 등록하고, 서비스를 배포하고, 재난이 나면 다른 환경으로 무중단 이전하는 과정을 한 화면에서 보여 주고 조작한다. 지금은 규칙 문서와 디자인 토큰, API 계약만 있다. 골격은 [specs/fe-1-scaffold.md](specs/fe-1-scaffold.md)에서 만든다.
 
-- **스택**: Vite, React, TypeScript(strict), react-router, TanStack Query, Tailwind CSS v4, shadcn/ui, lucide-react, MSW, openapi-typescript + openapi-fetch, Biome, Vitest + Testing Library. Node 22, pnpm
+- **스택**: Vite, React, TypeScript(strict), react-router, TanStack Query, Tailwind CSS v4, shadcn/ui, lucide-react, openapi-typescript + openapi-fetch, Biome, Vitest + Testing Library(+ MSW 는 테스트의 HTTP 가로채기만). Node 22, pnpm
 - **백엔드**: echo-was(FastAPI). 이미 있는 API의 원본은 echo-was `docs/api/*.md`이고, 화면 → API 연결표와 새 API 요청 초안은 [docs/api-contract.md](docs/api-contract.md)에 둔다
 - **배포**: Cloudflare Pages. 운영 주소 `https://app.echoport.uk`, API `https://api.echoport.uk`
 - **원장**: 본선 필수 기능 정리 `final_features_v6.md`(F1~F17). 기능 번호는 이 원장을 따른다. 화면 ID(L00·S01·E01-1 …)는 노션 「화면 목록 (프론트 IA)」과 Figma 「Wire Frame」 페이지를 따른다
@@ -38,7 +38,7 @@ Team Echo 멀티 클라우드 관리 플랫폼 **EchoPort**의 웹 프론트다.
 
 ```text
 src/
-├─ main.tsx              # 진입점. 테마 적용 → (VITE_USE_MOCKS=true면) MSW 워커 시작 → 렌더
+├─ main.tsx              # 진입점. 테마 적용 → 예전 목업 서비스 워커가 남았으면 지움 → 렌더
 ├─ App.tsx               # QueryClient · Tooltip · Toaster · Router 공급자
 ├─ router.tsx            # 라우트 표 (/login, /, /o/:slug/*, /dev/tokens(개발만), 404). 메뉴 경로는 ui-terms §3
 ├─ styles/               # tokens.css → shadcn-theme.css → index.css(Tailwind @theme 연결) 순서
@@ -58,11 +58,10 @@ src/
 │  ├─ status.ts          # 서버 상태 값 → 화면 문구·색 (StatusBadge 와 짝)
 │  ├─ geo.ts             # 리전·도시 → 좌표(계약 4-1 🆕 전까지), 거리 계산
 │  ├─ format.ts          # 상대 시각·경과 시간
-│  ├─ env.ts             # USE_MOCKS
 │  └─ utils.ts           # cn() (커스텀 글자 스타일을 아는 tailwind-merge)
-├─ mocks/                # MSW: browser · handlers · data (전부 // MOCK:)
+├─ assets/               # 로고 SVG · geo/east-asia-50m.json(재난 지도 해안선, scripts/trim-atlas.mjs 로 만든다)
 └─ test/                 # setup(MSW 서버·ResizeObserver) · msw-server · render(renderRoute)
-public/mockServiceWorker.js  # MSW 워커. 목업 아닌 빌드에서는 vite.config 가 dist 에서 지운다
+scripts/                # gen-api.mjs(API 타입) · trim-atlas.mjs(지도 데이터)
 specs/                   # 태스크 명세
 docs/                    # api-contract.md, PR.md(커밋 안 함)
 .claude/launch.json      # 브라우저 미리보기용 개발 서버 설정
@@ -97,10 +96,10 @@ docs/                    # api-contract.md, PR.md(커밋 안 함)
 - 서버 enum에 모르는 값이 와도 화면이 깨지지 않는다(중립 배지 + 원래 값 표시).
 - 실시간 이벤트는 "다시 불러와" 신호로만 쓰고 `invalidateQueries`를 부른다. 값을 싣는 예외는 `migration.metrics`뿐이다. 실시간이 생기기 전에는 배포 진행·이전 실행 화면만 2초 폴링한다.
 
-### 권한·목업
+### 권한·시뮬레이션
 - 역할은 VIEWER < DEVELOPER < ADMIN. 권한이 없는 버튼은 **숨기지 않고** 비활성 + 툴팁("Requires Developer")으로 보여 준다. `RoleButton`의 `requires`로만 처리한다.
-- 서버가 준 가짜 값(`simulated: true`)은 값 옆에 회색 `simulated` 배지를 단다. 프론트 목업(MSW)으로 보는 화면은 상단 바에 `Mock data` 배지를 단다. 심사 규칙상 목업을 숨기지 않는다.
-- 목업은 `src/mocks/`에만 두고 `VITE_USE_MOCKS=true`일 때만 켠다. 목업 데이터 모양은 계약 문서를 그대로 따른다.
+- 서버가 준 가짜 값(`simulated: true`)은 값 옆에 회색 `simulated` 배지를 단다. 심사 규칙상 가짜 값을 숨기지 않는다.
+- 앱에는 목업 응답이 없다(11/3). 화면은 운영 API 만 부른다. API 가 아직 없는 기능(재난·대피 후보)만 `lib/api/` 안에서 브라우저 시뮬레이션으로 만들고, 응답 모양은 계약 문서 그대로, 화면에는 항상 `simulated` 배지를 단다.
 
 ### 언어
 - **UI 문구는 영어**, 코드 주석과 문서·커밋 설명·PR은 **한국어**(이 문서처럼 한다체). 식별자는 영어.
@@ -111,7 +110,7 @@ docs/                    # api-contract.md, PR.md(커밋 안 함)
 
 - **패키지·실행**: `pnpm`(Node 22, `.nvmrc`). `npm`·`yarn`을 쓰지 않고 lock 파일은 `pnpm-lock.yaml` 하나만 커밋한다.
 - **명령**: 개발 서버 `pnpm dev`(5173 고정) / 빌드 `pnpm build` / 린트·포맷 검사 `pnpm lint`(고치기 `pnpm format`) / 타입 `pnpm typecheck` / 테스트 `pnpm test`(한 번 실행, 감시는 `pnpm test:watch`) / API 타입 생성 `pnpm gen:api`(`OPENAPI_URL`, 없으면 로컬 `openapi.json`).
-- **환경변수**: `.env.example`을 `.env.local`로 복사한다. `VITE_API_BASE_URL`(API 주소), `VITE_USE_MOCKS`(`true`면 MSW).
+- **환경변수**: `.env.example`을 `.env.local`로 복사한다. `VITE_API_BASE_URL`(API 주소) 하나. 운영 API 는 `https://app.echoport.uk` 출처만 받으므로, 로컬 화면 확인은 echo-was 를 로컬로 띄우거나 운영 배포 뒤 `app.echoport.uk` 에서 한다.
 - **품질 게이트**: Claude Code PreToolUse 훅(`.claude/settings.json`)이 `git add`·`git commit` 전에 `pnpm lint`·`pnpm typecheck`·`pnpm test`, `git push` 전에 `pnpm lint`를 돌려 실패하면 막는다(180초 제한). `package.json`이 없으면 건너뛴다.
 - **화면 확인**: 화면을 바꿨으면 `pnpm dev`로 띄워 브라우저에서 라이트·다크·projector를 확인한다. 테스트 통과만으로 화면이 맞다고 보고하지 않는다.
 - **PR 본문**: `write-pr` 스킬(`.claude/skills/write-pr/`)이 `.github/PULL_REQUEST_TEMPLATE.md` 구조로 `docs/PR.md`(gitignore)를 쓴다. GitHub PR은 사람이 만든다.
@@ -127,7 +126,7 @@ docs/                    # api-contract.md, PR.md(커밋 안 함)
 | 11/2 | 규칙 문서 구조를 echo-was와 같게(`CLAUDE.md` + `.claude/rules/` + 훅 + `write-pr` + `specs/`) | 팀 레포끼리 같은 위치에서 같은 규칙을 찾게 |
 | 11/2 | `AGENTS.md`를 두지 않는다 | 프론트는 1명이 Claude Code만 쓴다. 다른 에이전트 도구를 쓰게 되면 echo-was처럼 "CLAUDE.md를 따른다" 안내 파일만 더한다 |
 | 11/2 | 예선 `BOARD.md`·작업 로그를 두지 않는다 | 팀 결정과 할 일은 레포별 GitHub Projects가 추적한다 |
-| 11/2 | UI 키트는 shadcn/ui + Tailwind v4, 목업은 MSW | 예선(일반 CSS·UI 키트 없음·자체 목업)과 달리, 본선은 화면 수가 많고 Figma 토큰이 shadcn 변수로 연결돼 나온다 |
+| 11/2 | UI 키트는 shadcn/ui + Tailwind v4, 목업은 MSW(11/3 앱 목업 제거) | 예선(일반 CSS·UI 키트 없음·자체 목업)과 달리, 본선은 화면 수가 많고 Figma 토큰이 shadcn 변수로 연결돼 나온다 |
 | ~~11/2~~ | ~~Tailwind 간격 클래스 숫자 = px(`p-16` = 16px)~~ → 11/2 번복 | |
 | 11/2 | 간격은 Tailwind 기본 눈금(1 = 4px, `--spacing` = `--ep-space-4`)을 쓰고 토큰에 있는 값만 쓴다(`p-4` = 16px, `p-1.5` = 6px) | shadcn 컴포넌트가 기본 눈금(`h-9`, `px-4`)으로 짜여 있어 px 눈금이면 전부 고쳐야 한다. 토큰 간격은 모두 2px 단위라 기본 눈금 0.5 단계로 정확히 맞는다 |
 | 11/2 | 컨트롤 높이 32px(버튼 기본 `h-8`, 입력칸 `h-8`). shadcn 기본보다 한 단계 낮춤 | 노션 IA 와이어프레임 v2의 조밀한 밀도(본문 13px · 컨트롤 32px) |
@@ -140,7 +139,7 @@ docs/                    # api-contract.md, PR.md(커밋 안 함)
 | 11/2 | 운영 OpenAPI 로 `schema.d.ts`를 만들고 `api` + `unwrap` 으로 부른다. 화면 타입은 `types.ts` 별칭만 쓴다 | 운영 API 가 열렸다. 스키마가 바뀌면 타입 오류로 바로 드러난다 |
 | 11/2 | 재난(4-3)·좌표(4-1)는 API 가 생기기 전까지 브라우저 안에서 시뮬레이션한다(`lib/api/disasters.ts`, sessionStorage). 운영에서도 동작하고 항상 `simulated` 배지 | 재난은 원래 시뮬레이션이라 목업이라고 밝히면 심사 규칙에 맞고, MSW 를 끈 운영에서도 시연할 수 있다 |
 | 11/2 | 규모 → 반경은 `50·e^(0.9·(M−5.2))` km (M7.2 ≈ 300km), 가칭 | 계약 예시에 맞춘 임시 식. 규모별 반경 근거는 노션 IA 열린 질문 7 |
-| 11/2 | 되돌리기 API(API 서버 4) 전까지 배포 이력의 "Redeploy" 는 그 커밋으로 새 배포 요청을 만든다 | 같은 결과(예전 커밋으로 새 배포)를 지금 API 로 낼 수 있다. 되돌리기 API 가 생기면 `rollback_of_id` 를 남기는 쪽으로 바꾼다 |
+| ~~11/2~~ | ~~되돌리기 API(API 서버 4) 전까지 배포 이력의 "Redeploy" 는 그 커밋으로 새 배포 요청을 만든다~~ → 11/3 번복 | 같은 결과(예전 커밋으로 새 배포)를 지금 API 로 낼 수 있다. 되돌리기 API 가 생기면 `rollback_of_id` 를 남기는 쪽으로 바꾼다 |
 | 11/2 | 환경 카드의 Hot/Warm 은 예비 + 버전 일치를 Warm 으로만 보이고, 복제 지연은 `—` | 복제 지연·Hot 상태는 아직 API 에 없다(인프라·API 서버 8) |
 | 11/2 | 테마 기본값은 light(시스템 설정을 따르지 않음) | 시연 화면이 사용자 OS 설정에 따라 바뀌지 않게 |
 | 11/2 | 화면 배치는 Figma 「Wire Frame」 v2(조밀한 밀도)를 따른다: 묶음 사이드바, S01 벤토, SVC 목록+오른쪽 패널, 가로 스테퍼, SET 탭+등록 시트, 지도 재난 다이얼로그 | 노션 IA v2 와 와이어프레임이 화면 구성의 기준이다. 디자인(색·모양)은 토큰을 따른다 |
@@ -151,6 +150,11 @@ docs/                    # api-contract.md, PR.md(커밋 안 함)
 | 11/3 | 토폴로지는 React Flow + elkjs(layered, 지역 묶음 = 부모 노드). 배치용 선(프록시 → 모든 환경)은 그리지 않는다 | ADR 11/2. 서비스가 없는 환경도 프록시 오른쪽에 놓인다. 캔버스 너비가 바뀌면 다시 맞춘다 |
 | 11/3 | 재난 지도는 d3-geo 메르카토르 + world-atlas `countries-50m`(다이얼로그를 처음 열 때 지연 로드), 반경은 `geoCircle` | ADR 11/2. 110m 은 일본·한국 확대에 거칠고, 50m 은 gzip 240KB 라 첫 화면 번들에서 뺀다 |
 | 11/3 | 화면마다 Error Boundary(`ScreenErrorBoundary`, 경로가 바뀌면 초기화) + 라우트 `errorElement` | 한 화면 오류가 사이드바·상단 바까지 지우지 않게 |
-| 11/3 | 실시간(계약 3장)은 EventSource 하나 → 이벤트별 `invalidateQueries`, `resync` 면 조직 쿼리 전부. 서버 채널 전까지 목업 모드에서만 붙는다(`EVENTS_API_READY`) | 응답 모양을 REST 에만 둔다. 운영에서 없는 경로에 재연결을 반복하지 않게 |
+| 11/3 | 실시간(계약 3장)은 EventSource 하나 → 이벤트별 `invalidateQueries`, `resync` 면 조직 쿼리 전부. 서버 채널 전까지 붙지 않는다(`EVENTS_API_READY`) | 응답 모양을 REST 에만 둔다. 운영에서 없는 경로에 재연결을 반복하지 않게 |
 | 11/3 | 대피 후보(4-4)는 API 전까지 브라우저에서 규칙 점수로 계산한다(안전 .35 · 용량 .25 · 비용 .1 · 복귀 .15 · 데이터 위치 .15, 가칭) | 응답 모양은 계약 초안 그대로. 점수 근거를 화면 오른쪽에 보여 심사 질문에 답한다 |
 | 11/3 | 로고·파비콘은 Figma 「Logo」 Direction B SVG 를 그대로 쓴다(워드마크의 두 번째 O = 마크) | Figma 설명: 글자를 다시 치지 말고 인스턴스를 그대로 쓴다 |
+| 11/3 | 앱의 MSW 목업(`src/mocks`, 워커, `Mock data` 배지, `VITE_USE_MOCKS`)을 지운다. MSW 는 테스트의 HTTP 가로채기에만 쓴다 | 운영 API 가 열려 목업이 실제와 어긋나는 위험이 더 크다. 예전 워커가 남은 브라우저는 `main.tsx` 가 계속 지운다 |
+| 11/3 | 배포 이력 되돌리기는 서버의 `rollbackable` 행에만 버튼을 달고 `POST …/deploy-requests/{id}/rollback` 을 부른다. 현재 배포는 `isCurrent` | API 서버 4 가 운영에 열렸다. 되돌릴 수 있는지는 서버가 판단한다(성공 · 현재 아님 · 연결 살아 있음 · 서비스 ACTIVE) |
+| 11/3 | 지진 이전 기준은 규모 M7.0 이상(`EVACUATION_MIN_MAGNITUDE`, 가칭). 기준 미만이면 위험 표시만 하고 이전을 권하지 않는다. 태풍은 기준 없음 | 11/2 2부: 규칙으로 판단, "7 또는 8" 중 미정. 숫자가 정해지면 상수 하나만 바꾼다 |
+| 11/3 | 재난 출처는 `SIMULATED`(버튼)뿐이고 실제 지진 피드(P2P地震情報) 자리를 다이얼로그에 둔다 | 11/2 2부: 시간이 되면 실제 API 를 붙인다 |
+| 11/3 | elkjs 는 웹 워커(`elk-api` + `elk-worker`)로, 재난 지도 데이터는 일본·한국 둘레만 잘라 둔다 | 대시보드 청크 516KB → 64KB, 지도 243KB → 35KB(gzip). 쓰지 않는 recharts·motion·NumberFlow 는 쓸 때 다시 넣는다 |

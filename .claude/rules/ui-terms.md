@@ -73,6 +73,8 @@
 | 필드 | 값 → 문구 · 색 |
 |---|---|
 | `connectionStatus` | `UNCHECKED` → Not checked · 중립 / `CONNECTED` → Connected · success / `FAILED` → Failed · danger (툴팁에 `clusterInfoError`) |
+| 배포 요청 `trigger` | `MANUAL` → Manual / `STANDBY_SYNC` → Standby sync / `ROLLBACK` → Rollback (`rollbackOfRequestId` 가 대상) |
+| 배포 요청 `cancelReason` | `SUPERSEDED` → 새 배포에 밀림 / `SERVICE_DELETED` → 서비스 삭제 / `BASE_CHANGED` → 되돌리기 시작 전에 다른 버전이 올라감 |
 | 배포 요청 `status` | `QUEUED` → Queued · 중립 / `BUILDING` → Building · migrating / `DEPLOYING` → Deploying · migrating / `VERIFYING` → Verifying · migrating / `SUCCEEDED` → Succeeded · success / `FAILED` → Failed · danger / `CANCELLED` → Cancelled · 중립 |
 | `versionStatus` | `IN_SYNC` → In sync · success / `OUT_OF_SYNC` → Out of sync · warning |
 | `role`(연결) | `SERVING` → Serving · success / `STANDBY` → Standby · 중립 / `NONE` → — |
@@ -90,4 +92,4 @@
 | Environment | 배포 대상 클러스터 | 실행 단계(dev·prod)와 `.env`. 빌드 설정을 말할 때는 "실행 모드"라고 쓴다 |
 | Service | 사용자 앱 | Kubernetes Service, 코드의 `*Service` |
 | Session | 로그인 세션(쿠키) | 브라우저 `sessionStorage`. 우리는 세션을 저장소에 두지 않는다 |
-| Simulated / Mock | `simulated`: 서버가 준 가짜 값 | Mock: 프론트 MSW 목업. 배지가 다르다(`simulated` · `Mock data`) |
+| Simulated | `simulated`: 서버가 준 가짜 값, 또는 API 가 없어 브라우저가 흉내 낸 값(재난·대피 후보) | 앱 목업(MSW)은 11/3 에 지웠다. 테스트의 MSW 와 섞지 않는다 |
