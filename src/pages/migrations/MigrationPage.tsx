@@ -293,7 +293,7 @@ export default function MigrationPage() {
             <h2 className="text-title">Stages · planned vs actual</h2>
             <StageList stages={planStages(current.steps, current.rollbackConditions, targetName)} />
             <p className="text-caption text-fg-muted">
-              Planned {duration(current.expectedSeconds)} · watch {current.observeSeconds}s per
+              Planned {duration(current.expectedSeconds)} · wait up to {current.maxWaitSeconds}s per
               traffic step · created by {current.createdBy.login}
               {current.selfApproved && ' · self-approved'}
             </p>

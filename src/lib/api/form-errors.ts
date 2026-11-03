@@ -18,6 +18,8 @@ const REASONS: Record<string, string> = {
   VERSION_MISMATCH:
     'The target runs a different version. Wait for the standby to sync, or deploy to it.',
   LAST_SYNC_FAILED: 'The last standby sync failed.',
+  SIMULATE_NOT_ALLOWED: 'Failure injection only works while the API runs simulated executors.',
+  SIMULATE_REASON_STEP_MISMATCH: 'That failure cannot happen at this step.',
 };
 
 function humanize(reason: string): string {

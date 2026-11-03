@@ -1034,7 +1034,10 @@ export interface components {
         };
         /**
          * CreateMigrationPlanRequest
-         * @description 이전 계획 만들기. observeSeconds 를 빼면 설정 기본값(5초)이다.
+         * @description 이전 계획 만들기.
+         *
+         *     requiredRequests(비율 10·50·100% 단계 순 필요 건수 3개)·maxWaitSeconds(단계 최대 대기)를
+         *     빼면 설정 기본값(20·50·50건, 30초)이다.
          */
         CreateMigrationPlanRequest: {
             /**
@@ -1042,8 +1045,10 @@ export interface components {
              * Format: uuid
              */
             targetEnvironmentId: string;
-            /** Observeseconds */
-            observeSeconds?: number | null;
+            /** Requiredrequests */
+            requiredRequests?: components["schemas"]["RequiredRequestsItem"][] | null;
+            /** Maxwaitseconds */
+            maxWaitSeconds?: number | null;
             rollbackConditions?: components["schemas"]["RollbackConditionsRequest"];
             simulate?: components["schemas"]["MigrationSimulateRequest"] | null;
         };
@@ -1487,7 +1492,7 @@ export interface components {
          * @description 이전 계획 실패·롤백 원인. 롤백 결과는 MigrationRollbackStatus 로 따로 둔다.
          * @enum {string}
          */
-        MigrationErrorCode: "PREFLIGHT_FAILED" | "TRAFFIC_APPLY_FAILED" | "HEALTH_CHECK_FAILED" | "METRICS_UNAVAILABLE" | "THRESHOLD_EXCEEDED" | "DATA_LAG_EXCEEDED" | "ABORTED" | "WORKER_LOST" | "INTERNAL_ERROR";
+        MigrationErrorCode: "PREFLIGHT_FAILED" | "TRAFFIC_APPLY_FAILED" | "HEALTH_CHECK_FAILED" | "METRICS_UNAVAILABLE" | "THRESHOLD_EXCEEDED" | "DATA_LAG_EXCEEDED" | "ABORTED" | "WORKER_LOST" | "INTERNAL_ERROR" | "TARGET_NOT_RECEIVING";
         /** MigrationLogLineResponse */
         MigrationLogLineResponse: {
             /** Seq */
@@ -1525,7 +1530,11 @@ export interface components {
             /** Hasmore */
             hasMore: boolean;
         };
-        /** MigrationPlanDetailResponse */
+        /**
+         * MigrationPlanDetailResponse
+         * @description 단건 응답. maxWaitSeconds 는 계획 행의 observe_seconds 칸(새 계획은 단계 최대 대기, 8-1 전
+         *     계획은 그 계획의 지켜보기 초)이다. progress 는 비율 단계를 세는 동안만 값이 있다(1초 폴링용).
+         */
         MigrationPlanDetailResponse: {
             /**
              * Id
@@ -1587,10 +1596,11 @@ export interface components {
              */
             expiresAt: string;
             rollbackConditions: components["schemas"]["RollbackConditionsResponse"];
-            /** Observeseconds */
-            observeSeconds: number;
+            /** Maxwaitseconds */
+            maxWaitSeconds: number;
             /** Steps */
             steps: components["schemas"]["MigrationStepResponse"][];
+            progress: components["schemas"]["MigrationProgressResponse"] | null;
             rejectedBy: components["schemas"]["UserRefResponse"] | null;
             cancelledBy: components["schemas"]["UserRefResponse"] | null;
             abortedBy: components["schemas"]["UserRefResponse"] | null;
@@ -1671,6 +1681,41 @@ export interface components {
             expiresAt: string;
         };
         /**
+         * MigrationProgressResponse
+         * @description 지금 비율 단계의 건수 세기 진행(예: 도착 처리 14/50건 · 5xx 0/허용 1).
+         *
+         *     requests·errors5xx = 도착이 센 요청·5xx, sourceRequests = 출발이 센 요청, startedAt = 비율을
+         *     적용해 세기 시작한 시각, deadlineAt = 최대 대기 끝, updatedAt = 마지막 카운터 읽기 시각.
+         */
+        MigrationProgressResponse: {
+            /** Step */
+            step: number;
+            /** Targetweight */
+            targetWeight: number;
+            /** Requests */
+            requests: number;
+            /** Requiredrequests */
+            requiredRequests: number;
+            /** Errors5Xx */
+            errors5xx: number;
+            /** Allowederrors5Xx */
+            allowedErrors5xx: number;
+            /** Sourcerequests */
+            sourceRequests: number;
+            /**
+             * Startedat
+             * Format: date-time
+             */
+            startedAt: string;
+            /** Deadlineat */
+            deadlineAt: string | null;
+            /**
+             * Updatedat
+             * Format: date-time
+             */
+            updatedAt: string;
+        };
+        /**
          * MigrationRollbackStatus
          * @description 출발 100% 로 되돌린 결과. NOT_NEEDED 는 트래픽을 바꾼 적이 없어 되돌릴 필요가 없었다.
          * @enum {string}
@@ -1678,15 +1723,19 @@ export interface components {
         MigrationRollbackStatus: "SUCCEEDED" | "FAILED" | "NOT_NEEDED";
         /**
          * MigrationSimulateReason
-         * @description 가짜 모드에서 단계 하나를 일부러 실패시킬 원인(simulate.reason).
+         * @description 가짜 모드에서 단계 하나를 일부러 실패시킬(또는 트래픽 적음으로 넘길) 원인(simulate.reason).
+         *
+         *     LATENCY 는 저장된 옛 계획을 읽으려고 값만 남긴다. 요청으로는 받지 않고(422) 처리기는 아무
+         *     실패도 만들지 않는다(p95 는 판정에 쓰지 않는다).
          * @enum {string}
          */
-        MigrationSimulateReason: "ERROR_RATE" | "LATENCY" | "HEALTH" | "DATA_LAG" | "TRAFFIC";
+        MigrationSimulateReason: "ERROR_RATE" | "LATENCY" | "HEALTH" | "DATA_LAG" | "TRAFFIC" | "TARGET_NOT_RECEIVING" | "LOW_TRAFFIC";
         /**
          * MigrationSimulateRequest
-         * @description 가짜 실행기 모드에서만 받는다. failAtStep 단계를 reason 으로 일부러 실패시킨다.
+         * @description 가짜 실행기 모드에서만 받는다. failAtStep 단계를 reason 대로 실패(또는 트래픽 적음)시킨다.
          *
-         *     DATA_LAG 는 데이터 확인 단계(3)만, 그 밖의 reason 은 비율 단계(1·2·4)만 고를 수 있다.
+         *     DATA_LAG 는 데이터 확인 단계(3)만, TARGET_NOT_RECEIVING 은 비율 단계 1·2만, 그 밖의 reason 은
+         *     비율 단계(1·2·4)만 고를 수 있다. LATENCY 는 받지 않는다(p95 는 판정에 쓰지 않는다).
          */
         MigrationSimulateRequest: {
             /** Failatstep */
@@ -1701,7 +1750,10 @@ export interface components {
         MigrationStepKind: "PREFLIGHT" | "SHIFT" | "DATA_SYNC_CHECK";
         /**
          * MigrationStepResponse
-         * @description 계획 값(index·kind·비율·지켜보기·예상 시간)과 실제 결과(result)를 나란히 싣는다.
+         * @description 계획 값(index·kind·비율·필요 건수·최대 대기·예상 시간)과 실제 결과(result)를 나란히 싣는다.
+         *
+         *     requiredRequests·maxWaitSeconds 는 비율 단계만 값이 있다. 8-1 전에 만든 계획의
+         *     requiredRequests 는 null 이다.
          */
         MigrationStepResponse: {
             /** Index */
@@ -1711,8 +1763,10 @@ export interface components {
             sourceWeight: number | null;
             /** Targetweight */
             targetWeight: number | null;
-            /** Observeseconds */
-            observeSeconds: number | null;
+            /** Requiredrequests */
+            requiredRequests: number | null;
+            /** Maxwaitseconds */
+            maxWaitSeconds: number | null;
             /** Expectedseconds */
             expectedSeconds: number;
             result: components["schemas"]["StepResultResponse"];
@@ -1855,6 +1909,7 @@ export interface components {
          * @enum {string}
          */
         RefType: "BRANCH" | "COMMIT";
+        RequiredRequestsItem: number;
         /**
          * RevertStatus
          * @description 배포 기록이 생긴 뒤 실패했을 때 부른 되돌리기의 결과.
@@ -1895,6 +1950,11 @@ export interface components {
              * @default true
              */
             healthCheck: boolean;
+            /**
+             * P95Advisory
+             * @default true
+             */
+            p95Advisory: boolean;
         };
         /**
          * RollbackRequest
@@ -2075,18 +2135,31 @@ export interface components {
         /**
          * StepMetricsResponse
          * @description 단계 실제 결과의 지표. 그 단계가 재지 않은 값은 null.
+         *
+         *     비율 단계: requestCount·errors5xx = 도착이 센 요청·5xx, allowedErrors5xx = 허용 5xx,
+         *     errorRatePercent = 5xx ÷ 요청 × 100(요청 0이면 null), sourceRequestCount = 출발이 센 요청,
+         *     lowTraffic = 최대 대기 안에 건수를 못 채웠지만 서비스 전체가 조용해 헬스체크로 통과했는가,
+         *     p95Ms = 참고 값(판정에 쓰지 않음). 데이터 확인 단계는 replicationLagSeconds 만.
          */
         StepMetricsResponse: {
             /** Healthstatus */
-            healthStatus: string | null;
+            healthStatus?: string | null;
             /** Errorratepercent */
-            errorRatePercent: number | null;
+            errorRatePercent?: number | null;
             /** P95Ms */
-            p95Ms: number | null;
+            p95Ms?: number | null;
             /** Requestcount */
-            requestCount: number | null;
+            requestCount?: number | null;
+            /** Errors5Xx */
+            errors5xx?: number | null;
+            /** Allowederrors5Xx */
+            allowedErrors5xx?: number | null;
+            /** Sourcerequestcount */
+            sourceRequestCount?: number | null;
+            /** Lowtraffic */
+            lowTraffic?: boolean | null;
             /** Replicationlagseconds */
-            replicationLagSeconds: number | null;
+            replicationLagSeconds?: number | null;
         };
         /** StepResultResponse */
         StepResultResponse: {

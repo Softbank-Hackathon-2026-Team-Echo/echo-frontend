@@ -57,7 +57,8 @@ const step = (
   kind,
   sourceWeight: target === null ? null : 100 - target,
   targetWeight: target,
-  observeSeconds: kind === 'SHIFT' ? 5 : null,
+  requiredRequests: kind === 'SHIFT' ? 20 : null,
+  maxWaitSeconds: kind === 'SHIFT' ? 30 : null,
   expectedSeconds: kind === 'SHIFT' ? 7 : 2,
   result: {
     status: 'PENDING' as const,
@@ -94,8 +95,10 @@ const plan: MigrationPlan = {
     maxP95Ms: 800,
     maxReplicationLagSeconds: 1,
     healthCheck: true,
+    p95Advisory: true,
   },
-  observeSeconds: 5,
+  maxWaitSeconds: 30,
+  progress: null,
   steps: [
     step(0, 'PREFLIGHT', null),
     step(1, 'SHIFT', 10),
@@ -182,7 +185,8 @@ describe('PlanPage', () => {
     ).toBeInTheDocument();
     expect(calls[0]?.body).toMatchObject({
       targetEnvironmentId: 'e2',
-      observeSeconds: 5,
+      requiredRequests: [20, 50, 50],
+      maxWaitSeconds: 30,
       rollbackConditions: { maxErrorRatePercent: 1, maxP95Ms: 800, maxReplicationLagSeconds: 1 },
     });
   });

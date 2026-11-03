@@ -215,7 +215,10 @@ export default function PlanPage() {
                 error rate &gt; {current.rollbackConditions.maxErrorRatePercent}% at any traffic
                 step
               </li>
-              <li>p95 latency &gt; {current.rollbackConditions.maxP95Ms} ms</li>
+              {!current.rollbackConditions.p95Advisory && (
+                <li>p95 latency &gt; {current.rollbackConditions.maxP95Ms} ms</li>
+              )}
+              <li>the target does not receive traffic while the source still does</li>
               <li>
                 replication lag &gt; {current.rollbackConditions.maxReplicationLagSeconds} s before
                 the last step
@@ -223,7 +226,8 @@ export default function PlanPage() {
               {current.rollbackConditions.healthCheck && <li>the health check fails</li>}
             </ul>
             <p className="text-caption text-fg-muted">
-              Each traffic step is watched for {current.observeSeconds}s before EchoPort moves on.
+              Each traffic step waits up to {current.maxWaitSeconds}s for the target to handle its
+              requests before EchoPort moves on.
             </p>
           </section>
         </div>

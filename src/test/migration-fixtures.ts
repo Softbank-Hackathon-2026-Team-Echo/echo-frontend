@@ -18,7 +18,8 @@ export function step(
     kind,
     sourceWeight: target === null ? null : 100 - target,
     targetWeight: target,
-    observeSeconds: kind === 'SHIFT' ? 5 : null,
+    requiredRequests: kind === 'SHIFT' ? 20 : null,
+    maxWaitSeconds: kind === 'SHIFT' ? 30 : null,
     expectedSeconds: kind === 'SHIFT' ? 7 : 2,
     result: {
       status,
@@ -66,8 +67,10 @@ export function migrationPlan(extra: Partial<MigrationPlan> = {}): MigrationPlan
       maxP95Ms: 800,
       maxReplicationLagSeconds: 1,
       healthCheck: true,
+      p95Advisory: true,
     },
-    observeSeconds: 5,
+    maxWaitSeconds: 30,
+    progress: null,
     steps: [
       step(0, 'PREFLIGHT', null, 'PASSED', null, '2026-11-05T03:00:00Z'),
       step(
