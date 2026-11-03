@@ -67,7 +67,7 @@ src/
 scripts/                # gen-api.mjs(API 타입) · trim-atlas.mjs(지도 데이터) · check-bundle.mjs(번들 예산)
 .github/workflows/ci.yml # PR · main 에서 lint · typecheck · test · build · 번들 예산
 specs/                   # 태스크 명세
-docs/                    # api-contract.md, PR.md(커밋 안 함)
+docs/                    # api-contract.md, perf.md(성능 측정 방법 · 기준선), PR.md(커밋 안 함)
 .claude/launch.json      # 브라우저 미리보기용 개발 서버 설정
 ```
 
@@ -196,3 +196,4 @@ docs/                    # api-contract.md, PR.md(커밋 안 함)
 | 11/3 | Sentry 로는 5xx · 네트워크 오류 · 봉투가 아닌 응답 · 화면 렌더 오류만 보낸다. API 오류에는 requestId(X-Request-ID) · status · code 태그. 401 · 403 · 404 · 409 · 422 는 보내지 않는다 | 4xx 는 화면이 처리하는 예상된 응답이라 섞이면 진짜 오류가 묻힌다. requestId 로 echo-was 로그와 같은 요청을 찾는다 |
 | 11/3 | Sentry 개인정보: 자동 수집(IP · 쿠키 · 헤더 · 본문 · 쿼리)은 끄고 사용자는 GitHub 아이디만. 리플레이는 오류 난 세션만, 글자 · 입력 · 이미지 전부 가림. API 요청에 추적 헤더를 붙이지 않는다(`tracePropagationTargets: []`) | 비밀값 · 개인정보가 외부로 나가지 않게. sentry-trace · baggage 헤더는 echo-was CORS 허용 목록에 없어 붙이면 요청이 막힌다 |
 | 11/3 | 소스맵은 Cloudflare Pages 빌드에서 만들어 Sentry 에 올리고 dist 에서 지운다(`hidden`). 릴리스 이름은 커밋 SHA | 운영 파일은 GitHub Actions 가 아니라 Cloudflare 가 빌드해서, 같은 빌드의 소스맵이어야 줄 번호가 맞는다. 원본 코드를 공개하지 않는다 |
+| 11/3 | 성능은 같은 방법으로 전후를 잰다(`docs/perf.md`): Sentry Web Vitals(화면 이름 = 경로 패턴), 대시보드 다시 불러오기 1번의 칸별 렌더 수(Profiler 테스트), 번들 예산. 기준선은 '같은 응답에도 모든 칸이 1번씩 다시 그려짐' | 최적화(React Compiler · 화면 밖 멈추기 · 미리 받기)의 효과를 숫자로 보이려면 바꾸기 전 값이 있어야 한다. 주소 그대로면 같은 화면이 조직 · id 마다 따로 묶인다 |
