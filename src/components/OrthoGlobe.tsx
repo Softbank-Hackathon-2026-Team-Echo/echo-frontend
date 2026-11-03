@@ -97,6 +97,10 @@ export function OrthoGlobe({
     let land: MultiPolygon | undefined;
     let frame = 0;
     let stopped = false;
+    // 화면 밖에 있으면 그리지 않는다. 멈춘 동안의 시간은 빼서 다시 보일 때 멈춘 자리에서 이어 돈다
+    let visible = true;
+    let pausedAt: number | null = null;
+    let pausedTotal = 0;
     const startedAt = performance.now();
     const byKey = new Map(regions.map((region) => [region.key, region]));
     const routes = arcs.flatMap((arc) => {
@@ -122,7 +126,7 @@ export function OrthoGlobe({
       context.setTransform(ratio, 0, 0, ratio, 0, 0);
       context.clearRect(0, 0, size, size);
 
-      const seconds = animate ? (now - startedAt) / 1000 : 0;
+      const seconds = animate ? (now - startedAt - pausedTotal) / 1000 : 0;
       const lambda = -center[0] + (spin ? seconds * SPIN_DEG_PER_SECOND : 0);
       const phi = -center[1];
       const radius = size / 2 - 2;
@@ -249,8 +253,28 @@ export function OrthoGlobe({
         }
       }
 
-      if (animate && !stopped) frame = requestAnimationFrame(draw);
+      if (animate && !stopped && visible) frame = requestAnimationFrame(draw);
     }
+
+    // 소개 화면에서 아래로 내리면 지구본이 화면 밖으로 나간다(Grafana 의 보이지 않는 패널은 그리지 않기)
+    const observer =
+      typeof IntersectionObserver === 'undefined'
+        ? null
+        : new IntersectionObserver(([entry]) => {
+            const next = entry?.isIntersecting ?? true;
+            if (next === visible) return;
+            visible = next;
+            if (!animate || stopped) return;
+            if (visible) {
+              if (pausedAt !== null) pausedTotal += performance.now() - pausedAt;
+              pausedAt = null;
+              frame = requestAnimationFrame(draw);
+            } else {
+              pausedAt = performance.now();
+              cancelAnimationFrame(frame);
+            }
+          });
+    observer?.observe(canvas);
 
     loadLand()
       .then((loaded) => {
@@ -264,6 +288,7 @@ export function OrthoGlobe({
 
     return () => {
       stopped = true;
+      observer?.disconnect();
       cancelAnimationFrame(frame);
     };
   }, [regions, arcs, islands, center, animate, spin, ripple]);
