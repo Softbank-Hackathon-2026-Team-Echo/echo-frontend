@@ -17,6 +17,7 @@ function meWithRole(role: MemberRole): Me {
         name: 'Echo Demo',
         personal: false,
         role,
+        allowSelfApproval: false,
         createdAt: '2026-11-02T00:00:00Z',
       },
     ],

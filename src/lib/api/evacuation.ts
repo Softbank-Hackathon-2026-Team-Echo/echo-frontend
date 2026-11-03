@@ -1,4 +1,4 @@
-// MOCK: 대피 후보 API(계약 4-4 🆕)가 서버에 생기기 전까지 브라우저에서 규칙 점수를 매긴다.
+// 시뮬레이션: 대피 후보 API(계약 4-4 🆕)가 서버에 생기기 전까지 브라우저에서 규칙 점수를 매긴다.
 // 응답 모양은 계약 초안과 같다. 서버가 생기면 EVACUATION_API_READY 를 켜고 api + unwrap 으로 바꾼다
 import { distanceKm, environmentCoordinates, placeCountry } from '../geo';
 import type { Disaster } from './disasters';

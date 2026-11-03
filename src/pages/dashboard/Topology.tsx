@@ -17,7 +17,7 @@ import {
   useReactFlow,
   useStore,
 } from '@xyflow/react';
-import ELK from 'elkjs/lib/elk.bundled.js';
+import ELK from 'elkjs/lib/elk-api.js';
 import { TriangleAlert } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { ProviderLabel } from '@/components/ProviderLabel';
@@ -200,7 +200,11 @@ function TrafficEdge(props: EdgeProps<Edge<TrafficEdgeData>>) {
 const nodeTypes = { environment: EnvironmentNode, region: RegionNode, proxy: ProxyNode };
 const edgeTypes = { traffic: TrafficEdge };
 
-const elk = new ELK();
+// 배치 계산(약 1.4MB)은 웹 워커에서 돈다. 첫 화면 번들에 넣지 않고, 계산 중에도 화면이 멈추지 않는다
+const elk = new ELK({
+  workerFactory: () =>
+    new Worker(new URL('elkjs/lib/elk-worker.min.js', import.meta.url), { type: 'classic' }),
+});
 
 type Positions = Map<string, { x: number; y: number; width?: number; height?: number }>;
 

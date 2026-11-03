@@ -40,6 +40,9 @@ const CONFLICT_MESSAGES: Record<string, string> = {
   ENVIRONMENT_IN_USE: 'This environment still has services on it.',
   SERVICE_DELETING: 'This service is being deleted.',
   LAST_ADMIN: 'An organization needs at least one admin.',
+  NOT_ROLLBACKABLE: 'This deploy can no longer be rolled back to.',
+  ALREADY_CURRENT: 'This version is already live on that environment.',
+  MIGRATION_IN_PROGRESS: 'A migration is running for this service. Try again after it finishes.',
 };
 
 /** 화면에 보여 줄 한 줄 문구. 모르는 코드는 서버 message 를 그대로 쓴다 */
@@ -47,7 +50,6 @@ export function describeApiError(error: unknown): string {
   if (!isApiError(error)) return 'Something went wrong. Please try again.';
   if (error.status === 403) return PERMISSION_MESSAGE;
   if (error.status === 502 || error.status === 503) return UNAVAILABLE_MESSAGE;
-  if (error.code === 'MOCK_UNAVAILABLE') return 'Mock data stopped responding. Reload the page.';
   if (error.status === 0) return 'Cannot reach the server. Check your connection.';
   return CONFLICT_MESSAGES[error.code] ?? error.message;
 }

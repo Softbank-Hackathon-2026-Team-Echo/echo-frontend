@@ -7,7 +7,7 @@ Team Echo 멀티 클라우드 관리 플랫폼 **EchoPort**의 웹 프론트(대
 
 ## 기술 스택
 
-Vite · React 19 · TypeScript(strict) · react-router · TanStack Query · Tailwind CSS v4 · shadcn/ui(Radix) · lucide-react · MSW · Biome · Vitest + Testing Library. Node 22, pnpm 9.
+Vite · React 19 · TypeScript(strict) · react-router · TanStack Query · Tailwind CSS v4 · shadcn/ui(Radix) · lucide-react · Biome · Vitest + Testing Library(+ MSW, 테스트에서만). Node 22, pnpm 9.
 
 ## 시작하기
 
@@ -23,10 +23,9 @@ pnpm dev           # http://localhost:5173
 | 이름 | 예 | 설명 |
 |---|---|---|
 | `VITE_API_BASE_URL` | `http://localhost:8000` | echo-was 주소(끝 `/` 없이) |
-| `VITE_USE_MOCKS` | `true` | `true`면 MSW 목업으로 동작하고 상단 바에 `Mock data` 배지가 뜬다 |
 
-- 목업 모드(`VITE_USE_MOCKS=true`)에서는 echo-was 없이 `/` → `/o/echoport` → Settings › Environments까지 볼 수 있다. 조직은 `echoport`(Admin)·`echo-demo`(Developer) 두 개다.
-- 실서버 모드는 echo-was를 [README](https://github.com/Softbank-Hackathon-2026-Team-Echo/echo-was/blob/main/README.md)대로 띄우고, echo-was `.env`의 `FRONTEND_BASE_URL`·`FRONTEND_ALLOWED_ORIGINS`에 `http://localhost:5173`을 넣는다. 프록시 없이 직접 부른다(쿠키 인증 + CORS). Safari에서 로컬 로그인 쿠키가 붙지 않으면 echo-was 로컬 `.env`에 `SESSION_COOKIE_SECURE=false`.
+- 앱에는 목업이 없다(11/3). 화면은 echo-was 가 있어야 뜬다. 운영 API(`api.echoport.uk`)는 `https://app.echoport.uk` 출처만 받으므로 로컬에서는 쓸 수 없다.
+- 로컬은 echo-was를 [README](https://github.com/Softbank-Hackathon-2026-Team-Echo/echo-was/blob/main/README.md)대로 띄우고, echo-was `.env`의 `FRONTEND_BASE_URL`·`FRONTEND_ALLOWED_ORIGINS`에 `http://localhost:5173`을 넣는다. 프록시 없이 직접 부른다(쿠키 인증 + CORS). Safari에서 로컬 로그인 쿠키가 붙지 않으면 echo-was 로컬 `.env`에 `SESSION_COOKIE_SECURE=false`.
 - 개발 모드에서 `/dev/tokens`로 디자인 토큰·테마 3개(light·dark·projector)를 확인할 수 있다.
 
 ## 자주 쓰는 명령
@@ -51,5 +50,5 @@ pnpm dev           # http://localhost:5173
 | Build output directory | `dist` |
 | 환경변수 (공통) | `NODE_VERSION=22` |
 | 환경변수 (Production) | `VITE_API_BASE_URL=https://api.echoport.uk` |
-| 환경변수 (Preview) | `VITE_USE_MOCKS=true` — PR 미리보기 주소(`*.pages.dev`)는 API와 같은 사이트가 아니라 로그인 쿠키가 붙지 않으므로 목업으로만 본다 |
+| 환경변수 (Preview) | 없음(11/3 목업 제거). PR 미리보기 주소(`*.pages.dev`)는 API 허용 출처가 아니라 로그인 화면까지만 열린다. 화면 확인은 머지 뒤 `app.echoport.uk` 에서 한다 |
 | Custom domain | `app.echoport.uk` (echoport.uk DNS가 같은 Cloudflare 계정에 있어 레코드·인증서가 자동으로 붙는다) |

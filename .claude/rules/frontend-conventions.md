@@ -1,7 +1,7 @@
 # 프론트엔드 코드 컨벤션
 
 - **적용 대상**: echo-frontend의 `src/` 아래 모든 코드와 테스트
-- **스택 기준**: React 19, TypeScript strict, react-router, TanStack Query v5, Tailwind v4, shadcn/ui, MSW, Vitest
+- **스택 기준**: React 19, TypeScript strict, react-router, TanStack Query v5, Tailwind v4, shadcn/ui, Vitest(+ MSW 테스트용)
 - **전제**: 이름은 [ui-terms.md](ui-terms.md), 스타일은 [design-tokens.md](design-tokens.md), API 모양은 [docs/api-contract.md](../../docs/api-contract.md)를 먼저 따른다. 이 문서는 그 위의 코드 규칙이다
 
 > **핵심 철학**
@@ -35,7 +35,7 @@
 - 한 화면에서만 쓰는 컴포넌트·훅은 `pages/{화면}/` 안에 둔다. **두 화면 이상에서 쓰게 되면** `components/`·`hooks/`로 옮긴다.
 - `components/ui/`는 shadcn 원본에 가깝게 둔다. 고쳤으면 그 줄 위에 이유를 한 줄 주석으로 남긴다(CLI로 다시 받을 때 알아보려고).
 - `lib/api/`는 화면을 모른다(React 컴포넌트를 import하지 않는다). 쿼리 훅만 React를 쓴다.
-- `mocks/`는 앱 코드에서 import하지 않는다. `main.tsx`가 `VITE_USE_MOCKS`를 보고 동적으로 불러온다(운영 빌드에 목업이 들어가지 않게).
+- 앱에는 목업 폴더가 없다. API 가 없는 기능의 브라우저 시뮬레이션은 `lib/api/{resource}.ts` 안에 두고 파일 맨 위에 `// 시뮬레이션:` 주석과 `*_API_READY` 상수를 둔다.
 
 ## 3. 컴포넌트
 
@@ -106,19 +106,19 @@ export const queryKeys = {
 - 권한이 필요한 버튼은 `<RoleButton requires="DEVELOPER">`로만 만든다. 권한이 없으면 **숨기지 않고** 비활성 + 툴팁 "Requires Developer" / "Requires Admin".
 - 프론트 권한 검사는 안내용이다. 실제 거부는 서버가 하고(403 + 감사 기록), 프론트는 그 403도 §5대로 처리한다.
 
-## 8. 목업
+## 8. 시뮬레이션 (API 가 없는 기능)
 
-- MSW 핸들러와 데이터는 `src/mocks/`에만 둔다. 파일 맨 위에 `// MOCK:` 주석을 단다.
-- 목업 응답은 실서버와 같은 봉투(`{success, data}`)·같은 칸 이름·같은 오류 모양이다. 계약 문서 예시 값을 쓰고, 실제 토큰·비밀번호·내부 주소를 넣지 않는다.
-- `VITE_USE_MOCKS=true`이면 상단 바에 `Mock data` 배지를 보여 준다. 서버가 준 `simulated: true`는 별개로 값 옆에 `simulated` 배지를 단다.
-- 서버 API가 열리면 그 핸들러를 지운다. 남은 목업 목록은 PR 본문 📌 기타에 적는다.
+- 앱에는 MSW 목업이 없다(11/3). 화면은 운영 API 만 부른다.
+- API 가 아직 없는 기능은 `lib/api/{resource}.ts` 안에서 브라우저 시뮬레이션으로 만든다. 응답 모양은 계약 문서 그대로이고, 서버가 생기면 `*_API_READY` 를 켜고 `api` + `unwrap` 으로 바꾼다.
+- 시뮬레이션 값과 서버가 준 `simulated: true` 값에는 회색 `simulated` 배지를 단다. 숨기지 않는다.
+- 남은 시뮬레이션 목록은 PR 본문 📌 기타에 적는다.
 
 ## 9. API가 모자랄 때 (echo-was에 요청)
 
 프론트가 echo-was 코드를 고치지 않는다. 필요한 칸·엔드포인트·이벤트가 없으면:
 
 1. [docs/api-contract.md](../../docs/api-contract.md) 4장에 `(가칭)` 🆕 항목으로 모양을 적는다.
-2. 화면은 그 모양대로 목업을 만들어 먼저 진행한다.
+2. 화면은 그 모양대로 브라우저 시뮬레이션(§8)을 만들어 먼저 진행한다.
 3. echo-was에 이슈 초안을 쓴다. 사람이 확인한 뒤 올린다. 이미 같은 이슈가 있는지 먼저 찾는다(`gh issue list -R Softbank-Hackathon-2026-Team-Echo/echo-was`).
 
 ```text
@@ -134,12 +134,12 @@ export const queryKeys = {
 어떻게 되면 프론트가 붙일 수 있는지
 
 ## 그동안 프론트는
-목업으로 진행 중인 것
+시뮬레이션으로 진행 중인 것
 
 Refs: docs/api-contract.md §4-x
 ```
 
-4. 서버가 정하면 계약 문서에서 `(가칭)`과 🆕를 떼고 실제 이름으로 바꾼다. 목업·타입·[ui-terms.md](ui-terms.md)도 같은 PR에서 맞춘다.
+4. 서버가 정하면 계약 문서에서 `(가칭)`과 🆕를 떼고 실제 이름으로 바꾼다. 시뮬레이션·타입·[ui-terms.md](ui-terms.md)도 같은 PR에서 맞춘다.
 
 ## 10. 테스트
 
@@ -171,6 +171,6 @@ Refs: docs/api-contract.md §4-x
 3. 화면이 `lib/api/` 훅으로만 데이터를 받는가? 쿼리 키가 팩토리에서 오는가?
 4. 로딩·빈 목록·오류 세 상태가 있는가? 모르는 enum·`null`에 깨지지 않는가?
 5. 권한 버튼이 `RoleButton`인가? 상태를 바꾸는 버튼이 요청 중 비활성인가?
-6. 목업에 `// MOCK:`이 있고, 가짜 값에 배지가 붙는가?
+6. 시뮬레이션에 `// 시뮬레이션:`이 있고, 가짜 값에 `simulated` 배지가 붙는가?
 7. 라이트·다크·projector에서 화면을 봤는가? 1024px 미만에서 사이드바가 접히는가?
 8. `pnpm lint && pnpm typecheck && pnpm test && pnpm build`가 통과하는가?

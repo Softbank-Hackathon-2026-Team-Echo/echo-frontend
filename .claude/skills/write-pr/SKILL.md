@@ -41,7 +41,7 @@ git diff main...HEAD --stat
 - 아래도 함께 모은다.
   - 바뀐 화면 목록(경로·화면 ID) — 스크린샷이 필요한 곳
   - 새로 쓰거나 바꾼 API(✅ 있는 것 / 🆕 `(가칭)` 요청 초안) — `docs/api-contract.md` 변경 여부
-  - 남아 있는 목업(`grep -rn "MOCK:" src/mocks`)과 새 `simulated` 표시
+  - 남아 있는 브라우저 시뮬레이션(`grep -rn "시뮬레이션:" src/lib/api`)과 새 `simulated` 표시
   - 디자인 토큰 변경(`src/styles/tokens.css`, `index.css` `@theme`)
 
 ### Step 3: 템플릿 구조 읽기
@@ -68,7 +68,7 @@ pnpm lint && pnpm typecheck && pnpm test && pnpm build
 ```
 
 - 화면을 바꿨으면 **스크린샷을 직접 찍어 넣는다**(사용자에게 맡기지 않는다).
-  1. `.env.local` 의 `VITE_USE_MOCKS=true` 로 `pnpm dev` 를 띄우고 내장 브라우저로 바뀐 화면을 연다(라이트 기본, 필요하면 dark·projector·960px).
+  1. 앱에 목업이 없으므로 실제 API 가 붙는 곳에서 찍는다: echo-was 를 로컬로 띄운 `pnpm dev`, 또는 머지 뒤 로그인된 `app.echoport.uk`(내장 브라우저). 둘 다 안 되면 스크린샷 자리에 "머지 뒤 운영에서 확인"과 이유를 적고, 대신 화면 테스트(Testing Library)로 확인한 내용을 적는다(라이트 기본, 필요하면 dark·projector·960px).
   2. React Query devtools 버튼은 JS 로 숨긴다: `document.querySelectorAll('[class*=tsqd]').forEach(e => e.style.display = 'none')`.
   3. 이미지는 `pr-assets` 브랜치(orphan, main 에 합치지 않음)의 `pr-<번호>/` 에 올린다. 작업 트리를 건드리지 않게 별도 worktree 를 쓴다.
      ```bash

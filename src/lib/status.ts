@@ -55,6 +55,17 @@ export function versionStatusView(status: string): StatusView {
   return VERSION[status] ?? { label: status, tone: 'neutral' };
 }
 
+// 배포 요청을 만든 계기 (DeployRequestTrigger)
+const DEPLOY_TRIGGER: Record<string, string> = {
+  MANUAL: 'Manual',
+  STANDBY_SYNC: 'Standby sync',
+  ROLLBACK: 'Rollback',
+};
+
+export function deployTriggerLabel(trigger: string): string {
+  return DEPLOY_TRIGGER[trigger] ?? trigger;
+}
+
 // 배포 요청 실패 이유 (echo-was docs/api/deploy-requests.md)
 const DEPLOY_ERRORS: Record<string, string> = {
   REPO_NOT_ACCESSIBLE: 'The repository is not accessible.',

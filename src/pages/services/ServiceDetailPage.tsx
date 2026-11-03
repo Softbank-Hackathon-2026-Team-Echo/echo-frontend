@@ -27,16 +27,17 @@ import {
 } from '@/components/ui/table';
 import { useRole } from '@/hooks/useRole';
 import { useCurrentOrg } from '@/lib/api/me';
-import {
-  useCreateDeploy,
-  useDeleteService,
-  useDeployRequests,
-  useService,
-} from '@/lib/api/services';
+import { useDeleteService, useDeployRequests, useRollback, useService } from '@/lib/api/services';
 import type { DeployRequestSummary, ServiceDetail } from '@/lib/api/types';
 import { timeAgo } from '@/lib/format';
 import { hasRole } from '@/lib/roles';
-import { deployStatusView, envRoleView, shortSha, versionStatusView } from '@/lib/status';
+import {
+  deployStatusView,
+  deployTriggerLabel,
+  envRoleView,
+  shortSha,
+  versionStatusView,
+} from '@/lib/status';
 import { DeployDialog } from './DeployDialog';
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -135,7 +136,7 @@ function DeployHistory({
 }) {
   const navigate = useNavigate();
   const history = useDeployRequests(orgId, serviceId);
-  const redeploy = useCreateDeploy(orgId, serviceId);
+  const rollback = useRollback(orgId, serviceId);
 
   if (history.isError)
     return <ErrorState error={history.error} onRetry={() => history.refetch()} />;
@@ -168,8 +169,10 @@ function DeployHistory({
               <TableCell>
                 <span className="flex flex-col gap-0.5">
                   {request.environment.name}
-                  {request.trigger === 'STANDBY_SYNC' && (
-                    <span className="text-caption text-fg-muted">Standby sync</span>
+                  {request.trigger !== 'MANUAL' && (
+                    <span className="text-caption text-fg-muted">
+                      {deployTriggerLabel(request.trigger)}
+                    </span>
                   )}
                 </span>
               </TableCell>
@@ -178,6 +181,7 @@ function DeployHistory({
               <TableCell>
                 <span className="flex items-center gap-1.5">
                   <StatusBadge {...deployStatusView(request.status)} />
+                  {request.isCurrent && <StatusBadge label="Current" tone="success" />}
                   {request.simulated && <SimulatedBadge />}
                 </span>
               </TableCell>
@@ -188,25 +192,24 @@ function DeployHistory({
                       View
                     </Link>
                   </Button>
-                  {/* 사용자 되돌리기 API(API 서버 4)가 생기기 전까지는 같은 커밋을 새로 배포한다 */}
-                  <RoleButton
-                    requires="DEVELOPER"
-                    variant="ghost"
-                    size="sm"
-                    disabled={redeploy.isPending}
-                    onClick={() =>
-                      redeploy.mutate(
-                        { environmentId: request.environment.id, commitSha: request.commitSha },
-                        {
+                  {/* 서버가 되돌릴 수 있다고 한 행(성공 · 현재 아님 · 연결 살아 있음)에만 단다 */}
+                  {request.rollbackable && (
+                    <RoleButton
+                      requires="DEVELOPER"
+                      variant="ghost"
+                      size="sm"
+                      disabled={rollback.isPending}
+                      onClick={() =>
+                        rollback.mutate(request.id, {
                           onSuccess: (created) =>
                             navigate(`/o/${orgSlug}/services/${serviceId}/deploys/${created.id}`),
-                        },
-                      )
-                    }
-                  >
-                    <RotateCcw aria-hidden />
-                    Redeploy
-                  </RoleButton>
+                        })
+                      }
+                    >
+                      <RotateCcw aria-hidden />
+                      Roll back
+                    </RoleButton>
+                  )}
                 </span>
               </TableCell>
             </TableRow>

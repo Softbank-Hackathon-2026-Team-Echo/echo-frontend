@@ -58,8 +58,7 @@ function readEnvelope<T>(response: Response, body: unknown): T {
 function networkError(cause: unknown) {
   return new ApiError({
     status: 0,
-    // 목업 모드에서 응답이 없으면 MSW 워커가 이 탭을 놓친 것이다(탭을 오래 숨겨 둔 뒤 등)
-    code: import.meta.env.VITE_USE_MOCKS === 'true' ? 'MOCK_UNAVAILABLE' : 'NETWORK_ERROR',
+    code: 'NETWORK_ERROR',
     message: cause instanceof Error ? cause.message : 'Network error',
   });
 }
@@ -72,6 +71,8 @@ export const api = createClient<paths>({
   baseUrl: API_BASE_URL,
   credentials: 'include',
   headers: { Accept: 'application/json' },
+  // 만들 때의 fetch 를 붙잡지 않고 부를 때마다 찾는다(테스트의 MSW 가 나중에 fetch 를 바꾼다)
+  fetch: (request) => globalThis.fetch(request),
 });
 
 type Unwrapped<D> = D extends { data?: infer T } ? Exclude<T, null | undefined> : undefined;

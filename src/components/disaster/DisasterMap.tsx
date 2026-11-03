@@ -1,12 +1,10 @@
 import { geoCircle, geoGraticule10, geoMercator, geoPath } from 'd3-geo';
 import type { Feature, FeatureCollection, MultiLineString } from 'geojson';
 import { type MouseEvent, useEffect, useMemo, useState } from 'react';
-import { feature, mesh } from 'topojson-client';
-import type { GeometryCollection, Topology } from 'topojson-specification';
 import type { EnvironmentSummary } from '@/lib/api/types';
 import { environmentCoordinates, type LatLng, MAP_CITIES } from '@/lib/geo';
 
-// 일본·한국을 덮는 지도(메르카토르). 해안선은 world-atlas 50m 를 처음 열 때 불러온다
+// 일본·한국을 덮는 지도(메르카토르). 해안선은 world-atlas 50m 에서 이 둘레만 잘라 둔 것이다
 const BOUNDS = { north: 42, south: 30, west: 124, east: 146 };
 const WIDTH = 440;
 const HEIGHT = 320;
@@ -39,15 +37,9 @@ type Land = { countries: FeatureCollection; borders: MultiLineString };
 
 let landCache: Promise<Land> | undefined;
 
-/** 해안선·국경. 크기가 커서 지도를 처음 열 때 한 번만 불러온다 */
+/** 해안선·국경. 지도 둘레만 잘라 둔 파일(scripts/trim-atlas.mjs)을 지도를 처음 열 때 한 번 불러온다 */
 function loadLand(): Promise<Land> {
-  landCache ??= import('world-atlas/countries-50m.json').then((module) => {
-    const topology = module.default as unknown as Topology<{ countries: GeometryCollection }>;
-    return {
-      countries: feature(topology, topology.objects.countries) as FeatureCollection,
-      borders: mesh(topology, topology.objects.countries, (a, b) => a !== b),
-    };
-  });
+  landCache ??= import('@/assets/geo/east-asia-50m.json').then((module) => module.default as Land);
   return landCache;
 }
 

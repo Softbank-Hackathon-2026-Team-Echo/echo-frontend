@@ -8,8 +8,8 @@ import { App } from '@/App';
 import { initTheme } from '@/hooks/useTheme';
 
 /**
- * 목업 빌드 때 등록된 MSW 서비스 워커가 브라우저에 남아 있으면 지운다.
- * 운영이 목업에서 실서버로 바뀐 뒤 예전 워커가 남아 혼란을 주지 않게 한다 (echo-was#12 댓글)
+ * 예전 목업 빌드가 등록한 MSW 서비스 워커가 브라우저에 남아 있으면 지운다.
+ * 남은 워커가 API 요청을 가로채 가짜 응답을 주지 않게 한다 (echo-was#12 댓글)
  */
 async function removeMockWorker() {
   try {
@@ -24,33 +24,9 @@ async function removeMockWorker() {
   }
 }
 
-async function startMocks() {
-  // 빌드가 이 분기를 지울 수 있게 환경변수를 여기서 직접 비교한다(다른 모듈 상수는 지우지 못한다).
-  // 그래서 VITE_USE_MOCKS 가 없는 운영 번들에는 MSW 가 들어가지 않는다
-  if (import.meta.env.VITE_USE_MOCKS !== 'true') {
-    await removeMockWorker();
-    return;
-  }
-  const { worker } = await import('@/mocks/browser');
-  const options = { onUnhandledFrame: 'bypass', quiet: true } as const;
-  await worker.start(options);
-  // 탭을 오래 숨겨 두면 브라우저가 서비스 워커를 멈췄다 깨우면서 MSW 가 이 탭을 놓칠 수 있다.
-  // 다시 보일 때 워커를 다시 붙여 목업 응답이 끊기지 않게 한다
-  let hiddenAt = 0;
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') {
-      hiddenAt = Date.now();
-      return;
-    }
-    if (Date.now() - hiddenAt < 20_000) return;
-    worker.stop();
-    void worker.start(options);
-  });
-}
-
 initTheme();
 
-startMocks().then(() => {
+removeMockWorker().then(() => {
   const root = document.getElementById('root');
   if (!root) throw new Error('#root 요소가 없다');
   createRoot(root).render(

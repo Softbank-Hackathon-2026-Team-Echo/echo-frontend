@@ -15,7 +15,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useActiveDisasters } from '@/lib/api/disasters';
+import {
+  EVACUATION_MIN_MAGNITUDE,
+  meetsEvacuationThreshold,
+  useActiveDisasters,
+} from '@/lib/api/disasters';
 import { useEnvironments } from '@/lib/api/environments';
 import {
   type ExcludedReason,
@@ -163,6 +167,13 @@ export default function EvacuationPage() {
           </Select>
         )}
       </div>
+
+      {!meetsEvacuationThreshold(disaster) && (
+        <p role="status" className="rounded-lg bg-subtle px-3 py-2 text-small text-fg-secondary">
+          This earthquake is below the M{EVACUATION_MIN_MAGNITUDE.toFixed(1)} evacuation threshold,
+          so EchoPort does not propose a move. You can still plan one.
+        </p>
+      )}
 
       {source && ranking.source && (
         <div
