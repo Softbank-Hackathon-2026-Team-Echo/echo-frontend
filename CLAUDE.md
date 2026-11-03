@@ -48,7 +48,7 @@ src/
 │  └─ *.tsx              # 두 화면 이상에서 쓰는 앱 컴포넌트 (Panel, RoleButton, StatusBadge, SimulatedBadge, ProviderLabel, FormField, ConfirmDeleteDialog, ExternalLink, EmptyState, ErrorState, ScreenErrorBoundary, Logo, OrthoGlobe, 등록·배포 다이얼로그(EnvironmentFormDialog · RegisterServiceDialog · DeployDialog) …)
 ├─ layouts/AppShell.tsx  # 사이드바(워드마크 · Operate/Resilience/Govern 묶음 · 사용자 메뉴=테마·로그아웃) + 상단 바(브레드크럼 · Org 선택 · Simulate disaster · 알림)
 ├─ pages/                # 화면 단위 폴더 (login/, root/, landing/(L01 소개), onboarding/(O01~O03), dashboard/, services/, evacuation/, migrations/, settings/, dev/). 한 화면에서만 쓰는 컴포넌트는 그 폴더 안에
-├─ hooks/                # useTheme(테마 3개, localStorage), useRole(현재 조직 역할), useNow(경과 시간), usePrefersReducedMotion
+├─ hooks/                # useTheme(테마 3개, localStorage), useRole(현재 조직 역할), useNow(경과 시간), usePrefersReducedMotion, useInViewOnce(처음 화면에 들어오면 true)
 ├─ lib/
 │  ├─ api/               # client(api = openapi-fetch + unwrap, 스키마 밖 경로는 apiFetch) · errors · notify · form-errors(422 → 칸 오류)
 │  │                     #   query-client · query-keys · schema.d.ts(gen:api 생성) · types(스키마 별칭)
@@ -201,3 +201,4 @@ docs/                    # api-contract.md, perf.md(성능 측정 방법 · 기�
 | 11/3 | 성능은 같은 방법으로 전후를 잰다(`docs/perf.md`): Sentry Web Vitals(화면 이름 = 경로 패턴), 대시보드 다시 불러오기 1번의 칸별 렌더 수(Profiler 테스트), 번들 예산. 기준선은 '같은 응답에도 모든 칸이 1번씩 다시 그려짐' | 최적화(React Compiler · 화면 밖 멈추기 · 미리 받기)의 효과를 숫자로 보이려면 바꾸기 전 값이 있어야 한다. 주소 그대로면 같은 화면이 조직 · id 마다 따로 묶인다 |
 | 11/3 | `public/_headers` 로 iframe 금지(`X-Frame-Options: DENY` + `frame-ancestors 'none'`) · `Permissions-Policy`(카메라 · 마이크 · 위치 · 결제 · USB 끔) · `/assets/*` 1년 immutable 캐시. CSP 는 frame-ancestors 만 | 관리 화면이 로그인 세션으로 승인 · 배포를 하므로 클릭재킹을 막는다. Pages 기본값은 /assets 4시간 + 재검증이라, 해시 파일 이름을 믿고 재검증을 없앤다. 스크립트 출처 CSP 는 기능이 조용히 멈출 위험이 있어 보고 모드부터 따로 |
 | 11/3 | 사이드바 메뉴에 마우스를 올리거나 포커스 · 터치하면 그 경로의 지연 로드 청크를 미리 받는다(`lib/route-prefetch`, 라우터 표를 router.tsx 가 넘김). 첫 화면에서 전부 미리 받지는 않는다 | 메뉴를 누른 뒤 청크를 받는 동안 기다리지 않게. 전부 미리 받으면 첫 화면이 무거워진다. React Router 의 Link prefetch 는 framework 모드 전용이라 직접 만든다 |
+| 11/3 | 지구본(canvas)은 IntersectionObserver 로 화면 밖이면 그리기를 멈추고(멈춘 시간은 빼서 멈춘 자리에서 이어 돎), 토폴로지는 화면에 처음 들어올 때 캔버스 · 배치를 만든다(`useInViewOnce`) | Grafana 의 '보이지 않는 패널은 그리지 않기'. 소개 화면을 내려도 지구본이 초당 120번 다시 그려졌다. 탭 숨김은 브라우저가 requestAnimationFrame 을 이미 멈춘다 |
