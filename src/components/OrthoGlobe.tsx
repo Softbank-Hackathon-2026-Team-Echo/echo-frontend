@@ -198,13 +198,13 @@ export function OrthoGlobe({
           started = true;
         }
         context.strokeStyle = colors.arc;
-        context.lineWidth = 2;
+        context.lineWidth = 3;
         context.lineCap = 'round';
         context.stroke();
         const tip = head < 1 ? lifted(route.interpolate(head), head) : null;
         if (tip) {
           context.beginPath();
-          context.arc(tip[0], tip[1], 2.6, 0, Math.PI * 2);
+          context.arc(tip[0], tip[1], 3.6, 0, Math.PI * 2);
           context.fillStyle = colors.arcSoft;
           context.fill();
         }
