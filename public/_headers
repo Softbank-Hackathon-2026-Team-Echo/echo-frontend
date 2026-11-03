@@ -1,0 +1,17 @@
+# Cloudflare Pages 응답 헤더 (https://developers.cloudflare.com/pages/configuration/headers/)
+# 빌드하면 dist 로 복사된다. nosniff · Referrer-Policy(strict-origin-when-cross-origin) 는 Pages 가 이미 붙인다.
+# 주석은 줄 맨 앞에만 둔다(규칙 안 들여쓴 줄은 헤더로 읽힌다).
+#
+# 모든 응답:
+# - X-Frame-Options · frame-ancestors: 다른 사이트가 iframe 으로 감싸 승인 · 배포 버튼을 누르게 하는 공격(클릭재킹)을 막는다
+# - CSP 는 스크립트 출처를 막으면 기능이 조용히 멈출 수 있어 frame-ancestors 만 둔다(보고 모드부터 따로)
+# - Permissions-Policy: 쓰지 않는 브라우저 권한은 아예 끈다
+/*
+  X-Frame-Options: DENY
+  Content-Security-Policy: frame-ancestors 'none'
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
+
+# 해시가 붙은 빌드 파일: 내용이 바뀌면 이름도 바뀌므로 재검증 없이 1년 캐시한다.
+# index.html 은 Pages 기본값(max-age=0, must-revalidate)이라 새 배포를 바로 받는다
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
