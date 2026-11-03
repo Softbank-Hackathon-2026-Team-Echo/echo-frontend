@@ -1,6 +1,7 @@
 import { geoDistance, geoGraticule10, geoInterpolate, geoOrthographic, geoPath } from 'd3-geo';
 import type { MultiPolygon } from 'geojson';
 import { useEffect, useRef } from 'react';
+import { cn } from '@/lib/utils';
 
 export type GlobeRegion = {
   key: string;
@@ -57,13 +58,24 @@ const LIFT = 0.18;
 
 let landCache: Promise<MultiPolygon> | undefined;
 
-/** 세계 육지(110m, 0.1° 반올림). 지구본을 처음 그릴 때 한 번 불러온다 */
+/** 세계 육지(110m, 0.1° 반올림). 한 번만 받고, 실패하면 다음에 다시 받는다 */
 function loadLand(): Promise<MultiPolygon> {
   landCache ??= import('@/assets/geo/world-land-110m.json').then(
     (module) => module.default as MultiPolygon,
+    (error: unknown) => {
+      landCache = undefined;
+      throw error;
+    },
   );
   return landCache;
 }
+
+// 이 모듈(소개 · 온보딩 화면 묶음)을 불러오는 즉시 육지 데이터도 받기 시작한다.
+// 화면을 다 그린 뒤 effect 에서 받으면 대륙이 약 0.4초 늦게 나타났다
+loadLand().catch(() => undefined);
+
+// 육지가 끝내 안 오면 이 시간 뒤에는 구 · 점 · 곡선만으로 보여 준다
+const REVEAL_FALLBACK_MS = 1500;
 
 function readColors() {
   const style = getComputedStyle(document.documentElement);
@@ -276,6 +288,11 @@ export function OrthoGlobe({
           });
     observer?.observe(canvas);
 
+    // 육지가 준비되면 한 번에 페이드인한다(바다 · 곡선만 먼저 보였다가 대륙이 튀어나오지 않게)
+    const reveal = () => {
+      canvas.dataset.ready = 'true';
+    };
+    const fallback = window.setTimeout(reveal, REVEAL_FALLBACK_MS);
     loadLand()
       .then((loaded) => {
         land = loaded;
@@ -283,15 +300,26 @@ export function OrthoGlobe({
       })
       .catch(() => {
         // 육지 데이터가 없어도 구·점·곡선은 그린다
-      });
+      })
+      .finally(reveal);
     frame = requestAnimationFrame(draw);
 
     return () => {
       stopped = true;
+      window.clearTimeout(fallback);
       observer?.disconnect();
       cancelAnimationFrame(frame);
     };
   }, [regions, arcs, islands, center, animate, spin, ripple]);
 
-  return <canvas ref={canvasRef} aria-hidden className={className} />;
+  return (
+    <canvas
+      ref={canvasRef}
+      aria-hidden
+      className={cn(
+        'opacity-0 transition-opacity duration-500 data-[ready=true]:opacity-100 motion-reduce:transition-none',
+        className,
+      )}
+    />
+  );
 }
