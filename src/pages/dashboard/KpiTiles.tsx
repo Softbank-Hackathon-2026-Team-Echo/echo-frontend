@@ -1,8 +1,22 @@
+import { cn } from '@/lib/utils';
 import type { ServiceOnEnvironment } from './types';
 
-function Tile({ label, children }: { label: string; children: React.ReactNode }) {
+function Tile({
+  label,
+  children,
+  className,
+}: {
+  label: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
-    <div className="flex min-w-0 flex-col gap-2 rounded-lg border border-line bg-surface p-4">
+    <div
+      className={cn(
+        'flex min-w-0 flex-col gap-2 rounded-lg border border-line bg-surface p-4',
+        className,
+      )}
+    >
       <span className="text-small text-fg-secondary">{label}</span>
       {children}
     </div>
@@ -19,11 +33,24 @@ function Pending() {
   );
 }
 
-/** S01 KPI 타일 5개. 트래픽 비율만 지금 API(서비스 연결)로 채운다 */
-export function KpiTiles({ serving }: { serving: ServiceOnEnvironment | undefined }) {
-  const weight = serving?.link.trafficWeight ?? 0;
+/** 이전 중이면 트래픽 칸이 도착 환경 비율을 보인다 */
+export type TargetTraffic = { name: string; weight: number };
+
+/**
+ * S01 KPI 타일 5개(반분할 960 은 4개, 에러 버짓을 뺀다). 트래픽 비율만 지금 API(서비스 연결 · 이전 단계)로 채운다
+ */
+export function KpiTiles({
+  serving,
+  target,
+}: {
+  serving: ServiceOnEnvironment | undefined;
+  target?: TargetTraffic;
+}) {
+  const weight = target?.weight ?? serving?.link.trafficWeight ?? 0;
+  const envName = target?.name ?? serving?.link.environment.name;
+  const hasValue = Boolean(target || serving);
   return (
-    <div className="grid grid-cols-5 gap-4 max-compact:grid-cols-2">
+    <div className="grid grid-cols-5 gap-4 max-wide:grid-cols-4 max-wide:gap-3 max-sm:grid-cols-2">
       <Tile label="Success rate">
         <Pending />
       </Tile>
@@ -33,12 +60,12 @@ export function KpiTiles({ serving }: { serving: ServiceOnEnvironment | undefine
       <Tile label="Replication lag">
         <Pending />
       </Tile>
-      <Tile label="Traffic on primary">
+      <Tile label={target ? 'Traffic on target' : 'Traffic on primary'}>
         <span className="flex flex-wrap items-baseline gap-2">
-          <span className="text-metric-xl tabular-nums">{serving ? `${weight}%` : '—'}</span>
-          {serving && (
+          <span className="text-metric-xl tabular-nums">{hasValue ? `${weight}%` : '—'}</span>
+          {envName && (
             <span className="rounded-sm bg-success-bg px-1.5 text-label text-success-fg">
-              {serving.link.environment.name}
+              {envName}
             </span>
           )}
         </span>
@@ -46,7 +73,7 @@ export function KpiTiles({ serving }: { serving: ServiceOnEnvironment | undefine
           <span className="block h-full rounded-full bg-brand" style={{ width: `${weight}%` }} />
         </span>
       </Tile>
-      <Tile label="Error budget left">
+      <Tile label="Error budget left" className="max-wide:hidden">
         <Pending />
       </Tile>
     </div>
