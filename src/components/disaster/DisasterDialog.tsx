@@ -140,16 +140,15 @@ export function DisasterDialog({
               value={String(magnitude)}
               onValueChange={(value) => setMagnitude(Number(value))}
             >
-              <SelectTrigger id="disaster-magnitude" className="w-28">
+              <SelectTrigger id="disaster-magnitude" className="w-32">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 {MAGNITUDES.map((value) => (
                   <SelectItem key={value} value={String(value)}>
                     M{value.toFixed(1)}
-                    {type === 'EARTHQUAKE' && value === EVACUATION_MIN_MAGNITUDE && (
-                      <span className="text-caption text-fg-muted">evacuation threshold</span>
-                    )}
+                    {/* 선택 칸에도 같은 글자가 들어가므로 짧게 쓴다 */}
+                    {type === 'EARTHQUAKE' && value === EVACUATION_MIN_MAGNITUDE && ' (rule)'}
                   </SelectItem>
                 ))}
               </SelectContent>
