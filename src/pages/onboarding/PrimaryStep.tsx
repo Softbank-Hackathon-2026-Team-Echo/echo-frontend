@@ -2,6 +2,7 @@ import { Cloud, Server } from 'lucide-react';
 import { useState } from 'react';
 import { EnvironmentFormDialog } from '@/components/EnvironmentFormDialog';
 import { RoleButton } from '@/components/RoleButton';
+import { Button } from '@/components/ui/button';
 import { StepShell } from './StepShell';
 
 const PROVIDERS = [
@@ -11,7 +12,18 @@ const PROVIDERS = [
 ];
 
 /** O01: 지금 트래픽을 받는 환경을 등록한다. 폼은 설정의 환경 등록과 같다 */
-export function PrimaryStep({ orgId, orgSlug }: { orgId: string; orgSlug: string }) {
+export function PrimaryStep({
+  orgId,
+  orgSlug,
+  primaryName,
+  onContinue,
+}: {
+  orgId: string;
+  orgSlug: string;
+  /** 이미 등록했으면 그 이름. 다시 볼 때 Continue 를 보인다 */
+  primaryName: string | undefined;
+  onContinue: () => void;
+}) {
   const [open, setOpen] = useState(false);
   return (
     <StepShell
@@ -41,10 +53,20 @@ export function PrimaryStep({ orgId, orgSlug }: { orgId: string; orgSlug: string
           You give a name, region, cluster and where the kubeconfig is stored. EchoPort keeps only
           that reference, never the secret itself.
         </p>
-        <div className="flex justify-end">
-          <RoleButton requires="DEVELOPER" onClick={() => setOpen(true)}>
+        <div className="flex items-center justify-end gap-2">
+          {primaryName && (
+            <span className="mr-auto text-small text-fg-secondary">
+              Primary <span className="text-body-medium text-fg">{primaryName}</span> is connected
+            </span>
+          )}
+          <RoleButton
+            requires="DEVELOPER"
+            variant={primaryName ? 'outline' : 'default'}
+            onClick={() => setOpen(true)}
+          >
             Add environment
           </RoleButton>
+          {primaryName && <Button onClick={onContinue}>Continue</Button>}
         </div>
       </div>
       <EnvironmentFormDialog open={open} onOpenChange={setOpen} orgId={orgId} orgSlug={orgSlug} />
