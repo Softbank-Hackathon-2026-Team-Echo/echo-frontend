@@ -1,8 +1,14 @@
 // 이전 계획 (API 서버 8, echo-was docs/api/migration-plans.md). 승인 = 실행 시작이다
-import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQueries,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { api, unwrap } from './client';
 import { queryKeys } from './query-keys';
-import type { CreateMigrationPlan, MigrationPlanStatus } from './types';
+import type { CreateMigrationPlan, MigrationPlanStatus, MigrationPlanSummary } from './types';
 
 /** 실시간(SSE)이 생기기 전까지 실행 중인 계획은 1초마다 다시 부른다 (단계가 몇 초 단위로 바뀐다) */
 export const MIGRATION_POLL_MS = 1_000;
@@ -31,6 +37,34 @@ export function useMigrationPlans(orgId: string | undefined, serviceId: string |
         }),
       ),
     enabled: Boolean(orgId && serviceId),
+  });
+}
+
+/** 조직 전체 이전 기록(M01). 조직 단위 목록 API 가 없어 서비스마다 목록을 불러 합친다 */
+export function useOrgMigrationPlans(orgId: string | undefined, serviceIds: string[]) {
+  return useQueries({
+    queries: serviceIds.map((serviceId) => ({
+      queryKey: queryKeys.migrationPlans(orgId ?? '', serviceId),
+      queryFn: () =>
+        unwrap(
+          api.GET('/api/v1/orgs/{org_id}/services/{service_id}/migration-plans', {
+            params: {
+              path: { org_id: orgId ?? '', service_id: serviceId },
+              query: { page: 0, size: 20 },
+            },
+          }),
+        ),
+      enabled: Boolean(orgId),
+    })),
+    combine: (results) => ({
+      data: results
+        .flatMap((result) => result.data?.items ?? [])
+        .sort((a: MigrationPlanSummary, b: MigrationPlanSummary) =>
+          b.createdAt.localeCompare(a.createdAt),
+        ),
+      isPending: results.some((result) => result.isPending),
+      error: results.find((result) => result.error)?.error ?? null,
+    }),
   });
 }
 

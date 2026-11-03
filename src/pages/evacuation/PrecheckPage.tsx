@@ -6,6 +6,7 @@ import { ErrorState } from '@/components/ErrorState';
 import { PageHeader } from '@/components/PageHeader';
 import { RoleButton } from '@/components/RoleButton';
 import { SimulatedBadge } from '@/components/SimulatedBadge';
+import { type Stage, StageList } from '@/components/StageList';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -34,7 +35,6 @@ import { useService } from '@/lib/api/services';
 import { hasRole } from '@/lib/roles';
 import { cn } from '@/lib/utils';
 import { PatchReview } from './PatchReview';
-import { type Stage, StageList } from './StageList';
 import { WizardSteps } from './WizardSteps';
 
 const clock = (iso: string | null) => (iso ? new Date(iso).toLocaleTimeString('en-GB') : '');

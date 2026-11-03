@@ -2,6 +2,7 @@ import { type FormEvent, useState } from 'react';
 import { FormError, FormField } from '@/components/FormField';
 import { PageHeader } from '@/components/PageHeader';
 import { RoleButton } from '@/components/RoleButton';
+import { StageList } from '@/components/StageList';
 import { Input } from '@/components/ui/input';
 import { fieldErrors, formErrorMessage } from '@/lib/api/form-errors';
 import { useCreateMigrationPlan } from '@/lib/api/migrations';
@@ -12,8 +13,7 @@ import {
   draftSteps,
   duration,
   planStages,
-} from './plan-stages';
-import { StageList } from './StageList';
+} from '@/lib/migration-stages';
 import { WizardSteps } from './WizardSteps';
 
 const FIELDS = [

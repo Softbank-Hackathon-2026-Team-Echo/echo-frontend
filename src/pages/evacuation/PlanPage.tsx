@@ -5,6 +5,7 @@ import { ErrorState } from '@/components/ErrorState';
 import { PageHeader } from '@/components/PageHeader';
 import { RoleButton } from '@/components/RoleButton';
 import { SimulatedBadge } from '@/components/SimulatedBadge';
+import { StageList } from '@/components/StageList';
 import { StatusBadge } from '@/components/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -15,12 +16,11 @@ import { isActivePlan, useMigrationPlan, usePlanAction } from '@/lib/api/migrati
 import { useService } from '@/lib/api/services';
 import type { MigrationPlan } from '@/lib/api/types';
 import { dateTime } from '@/lib/format';
+import { duration, planStages } from '@/lib/migration-stages';
 import { hasRole, roleLabel } from '@/lib/roles';
 import { migrationPlanStatusView } from '@/lib/status';
 import { PlanDraft } from './PlanDraft';
-import { duration, planStages } from './plan-stages';
 import { SecurityComparison, securityMismatches } from './SecurityComparison';
-import { StageList } from './StageList';
 import { WizardSteps } from './WizardSteps';
 
 const clock = (iso: string | null) => (iso ? new Date(iso).toLocaleTimeString('en-GB') : '—');

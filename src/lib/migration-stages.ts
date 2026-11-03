@@ -1,5 +1,5 @@
+import type { Stage, StageState } from '@/components/StageList';
 import type { MigrationPlan, MigrationStep } from '@/lib/api/types';
-import type { Stage, StageState } from './StageList';
 
 // API 서버 8 단계는 고정이다: 사전 확인 → 90/10 → 50/50 → 데이터 동기화 확인 → 0/100
 const STEP_OVERHEAD_SECONDS = 2;
