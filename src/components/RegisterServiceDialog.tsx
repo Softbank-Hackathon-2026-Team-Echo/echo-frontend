@@ -32,11 +32,14 @@ export function RegisterServiceDialog({
   onOpenChange,
   orgId,
   orgSlug,
+  onRegistered,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   orgId: string;
   orgSlug: string;
+  /** 있으면 서비스 목록으로 가지 않고 이것을 부른다(온보딩) */
+  onRegistered?: (service: { id: string; name: string }) => void;
 }) {
   const navigate = useNavigate();
   const create = useCreateService(orgId);
@@ -60,7 +63,8 @@ export function RegisterServiceDialog({
       {
         onSuccess: (service) => {
           onOpenChange(false);
-          navigate(`/o/${orgSlug}/services?service=${service.id}`);
+          if (onRegistered) onRegistered(service);
+          else navigate(`/o/${orgSlug}/services?service=${service.id}`);
         },
       },
     );

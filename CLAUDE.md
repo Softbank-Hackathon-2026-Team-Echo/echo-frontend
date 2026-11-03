@@ -45,10 +45,10 @@ src/
 ├─ components/
 │  ├─ ui/                # shadcn/ui 생성 파일. 토큰 글자 스타일·32px 밀도로 고쳤다
 │  ├─ disaster/          # 재난 시뮬레이션 다이얼로그(S01-D) · 지도(DisasterMap, d3-geo + world-atlas 50m 지연 로드)
-│  └─ *.tsx              # 두 화면 이상에서 쓰는 앱 컴포넌트 (Panel, RoleButton, StatusBadge, SimulatedBadge, ProviderLabel, FormField, ConfirmDeleteDialog, ExternalLink, EmptyState, ErrorState, ScreenErrorBoundary, Logo …)
+│  └─ *.tsx              # 두 화면 이상에서 쓰는 앱 컴포넌트 (Panel, RoleButton, StatusBadge, SimulatedBadge, ProviderLabel, FormField, ConfirmDeleteDialog, ExternalLink, EmptyState, ErrorState, ScreenErrorBoundary, Logo, OrthoGlobe, 등록·배포 다이얼로그(EnvironmentFormDialog · RegisterServiceDialog · DeployDialog) …)
 ├─ layouts/AppShell.tsx  # 사이드바(워드마크 · Operate/Resilience/Govern 묶음 · 사용자 메뉴=테마·로그아웃) + 상단 바(브레드크럼 · Org 선택 · Simulate disaster · 알림)
-├─ pages/                # 화면 단위 폴더 (login/, root/, landing/(L01 소개), dashboard/, services/, evacuation/, migrations/, settings/, dev/). 한 화면에서만 쓰는 컴포넌트는 그 폴더 안에
-├─ hooks/                # useTheme(테마 3개, localStorage), useRole(현재 조직 역할), useNow(경과 시간)
+├─ pages/                # 화면 단위 폴더 (login/, root/, landing/(L01 소개), onboarding/(O01~O03), dashboard/, services/, evacuation/, migrations/, settings/, dev/). 한 화면에서만 쓰는 컴포넌트는 그 폴더 안에
+├─ hooks/                # useTheme(테마 3개, localStorage), useRole(현재 조직 역할), useNow(경과 시간), usePrefersReducedMotion
 ├─ lib/
 │  ├─ api/               # client(api = openapi-fetch + unwrap, 스키마 밖 경로는 apiFetch) · errors · notify · form-errors(422 → 칸 오류)
 │  │                     #   query-client · query-keys · schema.d.ts(gen:api 생성) · types(스키마 별칭)
@@ -58,6 +58,7 @@ src/
 │  ├─ status.ts          # 서버 상태 값 → 화면 문구·색 (StatusBadge 와 짝), 오류 코드 → 문구
 │  ├─ migration-*.ts     # 이전 단계 시간(stages) · 결과 숫자(metrics) · Failback 판정(mode). 두 화면 이상에서 쓴다
 │  ├─ geo.ts             # 리전·도시 → 좌표(계약 4-1 🆕 전까지), 거리 계산
+│  ├─ onboarding.ts      # 온보딩 단계 판단(환경·서비스 데이터로, 저장 없음). 온보딩 화면과 대시보드 안내가 같이 쓴다
 │  ├─ format.ts          # 상대 시각·경과 시간
 │  └─ utils.ts           # cn() (커스텀 글자 스타일을 아는 tailwind-merge)
 ├─ assets/               # 로고 SVG · geo/east-asia-50m.json(재난 지도 해안선, scripts/trim-atlas.mjs 로 만든다)
@@ -180,3 +181,7 @@ docs/                    # api-contract.md, PR.md(커밋 안 함)
 | 11/3 | 데모 실패 주입(`simulate`)은 E01-3 계획 만들기의 선택 칸으로 둔다. 이유별로 고를 수 있는 단계만 보인다 | F9 자동 롤백 시연. 서버가 가짜 실행기일 때만 받고, 아니면 422 `SIMULATE_NOT_ALLOWED` 를 칸 아래에 보인다 |
 | 11/3 | 재난 반경 안 환경으로는 계획 만들기·승인을 막는다(E01-3, 주소로 바로 들어와도) | 11/2 결정(재난 미종료 지역 복귀 금지)을 버튼 하나가 아니라 계획 화면에서도 지키게 |
 | 11/3 | Failback 표시는 서버 `mode` 칸이 생기기 전까지 "같은 서비스의 앞선 성공 이전을 거꾸로 되짚는 계획" 으로 가린다 | API 서버 8 에 종류 칸이 없다. 계약 4-6 `mode` 🆕 |
+| 11/3 | O01~O03 온보딩은 `/o/:slug/onboarding`(사이드바 없음)이고, 어느 단계인지는 저장하지 않고 서버 데이터로 정한다: 환경 0개 → 주 환경, 1개 → 예비, 배포 없음 → 배포, 그다음 훈련. 주 환경은 서비스를 받는(SERVING) 환경, 없으면 먼저 등록한 환경 | 이슈 #27 완료 기준 "중간에 나가도 이어서". 역할은 환경이 아니라 서비스 배포 단위라 따로 고르게 하지 않는다 |
+| 11/3 | 온보딩 등록 폼은 설정의 환경 등록 시트 · 서비스 등록 · 배포 다이얼로그를 그대로 연다(`components/` 로 옮겼다). 예비 환경이 주 환경에서 M8 영향 반경(≈ 620km) 안이면 "같은 재난 반경" 경고 | Figma 는 폼을 화면 안에 그렸지만 같은 폼을 두 벌 두지 않는다. 오사카(400km)는 경고, 후쿠오카(880km) · 서울(1,160km)은 통과(Figma 메모) |
+| 11/3 | 온보딩 리드 문단은 `text-lead`(Figma Body L 17/28)를 쓴다 | Figma O01~O03 이 소개 화면과 같은 Body L 을 쓴다. 변수가 생기면 같이 바꾼다 |
+| 11/3 | 새 조직을 만들면 그 조직의 온보딩으로 간다. 대시보드는 설정이 덜 끝났으면 "Continue setup" 안내를 보인다 | 처음 들어온 사람이 다음에 할 일을 찾게 |

@@ -4,6 +4,7 @@ import { useParams, useSearchParams } from 'react-router';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorState } from '@/components/ErrorState';
 import { PageHeader } from '@/components/PageHeader';
+import { RegisterServiceDialog } from '@/components/RegisterServiceDialog';
 import { RoleButton } from '@/components/RoleButton';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -19,7 +20,6 @@ import { useServiceDetails, useServices, useServicesDeployRequests } from '@/lib
 import type { DeployRequestSummary, ServiceDetail } from '@/lib/api/types';
 import { shortSha } from '@/lib/status';
 import { cn } from '@/lib/utils';
-import { RegisterServiceDialog } from './RegisterServiceDialog';
 import { ServicePanel } from './ServicePanel';
 
 function StatItem({

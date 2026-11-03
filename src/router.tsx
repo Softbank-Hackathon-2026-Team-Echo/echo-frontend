@@ -19,6 +19,12 @@ export const router = createBrowserRouter([
     lazy: () => import('@/pages/root/RootRedirect').then((m) => ({ Component: m.default })),
   },
   {
+    // 온보딩은 사이드바 없이 한 화면을 다 쓴다(Figma O01~O03)
+    path: '/o/:slug/onboarding',
+    errorElement: <RouteErrorPage />,
+    lazy: () => import('@/pages/onboarding/OnboardingPage').then((m) => ({ Component: m.default })),
+  },
+  {
     path: '/o/:slug',
     element: <AppShell />,
     errorElement: <RouteErrorPage />,

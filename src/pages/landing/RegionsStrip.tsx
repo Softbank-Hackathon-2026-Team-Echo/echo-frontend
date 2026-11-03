@@ -2,8 +2,8 @@ import { ArrowRight } from 'lucide-react';
 import { Link } from 'react-router';
 import { ProviderLabel } from '@/components/ProviderLabel';
 import { Button } from '@/components/ui/button';
+import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 import { cn } from '@/lib/utils';
-import { usePrefersReducedMotion } from './usePrefersReducedMotion';
 
 type Tile = { kind: string; city: string; region: string };
 

@@ -1,8 +1,8 @@
 import { useRef } from 'react';
+import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 import { cn } from '@/lib/utils';
 import { useCountUp } from './useCountUp';
 import { useInView } from './useInView';
-import { usePrefersReducedMotion } from './usePrefersReducedMotion';
 
 type Target = { value: number; format: (value: number) => string; title: string; note: string };
 
