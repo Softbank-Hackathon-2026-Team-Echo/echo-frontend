@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { ErrorBoundary, type FallbackProps } from 'react-error-boundary';
 import { useLocation } from 'react-router';
 import { Button } from '@/components/ui/button';
+import { reportError } from '@/lib/monitoring';
 import { EmptyState } from './EmptyState';
 
 function Fallback({ error, resetErrorBoundary }: FallbackProps) {
@@ -27,7 +28,11 @@ function Fallback({ error, resetErrorBoundary }: FallbackProps) {
 export function ScreenErrorBoundary({ children }: { children: ReactNode }) {
   const { pathname } = useLocation();
   return (
-    <ErrorBoundary FallbackComponent={Fallback} resetKeys={[pathname]}>
+    <ErrorBoundary
+      FallbackComponent={Fallback}
+      resetKeys={[pathname]}
+      onError={(error) => reportError(error, { tags: { boundary: 'screen', path: pathname } })}
+    >
       {children}
     </ErrorBoundary>
   );

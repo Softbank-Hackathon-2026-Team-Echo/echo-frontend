@@ -1,11 +1,17 @@
 import { CircleAlert } from 'lucide-react';
+import { useEffect } from 'react';
 import { isRouteErrorResponse, Link, useRouteError } from 'react-router';
 import { EmptyState } from '@/components/EmptyState';
 import { Button } from '@/components/ui/button';
+import { reportError } from '@/lib/monitoring';
 
 /** 라우터 밖(앱 껍데기 포함)에서 난 오류. 껍데기 안 화면 오류는 ScreenErrorBoundary 가 먼저 잡는다 */
 export function RouteErrorPage() {
   const error = useRouteError();
+  // 없는 주소(404 응답)는 오류가 아니다
+  useEffect(() => {
+    if (!isRouteErrorResponse(error)) reportError(error, { tags: { boundary: 'route' } });
+  }, [error]);
   const message = isRouteErrorResponse(error)
     ? `${error.status} ${error.statusText}`
     : error instanceof Error

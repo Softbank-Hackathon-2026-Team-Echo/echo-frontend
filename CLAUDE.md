@@ -60,6 +60,7 @@ src/
 │  ├─ geo.ts             # 리전·도시 → 좌표(계약 4-1 🆕 전까지), 거리 계산
 │  ├─ onboarding.ts      # 온보딩 단계 판단(환경·서비스 데이터로, 저장 없음). 온보딩 화면과 대시보드 안내가 같이 쓴다
 │  ├─ format.ts          # 상대 시각·경과 시간
+│  ├─ monitoring.ts      # Sentry(DSN 있을 때만, 첫 화면 뒤 지연 로드) · reportError(5xx·네트워크만) · 사용자 태그. sentry-sdk · sentry-replay 는 지연 로드 묶음
 │  └─ utils.ts           # cn() (커스텀 글자 스타일을 아는 tailwind-merge)
 ├─ assets/               # 로고 SVG · geo/east-asia-50m.json(재난 지도 해안선, scripts/trim-atlas.mjs 로 만든다)
 └─ test/                 # setup(MSW 서버·ResizeObserver) · msw-server · render(renderRoute)
@@ -113,7 +114,7 @@ docs/                    # api-contract.md, PR.md(커밋 안 함)
 
 - **패키지·실행**: `pnpm`(Node 22, `.nvmrc`). `npm`·`yarn`을 쓰지 않고 lock 파일은 `pnpm-lock.yaml` 하나만 커밋한다.
 - **명령**: 개발 서버 `pnpm dev`(5173 고정) / 빌드 `pnpm build` / 린트·포맷 검사 `pnpm lint`(고치기 `pnpm format`) / 타입 `pnpm typecheck` / 테스트 `pnpm test`(한 번 실행, 감시는 `pnpm test:watch`) / API 타입 생성 `pnpm gen:api`(`OPENAPI_URL`, 없으면 로컬 `openapi.json`).
-- **환경변수**: `.env.example`을 `.env.local`로 복사한다. `VITE_API_BASE_URL`(API 주소) 하나. 운영 API 는 `https://app.echoport.uk` 출처만 받으므로, 로컬 화면 확인은 echo-was 를 로컬로 띄우거나 운영 배포 뒤 `app.echoport.uk` 에서 한다.
+- **환경변수**: `.env.example`을 `.env.local`로 복사한다. `VITE_API_BASE_URL`(API 주소), `VITE_SENTRY_DSN`(비우면 오류 추적 꺼짐). 소스맵 업로드는 Cloudflare Pages 빌드 환경변수 `SENTRY_AUTH_TOKEN` · `SENTRY_ORG` · `SENTRY_PROJECT` 가 있을 때만 한다. 운영 API 는 `https://app.echoport.uk` 출처만 받으므로, 로컬 화면 확인은 echo-was 를 로컬로 띄우거나 운영 배포 뒤 `app.echoport.uk` 에서 한다.
 - **CI**: GitHub Actions(`.github/workflows/ci.yml`)가 PR 과 main 에서 `pnpm lint` · `typecheck` · `test` · `build` · `node scripts/check-bundle.mjs`(gzip 예산: 첫 화면 150KB · 화면 청크 120KB · 워커 450KB)를 돌린다. 배포는 Cloudflare Pages 가 따로 한다.
 - **품질 게이트**: Claude Code PreToolUse 훅(`.claude/settings.json`)이 `git add`·`git commit` 전에 `pnpm lint`·`pnpm typecheck`·`pnpm test`, `git push` 전에 `pnpm lint`를 돌려 실패하면 막는다(180초 제한). `package.json`이 없으면 건너뛴다.
 - **화면 확인**: 화면을 바꿨으면 `pnpm dev`로 띄워 브라우저에서 라이트·다크·projector를 확인한다. 테스트 통과만으로 화면이 맞다고 보고하지 않는다.
@@ -191,3 +192,7 @@ docs/                    # api-contract.md, PR.md(커밋 안 함)
 | 11/3 | 이전이 실행 중이면 대시보드 상태 알약이 "Evacuating to {도착} · N%", 트래픽 칸이 "Traffic on target" 으로 바뀌고 "Open migration" 버튼이 생긴다. 비율은 서버가 적용한 단계 비율이다 | 시연 장면 3. 대시보드만 보고 있어도 얼마나 옮겨 갔는지 보이게 |
 | 11/3 | GitHub Actions CI 를 둔다(lint · typecheck · test · build · 번들 예산). 예산은 gzip 기준 첫 화면 150KB · 화면 청크 120KB · 웹 워커 450KB | 지금까지 검사는 로컬 커밋 훅뿐이라 훅을 건너뛰거나 다른 사람이 올린 PR 은 깨진 채 머지될 수 있었다. 번들은 11/3 에 516KB → 64KB 로 줄였고 다시 커지지 않게 막는다 |
 | 11/3 | dependabot minimatch 경고(GHSA-g3hv-75wg-m249)는 지금 고치지 않는다 | 개발 도구(openapi-typescript → @redocly/openapi-core)만 쓰고 운영 번들에는 없다. 고친 버전(11.x)은 내보내기 방식이 달라 redocly 의 `require('minimatch')(…)` 호출이 깨지고, 위 패키지 최신판도 5.x 를 쓴다. 위 패키지가 올리면 따라간다 |
+| 11/3 | 오류 추적은 Sentry(무료 플랜). DSN 이 있을 때만 켜고, SDK(34KB) · 리플레이(39KB)는 첫 화면을 그린 뒤 따로 불러온다(첫 화면 +0.6KB) | 시연 중 오류가 나도 어디서 왜 났는지 바로 찾게. 팀 슬랙에 비용 0 · 나가는 정보를 공유했다 |
+| 11/3 | Sentry 로는 5xx · 네트워크 오류 · 봉투가 아닌 응답 · 화면 렌더 오류만 보낸다. API 오류에는 requestId(X-Request-ID) · status · code 태그. 401 · 403 · 404 · 409 · 422 는 보내지 않는다 | 4xx 는 화면이 처리하는 예상된 응답이라 섞이면 진짜 오류가 묻힌다. requestId 로 echo-was 로그와 같은 요청을 찾는다 |
+| 11/3 | Sentry 개인정보: 자동 수집(IP · 쿠키 · 헤더 · 본문 · 쿼리)은 끄고 사용자는 GitHub 아이디만. 리플레이는 오류 난 세션만, 글자 · 입력 · 이미지 전부 가림. API 요청에 추적 헤더를 붙이지 않는다(`tracePropagationTargets: []`) | 비밀값 · 개인정보가 외부로 나가지 않게. sentry-trace · baggage 헤더는 echo-was CORS 허용 목록에 없어 붙이면 요청이 막힌다 |
+| 11/3 | 소스맵은 Cloudflare Pages 빌드에서 만들어 Sentry 에 올리고 dist 에서 지운다(`hidden`). 릴리스 이름은 커밋 SHA | 운영 파일은 GitHub Actions 가 아니라 Cloudflare 가 빌드해서, 같은 빌드의 소스맵이어야 줄 번호가 맞는다. 원본 코드를 공개하지 않는다 |
