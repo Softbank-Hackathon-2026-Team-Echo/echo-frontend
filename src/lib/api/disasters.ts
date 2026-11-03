@@ -1,4 +1,4 @@
-// MOCK: 재난 API(계약 4-3 🆕)가 서버에 생기기 전까지 브라우저 안에서 흉내 낸다.
+// 시뮬레이션: 재난 API(계약 4-3 🆕)가 서버에 생기기 전까지 브라우저 안에서 흉내 낸다.
 // 모양은 계약 초안과 같고, 모든 재난은 simulated: true 다. 서버가 생기면 DISASTER_API_READY 를 켜고
 // 아래 store 대신 api + unwrap 으로 바꾼다. 영향 판정(반경 안의 환경)은 서버가 할 일이라 그때 서버 값을 쓴다.
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';

@@ -47,7 +47,6 @@ export function describeApiError(error: unknown): string {
   if (!isApiError(error)) return 'Something went wrong. Please try again.';
   if (error.status === 403) return PERMISSION_MESSAGE;
   if (error.status === 502 || error.status === 503) return UNAVAILABLE_MESSAGE;
-  if (error.code === 'MOCK_UNAVAILABLE') return 'Mock data stopped responding. Reload the page.';
   if (error.status === 0) return 'Cannot reach the server. Check your connection.';
   return CONFLICT_MESSAGES[error.code] ?? error.message;
 }

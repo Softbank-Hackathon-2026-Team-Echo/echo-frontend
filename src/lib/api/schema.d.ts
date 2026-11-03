@@ -119,6 +119,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/orgs/{org_id}/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Organization Settings */
+        patch: operations["update_organization_settings_api_v1_orgs__org_id__settings_patch"];
+        trace?: never;
+    };
     "/api/v1/orgs/{org_id}/members": {
         parameters: {
             query?: never;
@@ -376,6 +393,166 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/orgs/{org_id}/deploy-requests/{deploy_request_id}/rollback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Rollback */
+        post: operations["create_rollback_api_v1_orgs__org_id__deploy_requests__deploy_request_id__rollback_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/orgs/{org_id}/deploy-requests/{deploy_request_id}/logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Deploy Request Logs */
+        get: operations["get_deploy_request_logs_api_v1_orgs__org_id__deploy_requests__deploy_request_id__logs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/orgs/{org_id}/services/{service_id}/migration-plans": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search Migration Plans */
+        get: operations["search_migration_plans_api_v1_orgs__org_id__services__service_id__migration_plans_get"];
+        put?: never;
+        /** Create Migration Plan */
+        post: operations["create_migration_plan_api_v1_orgs__org_id__services__service_id__migration_plans_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/orgs/{org_id}/migration-plans/{plan_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Migration Plan */
+        get: operations["get_migration_plan_api_v1_orgs__org_id__migration_plans__plan_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/orgs/{org_id}/migration-plans/{plan_id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Approve Migration Plan
+         * @description 승인하면 바로 실행이 시작된다(별도 실행 버튼 없음).
+         */
+        post: operations["approve_migration_plan_api_v1_orgs__org_id__migration_plans__plan_id__approve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/orgs/{org_id}/migration-plans/{plan_id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reject Migration Plan */
+        post: operations["reject_migration_plan_api_v1_orgs__org_id__migration_plans__plan_id__reject_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/orgs/{org_id}/migration-plans/{plan_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel Migration Plan */
+        post: operations["cancel_migration_plan_api_v1_orgs__org_id__migration_plans__plan_id__cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/orgs/{org_id}/migration-plans/{plan_id}/abort": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Abort Migration Plan
+         * @description 중단을 받는다(멱등). 출발 100% 로 되돌리는 것은 일꾼이 한다.
+         */
+        post: operations["abort_migration_plan_api_v1_orgs__org_id__migration_plans__plan_id__abort_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/orgs/{org_id}/migration-plans/{plan_id}/logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Migration Plan Logs */
+        get: operations["get_migration_plan_logs_api_v1_orgs__org_id__migration_plans__plan_id__logs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/healthz": {
         parameters: {
             query?: never;
@@ -385,6 +562,23 @@ export interface paths {
         };
         /** Check Health */
         get: operations["check_health_healthz_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/livez": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Check Liveness For Load Balancer */
+        get: operations["check_liveness_for_load_balancer_livez_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -508,6 +702,21 @@ export interface components {
             /** Details */
             details?: components["schemas"]["ErrorDetail"][] | null;
         };
+        /** ApiResponse[LogPageResponse] */
+        ApiResponse_LogPageResponse_: {
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Code */
+            code?: string | null;
+            /** Message */
+            message?: string | null;
+            data?: components["schemas"]["LogPageResponse"] | null;
+            /** Details */
+            details?: components["schemas"]["ErrorDetail"][] | null;
+        };
         /** ApiResponse[MeResponse] */
         ApiResponse_MeResponse_: {
             /**
@@ -535,6 +744,36 @@ export interface components {
             /** Message */
             message?: string | null;
             data?: components["schemas"]["MemberResponse"] | null;
+            /** Details */
+            details?: components["schemas"]["ErrorDetail"][] | null;
+        };
+        /** ApiResponse[MigrationLogPageResponse] */
+        ApiResponse_MigrationLogPageResponse_: {
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Code */
+            code?: string | null;
+            /** Message */
+            message?: string | null;
+            data?: components["schemas"]["MigrationLogPageResponse"] | null;
+            /** Details */
+            details?: components["schemas"]["ErrorDetail"][] | null;
+        };
+        /** ApiResponse[MigrationPlanDetailResponse] */
+        ApiResponse_MigrationPlanDetailResponse_: {
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Code */
+            code?: string | null;
+            /** Message */
+            message?: string | null;
+            data?: components["schemas"]["MigrationPlanDetailResponse"] | null;
             /** Details */
             details?: components["schemas"]["ErrorDetail"][] | null;
         };
@@ -625,6 +864,21 @@ export interface components {
             /** Message */
             message?: string | null;
             data?: components["schemas"]["Page_MemberResponse_"] | null;
+            /** Details */
+            details?: components["schemas"]["ErrorDetail"][] | null;
+        };
+        /** ApiResponse[Page[MigrationPlanSummaryResponse]] */
+        ApiResponse_Page_MigrationPlanSummaryResponse__: {
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Code */
+            code?: string | null;
+            /** Message */
+            message?: string | null;
+            data?: components["schemas"]["Page_MigrationPlanSummaryResponse_"] | null;
             /** Details */
             details?: components["schemas"]["ErrorDetail"][] | null;
         };
@@ -779,6 +1033,21 @@ export interface components {
             role: components["schemas"]["OrganizationRole"];
         };
         /**
+         * CreateMigrationPlanRequest
+         * @description 이전 계획 만들기. observeSeconds 를 빼면 설정 기본값(5초)이다.
+         */
+        CreateMigrationPlanRequest: {
+            /**
+             * Targetenvironmentid
+             * Format: uuid
+             */
+            targetEnvironmentId: string;
+            /** Observeseconds */
+            observeSeconds?: number | null;
+            rollbackConditions?: components["schemas"]["RollbackConditionsRequest"];
+            simulate?: components["schemas"]["MigrationSimulateRequest"] | null;
+        };
+        /**
          * CreateOrganizationRequest
          * @description slug 는 1~39자 소문자·숫자·하이픈(처음·끝·연속 하이픈 금지)이고 만든 뒤 바꿀 수 없다.
          */
@@ -833,7 +1102,7 @@ export interface components {
          * DeployRequestCancelReason
          * @enum {string}
          */
-        DeployRequestCancelReason: "SUPERSEDED" | "SERVICE_DELETED";
+        DeployRequestCancelReason: "SUPERSEDED" | "SERVICE_DELETED" | "BASE_CHANGED";
         /** DeployRequestDetailResponse */
         DeployRequestDetailResponse: {
             /**
@@ -865,6 +1134,12 @@ export interface components {
             stageTimes: components["schemas"]["StageTimesResponse"];
             /** Simulated */
             simulated: boolean;
+            /** Iscurrent */
+            isCurrent: boolean;
+            /** Rollbackable */
+            rollbackable: boolean;
+            /** Rollbackofrequestid */
+            rollbackOfRequestId: string | null;
             /** Repourl */
             repoUrl: string;
             /** Supersededbyid */
@@ -922,12 +1197,18 @@ export interface components {
             stageTimes: components["schemas"]["StageTimesResponse"];
             /** Simulated */
             simulated: boolean;
+            /** Iscurrent */
+            isCurrent: boolean;
+            /** Rollbackable */
+            rollbackable: boolean;
+            /** Rollbackofrequestid */
+            rollbackOfRequestId: string | null;
         };
         /**
          * DeployRequestTrigger
          * @enum {string}
          */
-        DeployRequestTrigger: "MANUAL" | "STANDBY_SYNC";
+        DeployRequestTrigger: "MANUAL" | "STANDBY_SYNC" | "ROLLBACK";
         /**
          * EnvironmentConnectionStatus
          * @description 환경 접속 상태. 등록·다시 확인·config/secretRef 수정 때 바뀐다. 단건 조회는 바꾸지 않는다.
@@ -1134,6 +1415,44 @@ export interface components {
             /** Token */
             token: string;
         };
+        /**
+         * LogLevel
+         * @description 로그 한 줄의 수준(배포 작업 로그·빌드·실행 로그 공통).
+         * @enum {string}
+         */
+        LogLevel: "INFO" | "WARN" | "ERROR";
+        /** LogLineResponse */
+        LogLineResponse: {
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            level: components["schemas"]["LogLevel"];
+            /** Message */
+            message: string;
+        };
+        /**
+         * LogPageResponse
+         * @description 로그 한 페이지. simulated=true 면 가짜 실행기로 만든 기록이다. nextCursor 로 이어 읽는다.
+         */
+        LogPageResponse: {
+            source: components["schemas"]["LogSource"];
+            /** Simulated */
+            simulated: boolean;
+            /** Items */
+            items: components["schemas"]["LogLineResponse"][];
+            /** Nextcursor */
+            nextCursor: string | null;
+            /** Hasmore */
+            hasMore: boolean;
+        };
+        /**
+         * LogSource
+         * @description 로그 조회 대상. DEPLOY_JOB 은 DB 에 저장한 배포 작업 로그, 나머지는 실행기 즉석 조회.
+         * @enum {string}
+         */
+        LogSource: "DEPLOY_JOB" | "BUILD" | "RUNTIME";
         /** MeResponse */
         MeResponse: {
             user: components["schemas"]["UserResponse"];
@@ -1164,8 +1483,251 @@ export interface components {
             joinedAt: string;
         };
         /**
+         * MigrationErrorCode
+         * @description 이전 계획 실패·롤백 원인. 롤백 결과는 MigrationRollbackStatus 로 따로 둔다.
+         * @enum {string}
+         */
+        MigrationErrorCode: "PREFLIGHT_FAILED" | "TRAFFIC_APPLY_FAILED" | "HEALTH_CHECK_FAILED" | "METRICS_UNAVAILABLE" | "THRESHOLD_EXCEEDED" | "DATA_LAG_EXCEEDED" | "ABORTED" | "WORKER_LOST" | "INTERNAL_ERROR";
+        /** MigrationLogLineResponse */
+        MigrationLogLineResponse: {
+            /** Seq */
+            seq: number;
+            /** Step */
+            step: number | null;
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            level: components["schemas"]["LogLevel"];
+            /** Code */
+            code: string;
+            /** Message */
+            message: string;
+            /** Data */
+            data: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * MigrationLogPageResponse
+         * @description 실행 로그 한 페이지. simulated=true 면 가짜 실행기로 만든 기록이다.
+         *
+         *     nextCursor(마지막 seq)로 이어 읽는다.
+         */
+        MigrationLogPageResponse: {
+            /** Simulated */
+            simulated: boolean;
+            /** Items */
+            items: components["schemas"]["MigrationLogLineResponse"][];
+            /** Nextcursor */
+            nextCursor: string | null;
+            /** Hasmore */
+            hasMore: boolean;
+        };
+        /** MigrationPlanDetailResponse */
+        MigrationPlanDetailResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Serviceid
+             * Format: uuid
+             */
+            serviceId: string;
+            /**
+             * Sourceenvironmentid
+             * Format: uuid
+             */
+            sourceEnvironmentId: string;
+            /**
+             * Targetenvironmentid
+             * Format: uuid
+             */
+            targetEnvironmentId: string;
+            /**
+             * Sourceserviceenvironmentid
+             * Format: uuid
+             */
+            sourceServiceEnvironmentId: string;
+            /**
+             * Targetserviceenvironmentid
+             * Format: uuid
+             */
+            targetServiceEnvironmentId: string;
+            status: components["schemas"]["MigrationPlanStatus"];
+            /** Currentstep */
+            currentStep: number;
+            /** Expectedseconds */
+            expectedSeconds: number;
+            createdBy: components["schemas"]["UserRefResponse"];
+            approvedBy: components["schemas"]["UserRefResponse"] | null;
+            /** Selfapproved */
+            selfApproved: boolean;
+            errorCode: components["schemas"]["MigrationErrorCode"] | null;
+            rollbackStatus: components["schemas"]["MigrationRollbackStatus"] | null;
+            /** Simulated */
+            simulated: boolean;
+            /**
+             * Createdat
+             * Format: date-time
+             */
+            createdAt: string;
+            /** Approvedat */
+            approvedAt: string | null;
+            /** Startedat */
+            startedAt: string | null;
+            /** Finishedat */
+            finishedAt: string | null;
+            /**
+             * Expiresat
+             * Format: date-time
+             */
+            expiresAt: string;
+            rollbackConditions: components["schemas"]["RollbackConditionsResponse"];
+            /** Observeseconds */
+            observeSeconds: number;
+            /** Steps */
+            steps: components["schemas"]["MigrationStepResponse"][];
+            rejectedBy: components["schemas"]["UserRefResponse"] | null;
+            cancelledBy: components["schemas"]["UserRefResponse"] | null;
+            abortedBy: components["schemas"]["UserRefResponse"] | null;
+            /** Abortrequestedat */
+            abortRequestedAt: string | null;
+            /** Errormessage */
+            errorMessage: string | null;
+        };
+        /**
+         * MigrationPlanStatus
+         * @description 이전 계획 상태. 승인이 곧 실행 시작이다. 끝 상태는 되감지 않는다.
+         * @enum {string}
+         */
+        MigrationPlanStatus: "PENDING_APPROVAL" | "APPROVED" | "RUNNING" | "ROLLING_BACK" | "SUCCEEDED" | "ROLLED_BACK" | "FAILED" | "REJECTED" | "CANCELLED" | "EXPIRED" | "STALE";
+        /**
+         * MigrationPlanSummaryResponse
+         * @description 이전 계획 목록 한 항목. simulated=true 면 가짜 실행기로 진행하는 계획이다.
+         */
+        MigrationPlanSummaryResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Serviceid
+             * Format: uuid
+             */
+            serviceId: string;
+            /**
+             * Sourceenvironmentid
+             * Format: uuid
+             */
+            sourceEnvironmentId: string;
+            /**
+             * Targetenvironmentid
+             * Format: uuid
+             */
+            targetEnvironmentId: string;
+            /**
+             * Sourceserviceenvironmentid
+             * Format: uuid
+             */
+            sourceServiceEnvironmentId: string;
+            /**
+             * Targetserviceenvironmentid
+             * Format: uuid
+             */
+            targetServiceEnvironmentId: string;
+            status: components["schemas"]["MigrationPlanStatus"];
+            /** Currentstep */
+            currentStep: number;
+            /** Expectedseconds */
+            expectedSeconds: number;
+            createdBy: components["schemas"]["UserRefResponse"];
+            approvedBy: components["schemas"]["UserRefResponse"] | null;
+            /** Selfapproved */
+            selfApproved: boolean;
+            errorCode: components["schemas"]["MigrationErrorCode"] | null;
+            rollbackStatus: components["schemas"]["MigrationRollbackStatus"] | null;
+            /** Simulated */
+            simulated: boolean;
+            /**
+             * Createdat
+             * Format: date-time
+             */
+            createdAt: string;
+            /** Approvedat */
+            approvedAt: string | null;
+            /** Startedat */
+            startedAt: string | null;
+            /** Finishedat */
+            finishedAt: string | null;
+            /**
+             * Expiresat
+             * Format: date-time
+             */
+            expiresAt: string;
+        };
+        /**
+         * MigrationRollbackStatus
+         * @description 출발 100% 로 되돌린 결과. NOT_NEEDED 는 트래픽을 바꾼 적이 없어 되돌릴 필요가 없었다.
+         * @enum {string}
+         */
+        MigrationRollbackStatus: "SUCCEEDED" | "FAILED" | "NOT_NEEDED";
+        /**
+         * MigrationSimulateReason
+         * @description 가짜 모드에서 단계 하나를 일부러 실패시킬 원인(simulate.reason).
+         * @enum {string}
+         */
+        MigrationSimulateReason: "ERROR_RATE" | "LATENCY" | "HEALTH" | "DATA_LAG" | "TRAFFIC";
+        /**
+         * MigrationSimulateRequest
+         * @description 가짜 실행기 모드에서만 받는다. failAtStep 단계를 reason 으로 일부러 실패시킨다.
+         *
+         *     DATA_LAG 는 데이터 확인 단계(3)만, 그 밖의 reason 은 비율 단계(1·2·4)만 고를 수 있다.
+         */
+        MigrationSimulateRequest: {
+            /** Failatstep */
+            failAtStep: number;
+            reason: components["schemas"]["MigrationSimulateReason"];
+        };
+        /**
+         * MigrationStepKind
+         * @description 계획 단계 종류. 단계는 고정 5개(사전 확인 → 10% → 50% → 데이터 확인 → 100%)다.
+         * @enum {string}
+         */
+        MigrationStepKind: "PREFLIGHT" | "SHIFT" | "DATA_SYNC_CHECK";
+        /**
+         * MigrationStepResponse
+         * @description 계획 값(index·kind·비율·지켜보기·예상 시간)과 실제 결과(result)를 나란히 싣는다.
+         */
+        MigrationStepResponse: {
+            /** Index */
+            index: number;
+            kind: components["schemas"]["MigrationStepKind"];
+            /** Sourceweight */
+            sourceWeight: number | null;
+            /** Targetweight */
+            targetWeight: number | null;
+            /** Observeseconds */
+            observeSeconds: number | null;
+            /** Expectedseconds */
+            expectedSeconds: number;
+            result: components["schemas"]["StepResultResponse"];
+        };
+        /**
+         * MigrationStepStatus
+         * @description 단계 결과(step_results[i].status).
+         * @enum {string}
+         */
+        MigrationStepStatus: "PENDING" | "RUNNING" | "PASSED" | "FAILED" | "SKIPPED";
+        /**
          * OrganizationResponse
          * @description role 은 요청한 사람의 역할이다. 에이전트 토큰으로 읽으면 null.
+         *
+         *     allowSelfApproval 은 이전 계획을 만든 사람이 스스로 승인·거절할 수 있는지다(기본 false).
          */
         OrganizationResponse: {
             /**
@@ -1180,6 +1742,8 @@ export interface components {
             /** Personal */
             personal: boolean;
             role: components["schemas"]["OrganizationRole"] | null;
+            /** Allowselfapproval */
+            allowSelfApproval: boolean;
             /**
              * Createdat
              * Format: date-time
@@ -1247,6 +1811,17 @@ export interface components {
             /** Size */
             size: number;
         };
+        /** Page[MigrationPlanSummaryResponse] */
+        Page_MigrationPlanSummaryResponse_: {
+            /** Items */
+            items: components["schemas"]["MigrationPlanSummaryResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Size */
+            size: number;
+        };
         /** Page[OrganizationResponse] */
         Page_OrganizationResponse_: {
             /** Items */
@@ -1287,8 +1862,61 @@ export interface components {
          */
         RevertStatus: "SUCCEEDED" | "FAILED";
         /**
+         * RollbackConditionsRequest
+         * @description 판정 실패 기준. 빼면 기본값(오류율 1.0%, p95 800ms, 복제 지연 1.0초)이다.
+         */
+        RollbackConditionsRequest: {
+            /**
+             * Maxerrorratepercent
+             * @default 1
+             */
+            maxErrorRatePercent: number;
+            /**
+             * Maxp95Ms
+             * @default 800
+             */
+            maxP95Ms: number;
+            /**
+             * Maxreplicationlagseconds
+             * @default 1
+             */
+            maxReplicationLagSeconds: number;
+        };
+        /** RollbackConditionsResponse */
+        RollbackConditionsResponse: {
+            /** Maxerrorratepercent */
+            maxErrorRatePercent: number;
+            /** Maxp95Ms */
+            maxP95Ms: number;
+            /** Maxreplicationlagseconds */
+            maxReplicationLagSeconds: number;
+            /**
+             * Healthcheck
+             * @default true
+             */
+            healthCheck: boolean;
+        };
+        /**
+         * RollbackRequest
+         * @description 되돌리기 요청 본문(비워도 된다). simulate 는 가짜 실행기 모드에서만 받는다.
+         */
+        RollbackRequest: {
+            simulate?: components["schemas"]["RollbackSimulateRequest"] | null;
+        };
+        /**
+         * RollbackSimulateRequest
+         * @description 되돌리기에는 빌드 단계가 없어 DEPLOYING·VERIFYING 만 받는다(BUILDING 은 422).
+         */
+        RollbackSimulateRequest: {
+            /**
+             * Failat
+             * @enum {string}
+             */
+            failAt: "DEPLOYING" | "VERIFYING";
+        };
+        /**
          * ServiceDetailResponse
-         * @description 서비스 한 건 + 올라간 환경들(만든 순서).
+         * @description 서비스 한 건 + 올라간 환경들(만든 순서) + 끝나지 않은 이전 계획 id(없으면 null).
          */
         ServiceDetailResponse: {
             /**
@@ -1328,6 +1956,8 @@ export interface components {
             updatedAt: string;
             /** Environments */
             environments: components["schemas"]["ServiceEnvironmentResponse"][];
+            /** Activemigrationplanid */
+            activeMigrationPlanId: string | null;
         };
         /**
          * ServiceEnvironmentResponse
@@ -1357,6 +1987,8 @@ export interface components {
             /** Simulated */
             simulated: boolean | null;
             teardownError: components["schemas"]["TeardownErrorCode"] | null;
+            /** Lastsyncseconds */
+            lastSyncSeconds: number | null;
         };
         /**
          * ServiceEnvironmentRole
@@ -1441,6 +2073,32 @@ export interface components {
             finishedAt: string | null;
         };
         /**
+         * StepMetricsResponse
+         * @description 단계 실제 결과의 지표. 그 단계가 재지 않은 값은 null.
+         */
+        StepMetricsResponse: {
+            /** Healthstatus */
+            healthStatus: string | null;
+            /** Errorratepercent */
+            errorRatePercent: number | null;
+            /** P95Ms */
+            p95Ms: number | null;
+            /** Requestcount */
+            requestCount: number | null;
+            /** Replicationlagseconds */
+            replicationLagSeconds: number | null;
+        };
+        /** StepResultResponse */
+        StepResultResponse: {
+            status: components["schemas"]["MigrationStepStatus"];
+            /** Startedat */
+            startedAt: string | null;
+            /** Finishedat */
+            finishedAt: string | null;
+            metrics: components["schemas"]["StepMetricsResponse"] | null;
+            failureCode: components["schemas"]["MigrationErrorCode"] | null;
+        };
+        /**
          * TeardownErrorCode
          * @description 내리기 실패 이유. 서비스 delete_error·연결 teardown_error 에 쓴다.
          * @enum {string}
@@ -1467,6 +2125,14 @@ export interface components {
             role: components["schemas"]["OrganizationRole"];
         };
         /**
+         * UpdateOrganizationSettingsRequest
+         * @description 조직 설정 변경(어드민). allowSelfApproval 은 필수다.
+         */
+        UpdateOrganizationSettingsRequest: {
+            /** Allowselfapproval */
+            allowSelfApproval: boolean;
+        };
+        /**
          * UpdateServiceRequest
          * @description 서비스 수정. 들어온 칸만 바꾼다. null 은 description 만 받는다. name 은 바꿀 수 없다.
          */
@@ -1490,6 +2156,16 @@ export interface components {
             main: string;
             /** Environment */
             environment: string;
+        };
+        /** UserRefResponse */
+        UserRefResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Login */
+            login: string;
         };
         /** UserResponse */
         UserResponse: {
@@ -1707,6 +2383,42 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_OrganizationResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_organization_settings_api_v1_orgs__org_id__settings_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 조직 id(uuid) */
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateOrganizationSettingsRequest"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -2441,6 +3153,8 @@ export interface operations {
                 page?: number;
                 size?: number;
                 environmentId?: string | null;
+                trigger?: components["schemas"]["DeployRequestTrigger"][] | null;
+                status?: components["schemas"]["DeployRequestStatus"][] | null;
             };
             header?: never;
             path: {
@@ -2542,6 +3256,355 @@ export interface operations {
             };
         };
     };
+    create_rollback_api_v1_orgs__org_id__deploy_requests__deploy_request_id__rollback_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                deploy_request_id: string;
+                /** @description 조직 id(uuid) */
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["RollbackRequest"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_DeployRequestDetailResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_deploy_request_logs_api_v1_orgs__org_id__deploy_requests__deploy_request_id__logs_get: {
+        parameters: {
+            query: {
+                source: components["schemas"]["LogSource"];
+                cursor?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                deploy_request_id: string;
+                /** @description 조직 id(uuid) */
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_LogPageResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_migration_plans_api_v1_orgs__org_id__services__service_id__migration_plans_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                status?: components["schemas"]["MigrationPlanStatus"][] | null;
+            };
+            header?: never;
+            path: {
+                service_id: string;
+                /** @description 조직 id(uuid) */
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_Page_MigrationPlanSummaryResponse__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_migration_plan_api_v1_orgs__org_id__services__service_id__migration_plans_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                service_id: string;
+                /** @description 조직 id(uuid) */
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateMigrationPlanRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_MigrationPlanDetailResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_migration_plan_api_v1_orgs__org_id__migration_plans__plan_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                plan_id: string;
+                /** @description 조직 id(uuid) */
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_MigrationPlanDetailResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    approve_migration_plan_api_v1_orgs__org_id__migration_plans__plan_id__approve_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                plan_id: string;
+                /** @description 조직 id(uuid) */
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_MigrationPlanDetailResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reject_migration_plan_api_v1_orgs__org_id__migration_plans__plan_id__reject_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                plan_id: string;
+                /** @description 조직 id(uuid) */
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_MigrationPlanDetailResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cancel_migration_plan_api_v1_orgs__org_id__migration_plans__plan_id__cancel_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                plan_id: string;
+                /** @description 조직 id(uuid) */
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_MigrationPlanDetailResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    abort_migration_plan_api_v1_orgs__org_id__migration_plans__plan_id__abort_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                plan_id: string;
+                /** @description 조직 id(uuid) */
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_MigrationPlanDetailResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_migration_plan_logs_api_v1_orgs__org_id__migration_plans__plan_id__logs_get: {
+        parameters: {
+            query?: {
+                cursor?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path: {
+                plan_id: string;
+                /** @description 조직 id(uuid) */
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_MigrationLogPageResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     check_health_healthz_get: {
         parameters: {
             query?: never;
@@ -2557,6 +3620,26 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    check_liveness_for_load_balancer_livez_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
             };
         };
     };

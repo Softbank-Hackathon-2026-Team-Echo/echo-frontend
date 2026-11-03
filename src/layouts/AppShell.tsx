@@ -30,7 +30,6 @@ import { DisasterDialog } from '@/components/disaster/DisasterDialog';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorState } from '@/components/ErrorState';
 import { Logo } from '@/components/Logo';
-import { MockDataBadge } from '@/components/MockDataBadge';
 import { RoleButton } from '@/components/RoleButton';
 import { ScreenErrorBoundary } from '@/components/ScreenErrorBoundary';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -269,7 +268,6 @@ function Topbar({
       <header className="flex h-topbar shrink-0 items-center gap-3 border-b border-line bg-surface px-gutter max-compact:px-gutter-compact">
         <Breadcrumb />
         <div className="ml-auto flex items-center gap-2">
-          <MockDataBadge />
           <OrgSwitcher organizations={organizations} current={organization} />
           <RoleButton requires="DEVELOPER" variant="outline" onClick={() => setDisasterOpen(true)}>
             <Zap aria-hidden />

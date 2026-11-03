@@ -1,5 +1,5 @@
 // 실시간 채널 (계약 3장 🆕). 이벤트는 "무엇이 바뀌었는지"만 알리고, 받으면 해당 쿼리를 무효화해 REST 를 다시 부른다.
-// 서버에 채널이 열리면 EVENTS_API_READY 를 켠다. 그 전에는 목업 모드에서만 붙는다(MSW sse 핸들러)
+// 서버에 채널이 열리면 EVENTS_API_READY 를 켠다. 그 전에는 붙지 않는다(없는 경로에 재연결을 반복하지 않게)
 import { type QueryClient, type QueryKey, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useSyncExternalStore } from 'react';
 import { apiUrl } from './client';
@@ -82,7 +82,7 @@ export function handleOrgEvent(queryClient: QueryClient, orgId: string, event: O
 }
 
 export function eventsEnabled() {
-  return EVENTS_API_READY || import.meta.env.VITE_USE_MOCKS === 'true';
+  return EVENTS_API_READY;
 }
 
 /**
