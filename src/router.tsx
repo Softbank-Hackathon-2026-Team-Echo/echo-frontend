@@ -73,14 +73,28 @@ export const router = createBrowserRouter([
           {
             path: 'pre-check',
             handle: crumb('AI pre-check'),
-            element: <PlaceholderPage title="AI pre-check" />,
+            lazy: () =>
+              import('@/pages/evacuation/PrecheckPage').then((m) => ({ Component: m.default })),
+          },
+          {
+            path: 'plan',
+            handle: crumb('Approve plan'),
+            lazy: () =>
+              import('@/pages/evacuation/PlanPage').then((m) => ({ Component: m.default })),
           },
         ],
       },
       {
         path: 'migrations',
         handle: crumb('Migrations'),
-        element: <PlaceholderPage title="Migrations" />,
+        children: [
+          { index: true, element: <PlaceholderPage title="Migrations" /> },
+          {
+            path: ':planId',
+            handle: crumb('Migration'),
+            element: <PlaceholderPage title="Migration" />,
+          },
+        ],
       },
       {
         path: 'security',

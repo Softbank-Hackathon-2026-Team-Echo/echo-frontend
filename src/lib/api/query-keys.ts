@@ -21,6 +21,11 @@ export const queryKeys = {
   evacuation: (orgId: string) => ['org', orgId, 'evacuation'] as const,
   prechecks: (orgId: string) => ['org', orgId, 'prechecks'] as const,
   migrations: (orgId: string) => ['org', orgId, 'migrations'] as const,
+  migrationPlans: (orgId: string, serviceId: string) =>
+    ['org', orgId, 'migrations', 'service', serviceId] as const,
+  migrationPlan: (orgId: string, planId: string) => ['org', orgId, 'migrations', planId] as const,
+  migrationLogs: (orgId: string, planId: string) =>
+    ['org', orgId, 'migrations', planId, 'logs'] as const,
   security: (orgId: string) => ['org', orgId, 'security'] as const,
   audit: (orgId: string) => ['org', orgId, 'audit'] as const,
 };
