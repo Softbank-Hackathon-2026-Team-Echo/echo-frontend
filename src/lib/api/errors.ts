@@ -45,6 +45,15 @@ const CONFLICT_MESSAGES: Record<string, string> = {
   NOT_ROLLBACKABLE: 'This deploy can no longer be rolled back to.',
   ALREADY_CURRENT: 'This version is already live on that environment.',
   MIGRATION_IN_PROGRESS: 'A migration is running for this service. Try again after it finishes.',
+  MIGRATION_PLAN_OPEN: 'This service already has an open migration plan.',
+  SOURCE_NOT_SINGLE: 'The service must be serving 100% from exactly one environment.',
+  TARGET_SYNCING: 'The standby is still catching up to the latest version. Try again in a moment.',
+  DEPLOY_IN_PROGRESS: 'A deploy is running for this service. Wait for it to finish.',
+  TARGET_NOT_READY: 'The target has no deployment, or runs a different version.',
+  PLAN_NOT_PENDING: 'This plan is no longer waiting for approval.',
+  PLAN_NOT_RUNNING: 'This migration is not running.',
+  PLAN_STALE: 'Environments changed after this plan was made. Create a new plan.',
+  PLAN_EXPIRED: 'This plan expired after 24 hours. Create a new plan.',
 };
 
 /** 화면에 보여 줄 한 줄 문구. 모르는 코드는 서버 message 를 그대로 쓴다 */

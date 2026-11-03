@@ -13,6 +13,11 @@ const REASONS: Record<string, string> = {
   GITHUB_USER_NOT_FOUND: 'No GitHub user has this username.',
   ALREADY_MEMBER: 'That GitHub user is already a member.',
   EXPIRES_IN_DAYS_TOO_LONG: 'Tokens can last at most 90 days.',
+  SAME_ENVIRONMENT: 'The target must be a different environment from the source.',
+  NO_DEPLOYMENT: 'The target has no deployment of this service yet. Deploy to it first.',
+  VERSION_MISMATCH:
+    'The target runs a different version. Wait for the standby to sync, or deploy to it.',
+  LAST_SYNC_FAILED: 'The last standby sync failed.',
 };
 
 function humanize(reason: string): string {
@@ -37,4 +42,18 @@ export function fieldErrors(error: unknown): Record<string, string> {
     errors._form = REASONS[error.code] ?? describeApiError(error);
   }
   return errors;
+}
+
+/** 칸에 붙일 곳이 없는 오류(409 의 details 등)까지 한 문장으로. 폼 아래 한 줄 오류에 쓴다 */
+export function formErrorMessage(
+  error: unknown,
+  shownFields: readonly string[],
+): string | undefined {
+  if (!error) return undefined;
+  const errors = fieldErrors(error);
+  if (shownFields.some((field) => errors[field])) return errors._form;
+  const reasons = isApiError(error)
+    ? error.details.map((detail) => REASONS[detail.reason]).filter(Boolean)
+    : [];
+  return [describeApiError(error), ...reasons].join(' ');
 }

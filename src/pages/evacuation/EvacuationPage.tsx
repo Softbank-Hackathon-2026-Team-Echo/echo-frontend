@@ -168,6 +168,21 @@ export default function EvacuationPage() {
         )}
       </div>
 
+      {service.activeMigrationPlanId && (
+        <p
+          role="status"
+          className="rounded-lg bg-migrating-bg px-3 py-2 text-body text-migrating-fg"
+        >
+          {service.name} already has an open migration plan.{' '}
+          <Link
+            className="underline"
+            to={`plan?service=${service.id}&target=${selected?.environmentId ?? ''}&plan=${service.activeMigrationPlanId}`}
+          >
+            Open the plan
+          </Link>
+        </p>
+      )}
+
       {!meetsEvacuationThreshold(disaster) && (
         <p role="status" className="rounded-lg bg-subtle px-3 py-2 text-small text-fg-secondary">
           This earthquake is below the M{EVACUATION_MIN_MAGNITUDE.toFixed(1)} evacuation threshold,

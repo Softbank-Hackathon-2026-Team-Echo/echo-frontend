@@ -55,6 +55,25 @@ export function versionStatusView(status: string): StatusView {
   return VERSION[status] ?? { label: status, tone: 'neutral' };
 }
 
+const MIGRATION_PLAN: Record<string, StatusView> = {
+  PENDING_APPROVAL: { label: 'Waiting for approval', tone: 'warning' },
+  APPROVED: { label: 'Approved', tone: 'migrating' },
+  RUNNING: { label: 'Migrating', tone: 'migrating' },
+  ROLLING_BACK: { label: 'Rolling back', tone: 'warning' },
+  SUCCEEDED: { label: 'Succeeded', tone: 'success' },
+  ROLLED_BACK: { label: 'Rolled back', tone: 'warning' },
+  FAILED: { label: 'Failed', tone: 'danger' },
+  REJECTED: { label: 'Rejected', tone: 'neutral' },
+  CANCELLED: { label: 'Cancelled', tone: 'neutral' },
+  EXPIRED: { label: 'Expired', tone: 'neutral' },
+  STALE: { label: 'Stale', tone: 'neutral' },
+};
+
+/** 이전 계획 상태 (MigrationPlanStatus) */
+export function migrationPlanStatusView(status: string): StatusView {
+  return MIGRATION_PLAN[status] ?? { label: status, tone: 'neutral' };
+}
+
 // 배포 요청을 만든 계기 (DeployRequestTrigger)
 const DEPLOY_TRIGGER: Record<string, string> = {
   MANUAL: 'Manual',
