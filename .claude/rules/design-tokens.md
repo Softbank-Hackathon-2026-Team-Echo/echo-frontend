@@ -79,6 +79,7 @@ shadcn 이름(`background` · `foreground` · `card` · `popover` · `primary` �
 | `text-overline` | 대문자 오버라인 (`uppercase` 함께) | 10/14 600 +8% (12/16) |
 | `text-metric-xl` · `text-metric` | KPI 큰 숫자 · 작은 숫자 (`tabular-nums` 함께) | 24/32 · 18/24 600 (30/38 · 22/28) |
 | `text-mono` | 코드·로그 줄 (`font-mono` 함께) | 11/16 (13/18) |
+| `text-display` · `text-headline` · `text-stat` · `text-lead` · `text-lead-sm` | **L01 소개 화면 전용.** 히어로 제목 · 섹션 제목 · 큰 숫자 · 리드 문단 | 60/68 · 44/56 · 64/72 600 · 17/28 · 15/24 (projector 같음). Figma 텍스트 스타일 값이고 아직 변수가 아니다. 앱 화면에서는 쓰지 않는다 |
 
 ## 4. 의미 색 쓰는 법
 
