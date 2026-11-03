@@ -55,6 +55,9 @@ export function useOrgMigrationPlans(orgId: string | undefined, serviceIds: stri
           }),
         ),
       enabled: Boolean(orgId),
+      // 실행 중인 계획이 있으면 끝나는 순간을 잡으려고 2초마다 다시 부른다(대시보드 완료 카드)
+      refetchInterval: (query: { state: { data?: { items: MigrationPlanSummary[] } } }) =>
+        query.state.data?.items.some((plan) => isActivePlan(plan.status)) ? 2_000 : false,
     })),
     combine: (results) => ({
       data: results
