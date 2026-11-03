@@ -26,6 +26,10 @@ type OrthoGlobeProps = {
   center: [number, number];
   /** 움직임 줄이기면 돌지 않고 곡선도 멈춘 채 다 그린다 */
   animate: boolean;
+  /** false 면 곡선만 움직이고 지구본은 center 에 멈춰 둔다(온보딩: 주 환경을 정면에) */
+  spin?: boolean;
+  /** 이 리전에서 파문이 퍼진다(O03 훈련 미리보기) */
+  ripple?: string;
   className?: string;
 };
 
@@ -42,6 +46,7 @@ const TOKENS = {
   // TODO(김도영, 2026-11-03): Figma 에 provider-azure 변수가 생기면 바꾼다
   azure: '--ep-color-chart-1',
   onprem: '--ep-color-provider-onprem',
+  danger: '--ep-color-status-danger-solid',
 } as const;
 
 const SPIN_DEG_PER_SECOND = 2.5;
@@ -77,6 +82,8 @@ export function OrthoGlobe({
   islands = [],
   center,
   animate,
+  spin = true,
+  ripple,
   className,
 }: OrthoGlobeProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -116,7 +123,7 @@ export function OrthoGlobe({
       context.clearRect(0, 0, size, size);
 
       const seconds = animate ? (now - startedAt) / 1000 : 0;
-      const lambda = -center[0] + seconds * SPIN_DEG_PER_SECOND;
+      const lambda = -center[0] + (spin ? seconds * SPIN_DEG_PER_SECOND : 0);
       const phi = -center[1];
       const radius = size / 2 - 2;
       projection
@@ -229,6 +236,17 @@ export function OrthoGlobe({
         context.lineWidth = 2;
         context.stroke();
         context.globalAlpha = 1;
+        if (region.key === ripple) {
+          // 1.6초마다 반경 8 → 28 로 번지며 옅어진다
+          const phase = animate ? (seconds / 1.6) % 1 : 0.5;
+          context.beginPath();
+          context.arc(x, y, 8 + 20 * phase, 0, Math.PI * 2);
+          context.strokeStyle = colors.danger;
+          context.globalAlpha = 1 - phase;
+          context.lineWidth = 2;
+          context.stroke();
+          context.globalAlpha = 1;
+        }
       }
 
       if (animate && !stopped) frame = requestAnimationFrame(draw);
@@ -248,7 +266,7 @@ export function OrthoGlobe({
       stopped = true;
       cancelAnimationFrame(frame);
     };
-  }, [regions, arcs, islands, center, animate]);
+  }, [regions, arcs, islands, center, animate, spin, ripple]);
 
   return <canvas ref={canvasRef} aria-hidden className={className} />;
 }

@@ -2,6 +2,7 @@ import { GitBranch, Lock, MoreHorizontal, Pencil, RotateCcw, Trash2 } from 'luci
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
+import { DeployDialog } from '@/components/DeployDialog';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorState } from '@/components/ErrorState';
 import { ExternalLink } from '@/components/ExternalLink';
@@ -40,7 +41,6 @@ import {
   teardownErrorLabel,
   versionStatusView,
 } from '@/lib/status';
-import { DeployDialog } from './DeployDialog';
 import { EditServiceDialog } from './EditServiceDialog';
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {

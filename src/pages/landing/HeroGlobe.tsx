@@ -4,7 +4,7 @@ import {
   type GlobeRegion,
   OrthoGlobe,
 } from '@/components/OrthoGlobe';
-import { usePrefersReducedMotion } from './usePrefersReducedMotion';
+import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 
 // 환경 종류별 리전(색 = provider, 모두 같은 크기). 한국 · 일본은 시연 3곳(서울 GCP · 도쿄 AWS · 후쿠오카 온프레)만 두고,
 // 나머지는 세계 여러 나라에 퍼뜨린다

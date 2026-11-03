@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useParams } from 'react-router';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { EmptyState } from '@/components/EmptyState';
+import { EnvironmentFormDialog } from '@/components/EnvironmentFormDialog';
 import { ErrorState } from '@/components/ErrorState';
 import { PageHeader } from '@/components/PageHeader';
 import { ProviderLabel } from '@/components/ProviderLabel';
@@ -37,7 +38,6 @@ import { useCurrentOrg } from '@/lib/api/me';
 import type { EnvironmentSummary } from '@/lib/api/types';
 import { hasRole } from '@/lib/roles';
 import { connectionErrorLabel, connectionStatusView } from '@/lib/status';
-import { EnvironmentFormDialog } from './EnvironmentFormDialog';
 import { SettingsTabs } from './SettingsTabs';
 
 const SKELETON_ROWS = 5;

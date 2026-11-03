@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { configFields, orgSecretPrefix } from './EnvironmentFormDialog';
+import { configFields, orgSecretPrefix } from '@/components/EnvironmentFormDialog';
 
 describe('configFields', () => {
   it('configSchema 의 속성을 입력칸으로 바꾸고, enum 은 선택지로 둔다', () => {

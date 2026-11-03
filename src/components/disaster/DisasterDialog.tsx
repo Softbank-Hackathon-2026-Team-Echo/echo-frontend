@@ -47,10 +47,15 @@ export function DisasterDialog({
   open,
   onOpenChange,
   orgId,
+  initialEpicenter,
+  onCreated,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   orgId: string;
+  /** 처음 진원지(온보딩 훈련은 주 환경 근처). 없으면 첫 프리셋 */
+  initialEpicenter?: LatLng;
+  onCreated?: () => void;
 }) {
   const environments = useEnvironments(orgId);
   const items = environments.data?.items ?? [];
@@ -58,7 +63,7 @@ export function DisasterDialog({
   const defaultPreset = EPICENTER_PRESETS[0];
   const [type, setType] = useState<DisasterType>('EARTHQUAKE');
   const [epicenter, setEpicenter] = useState<LatLng>(
-    defaultPreset?.epicenter ?? { lat: 35.2, lng: 139.4 },
+    initialEpicenter ?? defaultPreset?.epicenter ?? { lat: 35.2, lng: 139.4 },
   );
   const [magnitude, setMagnitude] = useState(7.2);
 
@@ -73,7 +78,12 @@ export function DisasterDialog({
     event.preventDefault();
     create.mutate(
       { type, magnitude, epicenter, epicenterLabel: nearLabel(epicenter) },
-      { onSuccess: () => onOpenChange(false) },
+      {
+        onSuccess: () => {
+          onOpenChange(false);
+          onCreated?.();
+        },
+      },
     );
   }
 

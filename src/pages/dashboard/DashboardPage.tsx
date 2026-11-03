@@ -1,4 +1,4 @@
-import { ArrowRight, History } from 'lucide-react';
+import { ArrowRight, Compass, History } from 'lucide-react';
 import { Link, useParams } from 'react-router';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorState } from '@/components/ErrorState';
@@ -12,6 +12,7 @@ import { useEnvironments } from '@/lib/api/environments';
 import { useCurrentOrg } from '@/lib/api/me';
 import { isActivePlan, useOrgMigrationPlans } from '@/lib/api/migrations';
 import { useServiceDetails, useServices } from '@/lib/api/services';
+import { onboardingProgress } from '@/lib/onboarding';
 import { envRoleView } from '@/lib/status';
 import { ActiveDisasterCard } from './ActiveDisasterCard';
 import { CompletionCard, recentCompletion } from './CompletionCard';
@@ -57,6 +58,7 @@ export default function DashboardPage() {
   }
 
   const envList = environments.data.items;
+  const setup = onboardingProgress(envList, details.data);
   const names = new Map(envList.map((item) => [item.id, item.name]));
   const active = disasters.data ?? [];
   const latest = active.at(-1);
@@ -101,6 +103,24 @@ export default function DashboardPage() {
           </Button>
         )}
       </div>
+
+      {setup.next !== 'drill' && !details.isPending && (
+        <div className="flex flex-wrap items-center gap-3 rounded-lg bg-brand-subtle px-3 py-2 text-brand-on-subtle">
+          <Compass aria-hidden className="size-4 shrink-0" />
+          <p className="flex-1 text-body">
+            {setup.done.primary
+              ? setup.done.standby
+                ? 'Deploy your app to finish setup.'
+                : 'Add a standby environment so the app has somewhere to evacuate to.'
+              : 'Connect the environment your app runs on to get started.'}
+          </p>
+          <Button asChild size="sm">
+            <Link to={`/o/${organization.slug}/onboarding`}>
+              Continue setup <ArrowRight aria-hidden />
+            </Link>
+          </Button>
+        </div>
+      )}
 
       <KpiTiles serving={serving} />
 

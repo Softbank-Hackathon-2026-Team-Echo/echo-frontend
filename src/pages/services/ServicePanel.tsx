@@ -1,6 +1,7 @@
 import { CircleCheck, CircleX, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
+import { DeployDialog } from '@/components/DeployDialog';
 import { ExternalLink } from '@/components/ExternalLink';
 import { ProviderLabel } from '@/components/ProviderLabel';
 import { RoleButton } from '@/components/RoleButton';
@@ -11,7 +12,6 @@ import { isTerminalStatus, useDeployRequests, useRollback, useService } from '@/
 import type { DeployRequestSummary, ServiceEnvironment } from '@/lib/api/types';
 import { dateTime } from '@/lib/format';
 import { deployErrorLabel, deployTriggerLabel, shortSha } from '@/lib/status';
-import { DeployDialog } from './DeployDialog';
 
 /** 연결 하나의 오른쪽 배지: Serving 100% · Standby 0% · Out of sync */
 function linkBadge(link: ServiceEnvironment) {

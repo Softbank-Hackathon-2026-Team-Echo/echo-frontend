@@ -54,7 +54,7 @@ export function CreateOrgDialog({
       {
         onSuccess: (organization) => {
           onOpenChange(false);
-          navigate(`/o/${organization.slug}`);
+          navigate(`/o/${organization.slug}/onboarding`);
         },
       },
     );
