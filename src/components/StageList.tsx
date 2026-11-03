@@ -16,7 +16,7 @@ const INDICATOR: Record<StageState, string> = {
 };
 
 /** 세로 단계 목록 (Figma Stage Step). 지금 단계는 남색 테두리가 깜빡인다 */
-export function StageList({ stages }: { stages: Stage[] }) {
+export function StageList({ stages, start = 0 }: { stages: Stage[]; start?: number }) {
   return (
     <ol className="flex flex-col gap-3.5">
       {stages.map((stage, index) => (
@@ -38,7 +38,7 @@ export function StageList({ stages }: { stages: Stage[] }) {
             ) : stage.state === 'failed' ? (
               <X aria-hidden className="size-3.5" />
             ) : (
-              index + 1
+              start + index + 1
             )}
           </span>
           <span className="flex min-w-0 flex-col gap-0.5">

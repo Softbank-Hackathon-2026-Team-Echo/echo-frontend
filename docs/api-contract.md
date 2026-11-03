@@ -197,6 +197,8 @@ KPI 타일 5개(성공률·p95·복제 지연·트래픽 비율·에러 버짓)�
 - `failback.allowed = false`이면 복귀 버튼 비활성 + 이유 표시(재난 미종료 지역 복귀 금지, 11/2 결정).
 - 실행 중 숫자는 3장 `migration.metrics`로 받는다.
 
+> 11/3 M02 Result 에 필요한 칸 (가칭, 데이터 이전 엔진 · API 서버 8 에 요청 후보): 계획 상세 `result` 에 `writePauseSeconds`(쓰기 정지 시간) · `missingRows` · `duplicateRows` · `rowsCompared` · `rpoSeconds` · `failedRequests`. 근거는 echo-infra #18 PoC 측정 항목(쓰기 정지 ≈0.30s, 누락·중복 0, 복귀 ≈0.46s, 복제 지연 ≈0.1s, 로컬 값). 지금 프론트는 실패 요청을 단계 지표(오류율 × 요청 수)로 계산하고 나머지는 `—` 로 둔다.
+
 ### 4-7. 보안 (F12·F13)
 
 | 동작 | 제안 |

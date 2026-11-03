@@ -1,0 +1,107 @@
+import { screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { HttpResponse, http } from 'msw';
+import { afterEach, describe, expect, it } from 'vitest';
+import type { Me, MigrationPlan } from '@/lib/api/types';
+import { AT, migrationPlan } from '@/test/migration-fixtures';
+import { server } from '@/test/msw-server';
+import { renderRoute } from '@/test/render';
+import MigrationPage from './MigrationPage';
+
+const API = 'http://api.test/api/v1';
+const ok = <T,>(data: T, status = 200) => HttpResponse.json({ success: true, data }, { status });
+
+const me: Me = {
+  user: { id: 'u1', githubLogin: 'echoport', name: null, avatarUrl: null },
+  organizations: [
+    {
+      id: 'o1',
+      slug: 'echo-demo',
+      name: 'Echo Demo',
+      personal: false,
+      role: 'DEVELOPER',
+      allowSelfApproval: false,
+      createdAt: AT,
+    },
+  ],
+};
+
+function serve(plan: MigrationPlan) {
+  const calls: string[] = [];
+  server.use(
+    http.get(`${API}/me`, () => ok(me)),
+    http.get(`${API}/orgs/o1/environments`, () => ok({ items: [], total: 0, page: 0, size: 100 })),
+    http.get(`${API}/orgs/o1/migration-plans/:id`, () => ok(plan)),
+    http.get(`${API}/orgs/o1/migration-plans/:id/logs`, () =>
+      ok({ simulated: true, items: [], nextCursor: null, hasMore: false }),
+    ),
+    http.post(`${API}/orgs/o1/migration-plans/:id/abort`, () => {
+      calls.push('abort');
+      return ok({ ...plan, abortRequestedAt: AT }, 202);
+    }),
+  );
+  return calls;
+}
+
+function renderPage() {
+  return renderRoute(<MigrationPage />, {
+    path: '/o/:slug/migrations/:planId',
+    url: '/o/echo-demo/migrations/plan-1234abcd',
+  });
+}
+
+afterEach(() => window.sessionStorage.clear());
+
+describe('MigrationPage', () => {
+  it('끝난 이전은 Result 숫자 표를 바로 연다', async () => {
+    serve(migrationPlan({ status: 'SUCCEEDED', finishedAt: '2026-11-05T03:00:25Z' }));
+    renderPage();
+
+    expect(await screen.findByText('Zero failed requests while traffic moved')).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Result' })).toHaveAttribute('aria-selected', 'true');
+  });
+
+  it('Roll back 은 확인을 거친 뒤 중단 API 를 부른다', async () => {
+    const calls = serve(migrationPlan());
+    renderPage();
+
+    await screen.findByText('Traffic weight');
+    await userEvent.click(screen.getByRole('button', { name: 'Roll back' }));
+    expect(calls).toEqual([]);
+    await userEvent.click(
+      within(screen.getByRole('dialog')).getByRole('button', { name: 'Roll back' }),
+    );
+
+    await expect.poll(() => calls).toEqual(['abort']);
+  });
+
+  it('출발 환경이 아직 재난 반경 안이면 복귀를 막는다', async () => {
+    window.sessionStorage.setItem(
+      'echoport.disasters.o1',
+      JSON.stringify([
+        {
+          id: 'd1',
+          type: 'EARTHQUAKE',
+          source: 'SIMULATED',
+          magnitude: 7.2,
+          epicenter: { lat: 35.2, lng: 139.4 },
+          epicenterLabel: 'near Tokyo',
+          radiusKm: 302,
+          status: 'ACTIVE',
+          affectedEnvironmentIds: ['e1'],
+          safeEnvironmentIds: ['e2'],
+          startedAt: AT,
+          endedAt: null,
+          simulated: true,
+        },
+      ]),
+    );
+    serve(migrationPlan({ status: 'SUCCEEDED', finishedAt: '2026-11-05T03:00:25Z' }));
+    renderPage();
+
+    expect(await screen.findByRole('button', { name: 'Start failback' })).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    );
+  });
+});

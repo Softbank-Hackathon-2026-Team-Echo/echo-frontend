@@ -88,11 +88,16 @@ export const router = createBrowserRouter([
         path: 'migrations',
         handle: crumb('Migrations'),
         children: [
-          { index: true, element: <PlaceholderPage title="Migrations" /> },
+          {
+            index: true,
+            lazy: () =>
+              import('@/pages/migrations/MigrationsPage').then((m) => ({ Component: m.default })),
+          },
           {
             path: ':planId',
             handle: crumb('Migration'),
-            element: <PlaceholderPage title="Migration" />,
+            lazy: () =>
+              import('@/pages/migrations/MigrationPage').then((m) => ({ Component: m.default })),
           },
         ],
       },

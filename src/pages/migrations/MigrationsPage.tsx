@@ -1,0 +1,178 @@
+import { ArrowRightLeft, CircleCheck, Gauge, ShieldCheck } from 'lucide-react';
+import { Link, useNavigate, useParams } from 'react-router';
+import { EmptyState } from '@/components/EmptyState';
+import { ErrorState } from '@/components/ErrorState';
+import { PageHeader } from '@/components/PageHeader';
+import { SimulatedBadge } from '@/components/SimulatedBadge';
+import { StatusBadge } from '@/components/StatusBadge';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { useEnvironments } from '@/lib/api/environments';
+import { useCurrentOrg } from '@/lib/api/me';
+import { useOrgMigrationPlans } from '@/lib/api/migrations';
+import { useServices } from '@/lib/api/services';
+import { duration } from '@/lib/migration-stages';
+import { migrationPlanStatusView } from '@/lib/status';
+
+function Summary({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof Gauge;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex flex-1 items-center gap-3 px-4 py-3">
+      <span className="flex size-8 items-center justify-center rounded-md bg-brand-subtle text-brand-on-subtle">
+        <Icon aria-hidden className="size-4" />
+      </span>
+      <span className="flex flex-col">
+        <span className="text-caption text-fg-secondary">{label}</span>
+        <span className="text-body-medium tabular-nums">{value}</span>
+      </span>
+    </div>
+  );
+}
+
+const took = (from: string | null, to: string | null) =>
+  from && to ? Math.round((Date.parse(to) - Date.parse(from)) / 1000) : null;
+
+/** M01 이전 기록: 계획 · 실행 · 롤백. 행을 누르면 M02 결과로 간다 */
+export default function MigrationsPage() {
+  const { slug } = useParams();
+  const navigate = useNavigate();
+  const { organization } = useCurrentOrg(slug);
+  const orgId = organization?.id;
+  const services = useServices(orgId);
+  const environments = useEnvironments(orgId);
+  const serviceItems = services.data?.items ?? [];
+  const plans = useOrgMigrationPlans(
+    orgId,
+    serviceItems.map((service) => service.id),
+  );
+
+  if (services.isError)
+    return <ErrorState error={services.error} onRetry={() => services.refetch()} />;
+  if (plans.error) return <ErrorState error={plans.error} />;
+
+  const envNames = new Map(environments.data?.items.map((item) => [item.id, item.name]));
+  const serviceNames = new Map(serviceItems.map((item) => [item.id, item.name]));
+  const runs = plans.data;
+  const succeeded = runs.filter((plan) => plan.status === 'SUCCEEDED');
+  const ran = runs.filter((plan) => plan.startedAt);
+  const fastest = succeeded
+    .map((plan) => took(plan.startedAt, plan.finishedAt))
+    .filter((value): value is number => value !== null)
+    .sort((a, b) => a - b)[0];
+
+  return (
+    <>
+      <PageHeader
+        title="Migrations"
+        description="Every evacuation and failback with its measured result."
+        actions={
+          <Button asChild>
+            <Link to={`/o/${slug}/evacuation`}>Plan a migration</Link>
+          </Button>
+        }
+      />
+      {!organization || services.isPending || plans.isPending ? (
+        <Skeleton className="h-64" />
+      ) : runs.length === 0 ? (
+        <EmptyState
+          icon={ArrowRightLeft}
+          title="No migrations yet"
+          description="Plan one from Evacuation. Approved plans and their results show up here."
+        />
+      ) : (
+        <>
+          <div className="flex divide-x divide-line rounded-xl border border-line bg-surface max-compact:flex-col max-compact:divide-x-0 max-compact:divide-y">
+            <Summary icon={ArrowRightLeft} label="Plans" value={String(runs.length)} />
+            <Summary
+              icon={CircleCheck}
+              label="Succeeded"
+              value={`${succeeded.length} / ${ran.length}`}
+            />
+            <Summary
+              icon={Gauge}
+              label="Fastest run"
+              value={fastest === undefined ? '—' : duration(fastest)}
+            />
+            <Summary
+              icon={ShieldCheck}
+              label="Rolled back"
+              value={String(runs.filter((plan) => plan.status === 'ROLLED_BACK').length)}
+            />
+          </div>
+          <div className="overflow-hidden rounded-xl border border-line bg-surface">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Plan</TableHead>
+                  <TableHead>Service</TableHead>
+                  <TableHead>Route</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Result</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {runs.map((plan) => {
+                  const seconds = took(plan.startedAt, plan.finishedAt);
+                  return (
+                    <TableRow
+                      key={plan.id}
+                      className="cursor-pointer"
+                      onClick={() => navigate(`/o/${slug}/migrations/${plan.id}`)}
+                    >
+                      <TableCell>
+                        <Link
+                          to={`/o/${slug}/migrations/${plan.id}`}
+                          className="font-mono text-mono hover:underline"
+                          onClick={(event) => event.stopPropagation()}
+                        >
+                          {plan.id.slice(0, 8)}
+                        </Link>
+                        <span className="text-caption text-fg-muted">
+                          {' '}
+                          ·{' '}
+                          {new Date(plan.createdAt).toLocaleString('en-GB', {
+                            dateStyle: 'short',
+                            timeStyle: 'short',
+                          })}
+                        </span>
+                      </TableCell>
+                      <TableCell>{serviceNames.get(plan.serviceId) ?? '—'}</TableCell>
+                      <TableCell className="font-mono text-mono">
+                        {envNames.get(plan.sourceEnvironmentId) ?? '?'} →{' '}
+                        {envNames.get(plan.targetEnvironmentId) ?? '?'}
+                      </TableCell>
+                      <TableCell>
+                        <span className="flex items-center gap-1.5">
+                          <StatusBadge {...migrationPlanStatusView(plan.status)} />
+                          {plan.simulated && <SimulatedBadge />}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-fg-secondary">
+                        {plan.errorCode ?? (seconds === null ? '—' : `took ${duration(seconds)}`)}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        </>
+      )}
+    </>
+  );
+}
