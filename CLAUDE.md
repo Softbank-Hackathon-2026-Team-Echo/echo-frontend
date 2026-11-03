@@ -63,7 +63,8 @@ src/
 │  └─ utils.ts           # cn() (커스텀 글자 스타일을 아는 tailwind-merge)
 ├─ assets/               # 로고 SVG · geo/east-asia-50m.json(재난 지도 해안선, scripts/trim-atlas.mjs 로 만든다)
 └─ test/                 # setup(MSW 서버·ResizeObserver) · msw-server · render(renderRoute)
-scripts/                # gen-api.mjs(API 타입) · trim-atlas.mjs(지도 데이터)
+scripts/                # gen-api.mjs(API 타입) · trim-atlas.mjs(지도 데이터) · check-bundle.mjs(번들 예산)
+.github/workflows/ci.yml # PR · main 에서 lint · typecheck · test · build · 번들 예산
 specs/                   # 태스크 명세
 docs/                    # api-contract.md, PR.md(커밋 안 함)
 .claude/launch.json      # 브라우저 미리보기용 개발 서버 설정
@@ -113,6 +114,7 @@ docs/                    # api-contract.md, PR.md(커밋 안 함)
 - **패키지·실행**: `pnpm`(Node 22, `.nvmrc`). `npm`·`yarn`을 쓰지 않고 lock 파일은 `pnpm-lock.yaml` 하나만 커밋한다.
 - **명령**: 개발 서버 `pnpm dev`(5173 고정) / 빌드 `pnpm build` / 린트·포맷 검사 `pnpm lint`(고치기 `pnpm format`) / 타입 `pnpm typecheck` / 테스트 `pnpm test`(한 번 실행, 감시는 `pnpm test:watch`) / API 타입 생성 `pnpm gen:api`(`OPENAPI_URL`, 없으면 로컬 `openapi.json`).
 - **환경변수**: `.env.example`을 `.env.local`로 복사한다. `VITE_API_BASE_URL`(API 주소) 하나. 운영 API 는 `https://app.echoport.uk` 출처만 받으므로, 로컬 화면 확인은 echo-was 를 로컬로 띄우거나 운영 배포 뒤 `app.echoport.uk` 에서 한다.
+- **CI**: GitHub Actions(`.github/workflows/ci.yml`)가 PR 과 main 에서 `pnpm lint` · `typecheck` · `test` · `build` · `node scripts/check-bundle.mjs`(gzip 예산: 첫 화면 150KB · 화면 청크 120KB · 워커 450KB)를 돌린다. 배포는 Cloudflare Pages 가 따로 한다.
 - **품질 게이트**: Claude Code PreToolUse 훅(`.claude/settings.json`)이 `git add`·`git commit` 전에 `pnpm lint`·`pnpm typecheck`·`pnpm test`, `git push` 전에 `pnpm lint`를 돌려 실패하면 막는다(180초 제한). `package.json`이 없으면 건너뛴다.
 - **화면 확인**: 화면을 바꿨으면 `pnpm dev`로 띄워 브라우저에서 라이트·다크·projector를 확인한다. 테스트 통과만으로 화면이 맞다고 보고하지 않는다.
 - **PR 본문**: `write-pr` 스킬(`.claude/skills/write-pr/`)이 `.github/PULL_REQUEST_TEMPLATE.md` 구조로 `docs/PR.md`(gitignore)를 쓴다. GitHub PR은 사람이 만든다.
@@ -187,3 +189,5 @@ docs/                    # api-contract.md, PR.md(커밋 안 함)
 | 11/3 | 새 조직을 만들면 그 조직의 온보딩으로 간다. 대시보드는 설정이 덜 끝났으면 "Continue setup" 안내를 보인다 | 처음 들어온 사람이 다음에 할 일을 찾게 |
 | 11/3 | 대시보드는 1280 미만(반분할 시연 960 포함)에서 세로 구성으로 바뀐다: 상태 알약 → KPI 4개(에러 버짓 뺌) → 토폴로지 전체 폭 → 이벤트 \| 상황 카드. 상황 카드는 이전 중이면 A·B 비율 막대 + 단계, 재난 중이면 재난 요약, 평소에는 환경 목록. A·B 그래프 · 최근 활동은 넓은 화면에만 | Figma 「S01 · split screen 1920」 장면 1~3. 오른쪽 960 은 관리 대상 앱이 성공률과 응답 서버를 보여 줘서 왼쪽 그래프는 뺀다 |
 | 11/3 | 이전이 실행 중이면 대시보드 상태 알약이 "Evacuating to {도착} · N%", 트래픽 칸이 "Traffic on target" 으로 바뀌고 "Open migration" 버튼이 생긴다. 비율은 서버가 적용한 단계 비율이다 | 시연 장면 3. 대시보드만 보고 있어도 얼마나 옮겨 갔는지 보이게 |
+| 11/3 | GitHub Actions CI 를 둔다(lint · typecheck · test · build · 번들 예산). 예산은 gzip 기준 첫 화면 150KB · 화면 청크 120KB · 웹 워커 450KB | 지금까지 검사는 로컬 커밋 훅뿐이라 훅을 건너뛰거나 다른 사람이 올린 PR 은 깨진 채 머지될 수 있었다. 번들은 11/3 에 516KB → 64KB 로 줄였고 다시 커지지 않게 막는다 |
+| 11/3 | dependabot minimatch 경고(GHSA-g3hv-75wg-m249)는 지금 고치지 않는다 | 개발 도구(openapi-typescript → @redocly/openapi-core)만 쓰고 운영 번들에는 없다. 고친 버전(11.x)은 내보내기 방식이 달라 redocly 의 `require('minimatch')(…)` 호출이 깨지고, 위 패키지 최신판도 5.x 를 쓴다. 위 패키지가 올리면 따라간다 |
