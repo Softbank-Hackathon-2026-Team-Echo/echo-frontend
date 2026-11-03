@@ -40,6 +40,9 @@ const CONFLICT_MESSAGES: Record<string, string> = {
   ENVIRONMENT_IN_USE: 'This environment still has services on it.',
   SERVICE_DELETING: 'This service is being deleted.',
   LAST_ADMIN: 'An organization needs at least one admin.',
+  NOT_ROLLBACKABLE: 'This deploy can no longer be rolled back to.',
+  ALREADY_CURRENT: 'This version is already live on that environment.',
+  MIGRATION_IN_PROGRESS: 'A migration is running for this service. Try again after it finishes.',
 };
 
 /** 화면에 보여 줄 한 줄 문구. 모르는 코드는 서버 message 를 그대로 쓴다 */

@@ -49,4 +49,7 @@ export type DeployRequestStatus = Schemas['DeployRequestStatus'];
 export type DeployRequestSummary = Schemas['DeployRequestSummaryResponse'];
 export type DeployRequestDetail = Schemas['DeployRequestDetailResponse'];
 export type CreateDeploy = Schemas['CreateDeployRequest'];
+export type DeployTrigger = Schemas['DeployRequestTrigger'];
+export type LogSource = Schemas['LogSource'];
+export type LogLine = Schemas['LogLineResponse'];
 export type SimulatedFailureStage = Schemas['SimulatedFailureStage'];

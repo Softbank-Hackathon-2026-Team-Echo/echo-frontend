@@ -1,7 +1,19 @@
-import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQueries,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
 import { api, unwrap } from './client';
 import { queryKeys } from './query-keys';
-import type { CreateDeploy, CreateService, DeployRequestStatus, ServiceDetail } from './types';
+import type {
+  CreateDeploy,
+  CreateService,
+  DeployRequestStatus,
+  LogSource,
+  ServiceDetail,
+} from './types';
 
 const PAGE_SIZE = 100;
 /** 실시간(SSE)이 생기기 전까지 배포 진행 화면은 2초마다 다시 부른다 (계약 3장) */
@@ -164,5 +176,54 @@ export function useCreateDeploy(orgId: string, serviceId: string) {
         queryClient.invalidateQueries({ queryKey: queryKeys.service(orgId, serviceId) }),
         queryClient.invalidateQueries({ queryKey: queryKeys.deployRequests(orgId, serviceId) }),
       ]),
+  });
+}
+
+/**
+ * 이력에서 고른 예전 성공 배포로 되돌린다(새 빌드 없이 그때 이미지·설정 사본).
+ * 이력 행의 `rollbackable` 이 true 일 때만 부른다. 409 문구는 공통 오류 처리가 고른다
+ */
+export function useRollback(orgId: string, serviceId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (deployRequestId: string) =>
+      unwrap(
+        api.POST('/api/v1/orgs/{org_id}/deploy-requests/{deploy_request_id}/rollback', {
+          params: { path: { org_id: orgId, deploy_request_id: deployRequestId } },
+          body: {},
+        }),
+      ),
+    onSuccess: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.service(orgId, serviceId) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.deployRequests(orgId, serviceId) }),
+      ]),
+  });
+}
+
+const LOG_PAGE_SIZE = 200;
+
+/** 배포 요청 로그 한 종류. 시간 순 커서 페이지이고, 진행 중이면 2초마다 다시 부른다(실시간 전송 없음) */
+export function useDeployLogs(
+  orgId: string | undefined,
+  deployRequestId: string | undefined,
+  source: LogSource,
+  live: boolean,
+) {
+  return useInfiniteQuery({
+    queryKey: queryKeys.deployLogs(orgId ?? '', deployRequestId ?? '', source),
+    queryFn: ({ pageParam }) =>
+      unwrap(
+        api.GET('/api/v1/orgs/{org_id}/deploy-requests/{deploy_request_id}/logs', {
+          params: {
+            path: { org_id: orgId ?? '', deploy_request_id: deployRequestId ?? '' },
+            query: { source, limit: LOG_PAGE_SIZE, ...(pageParam ? { cursor: pageParam } : {}) },
+          },
+        }),
+      ),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (page) => (page.hasMore ? (page.nextCursor ?? undefined) : undefined),
+    enabled: Boolean(orgId && deployRequestId),
+    refetchInterval: live ? DEPLOY_POLL_MS : false,
   });
 }

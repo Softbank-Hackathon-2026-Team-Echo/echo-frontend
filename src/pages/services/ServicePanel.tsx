@@ -7,15 +7,10 @@ import { RoleButton } from '@/components/RoleButton';
 import { SimulatedBadge } from '@/components/SimulatedBadge';
 import { StatusBadge } from '@/components/StatusBadge';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  isTerminalStatus,
-  useCreateDeploy,
-  useDeployRequests,
-  useService,
-} from '@/lib/api/services';
+import { isTerminalStatus, useDeployRequests, useRollback, useService } from '@/lib/api/services';
 import type { DeployRequestSummary, ServiceEnvironment } from '@/lib/api/types';
 import { dateTime } from '@/lib/format';
-import { deployErrorLabel, shortSha } from '@/lib/status';
+import { deployErrorLabel, deployTriggerLabel, shortSha } from '@/lib/status';
 import { DeployDialog } from './DeployDialog';
 
 /** 연결 하나의 오른쪽 배지: Serving 100% · Standby 0% · Out of sync */
@@ -52,18 +47,15 @@ export function ServicePanel({
   const navigate = useNavigate();
   const { data: service, isPending } = useService(orgId, serviceId);
   const history = useDeployRequests(orgId, serviceId);
-  const redeploy = useCreateDeploy(orgId, serviceId);
+  const rollback = useRollback(orgId, serviceId);
   const [deployOpen, setDeployOpen] = useState(false);
 
   if (isPending || !service) return <Skeleton className="h-96 w-full" />;
 
   const serving = service.environments.find((link) => link.role === 'SERVING');
-  // 되돌릴 대상: 서비스 중 환경에서 성공한 배포 중 지금 버전이 아닌 가장 최근 것
+  // 되돌릴 대상: 서비스 중 환경에서 서버가 되돌릴 수 있다고 한 가장 최근 배포 (목록은 최신순)
   const previous = history.data?.items.find(
-    (item) =>
-      item.status === 'SUCCEEDED' &&
-      item.environment.id === serving?.environment.id &&
-      item.commitSha !== serving?.currentDeployment?.commitSha,
+    (item) => item.rollbackable && item.environment.id === serving?.environment.id,
   );
 
   return (
@@ -138,9 +130,7 @@ export function ServicePanel({
                       {dateTime(request.stageTimes.queuedAt)} ·{' '}
                       {request.status === 'FAILED' && request.errorCode
                         ? deployErrorLabel(request.errorCode)
-                        : request.trigger === 'STANDBY_SYNC'
-                          ? 'standby sync'
-                          : 'manual'}
+                        : deployTriggerLabel(request.trigger).toLowerCase()}
                     </span>
                   </span>
                 </Link>
@@ -154,20 +144,16 @@ export function ServicePanel({
         <RoleButton requires="DEVELOPER" onClick={() => setDeployOpen(true)}>
           Deploy
         </RoleButton>
-        {previous && serving && (
-          // 되돌리기 API(API 서버 4) 전까지는 예전 커밋으로 새 배포 요청을 만든다
+        {previous && (
           <RoleButton
             requires="DEVELOPER"
             variant="outline"
-            disabled={redeploy.isPending}
+            disabled={rollback.isPending}
             onClick={() =>
-              redeploy.mutate(
-                { environmentId: serving.environment.id, commitSha: previous.commitSha },
-                {
-                  onSuccess: (created) =>
-                    navigate(`/o/${orgSlug}/services/${service.id}/deploys/${created.id}`),
-                },
-              )
+              rollback.mutate(previous.id, {
+                onSuccess: (created) =>
+                  navigate(`/o/${orgSlug}/services/${service.id}/deploys/${created.id}`),
+              })
             }
           >
             Roll back to <span className="font-mono">{shortSha(previous.commitSha)}</span>

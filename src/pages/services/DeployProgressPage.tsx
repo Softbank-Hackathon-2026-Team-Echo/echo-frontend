@@ -1,4 +1,4 @@
-import { Check, CircleAlert, Loader2, Minus, SquareTerminal, X } from 'lucide-react';
+import { Check, CircleAlert, Loader2, Minus, X } from 'lucide-react';
 import { Link, useParams } from 'react-router';
 import { ErrorState } from '@/components/ErrorState';
 import { ExternalLink } from '@/components/ExternalLink';
@@ -11,8 +11,9 @@ import { useCurrentOrg } from '@/lib/api/me';
 import { isTerminalStatus, useDeployRequest, useService } from '@/lib/api/services';
 import type { DeployRequestDetail, ServiceDetail } from '@/lib/api/types';
 import { dateTime, elapsed } from '@/lib/format';
-import { deployErrorLabel, deployStatusView, shortSha } from '@/lib/status';
+import { deployErrorLabel, deployStatusView, deployTriggerLabel, shortSha } from '@/lib/status';
 import { cn } from '@/lib/utils';
+import { DeployLogs } from './DeployLogs';
 
 type StageState = 'done' | 'current' | 'failed' | 'pending' | 'skipped';
 
@@ -188,6 +189,13 @@ function Stepper({
   );
 }
 
+// 취소 이유 (DeployRequestCancelReason)
+const CANCEL_REASONS: Record<string, string> = {
+  SUPERSEDED: 'Replaced by a newer deploy to the same environment.',
+  SERVICE_DELETED: 'Cancelled because the service was deleted.',
+  BASE_CHANGED: 'Cancelled because another version went live before this rollback started.',
+};
+
 function Outcome({ request }: { request: DeployRequestDetail }) {
   if (request.status === 'SUCCEEDED') {
     return (
@@ -216,60 +224,11 @@ function Outcome({ request }: { request: DeployRequestDetail }) {
   if (request.status === 'CANCELLED') {
     return (
       <p className="rounded-lg bg-subtle p-4 text-body text-fg-secondary">
-        {request.cancelReason === 'SUPERSEDED'
-          ? 'Replaced by a newer deploy to the same environment.'
-          : 'Cancelled because the service was deleted.'}
+        {CANCEL_REASONS[request.cancelReason ?? ''] ?? 'This deploy was cancelled.'}
       </p>
     );
   }
   return null;
-}
-
-function LogPanel({ request }: { request: DeployRequestDetail }) {
-  return (
-    <section className="flex flex-col overflow-hidden rounded-lg border border-line bg-subtle">
-      <header className="flex items-center justify-between gap-2 border-b border-line px-4 py-2">
-        <span className="flex items-center gap-2 font-mono text-mono text-fg-secondary">
-          <SquareTerminal aria-hidden className="size-4" />
-          deploy · {request.id.slice(0, 8)}
-        </span>
-        {!isTerminalStatus(request.status) && (
-          <span className="flex items-center gap-1.5 text-caption text-success-fg">
-            <span aria-hidden className="size-1.5 rounded-full bg-success-solid" />
-            Live
-          </span>
-        )}
-      </header>
-      {/* 배포 로그 API 는 API 서버 4 예정 (계약 §2 SVC 배포 로그 🆕). 지금은 단계 시각만 줄로 보여 준다 */}
-      <ol className="flex flex-col gap-1 p-4 font-mono text-mono">
-        {(
-          [
-            ['queuedAt', 'request queued'],
-            [
-              'buildingAt',
-              request.build?.reused ? 'build started · image reused' : 'build started',
-            ],
-            ['deployingAt', `deploying to ${request.environment.name}`],
-            ['verifyingAt', 'health check started'],
-            ['finishedAt', `finished · ${request.status.toLowerCase()}`],
-          ] as const
-        )
-          .filter(([key]) => request.stageTimes[key])
-          .map(([key, text]) => (
-            <li key={key} className="flex gap-4">
-              <span className="text-fg-muted">
-                {new Date(request.stageTimes[key] ?? '').toLocaleTimeString('en-GB')}
-              </span>
-              <span className="text-fg-muted">INFO</span>
-              <span>{text}</span>
-            </li>
-          ))}
-        <li className="pt-2 text-fg-muted">
-          Detailed build and deploy logs will stream here once the API provides them.
-        </li>
-      </ol>
-    </section>
-  );
 }
 
 function UrlCard({ request }: { request: DeployRequestDetail }) {
@@ -327,7 +286,7 @@ export default function DeployProgressPage() {
               from <span className="font-mono">{refText}</span>
             </span>
             ·<span>started {dateTime(request.stageTimes.queuedAt)}</span>·
-            <span>{request.trigger === 'STANDBY_SYNC' ? 'standby sync' : 'manual'}</span>·
+            <span>{deployTriggerLabel(request.trigger).toLowerCase()}</span>·
             <span className="font-mono tabular-nums">
               {elapsed(request.stageTimes.queuedAt, request.stageTimes.finishedAt, now)}
             </span>
@@ -350,7 +309,7 @@ export default function DeployProgressPage() {
       <Outcome request={request} />
 
       <div className="grid grid-cols-[1fr_20rem] items-start gap-4 max-wide:grid-cols-1">
-        <LogPanel request={request} />
+        {organization && <DeployLogs orgId={organization.id} request={request} />}
         <UrlCard request={request} />
       </div>
     </>

@@ -12,6 +12,8 @@ export const queryKeys = {
     ['org', orgId, 'services', serviceId, 'deploy-requests'] as const,
   deployRequest: (orgId: string, deployRequestId: string) =>
     ['org', orgId, 'deploy-requests', deployRequestId] as const,
+  deployLogs: (orgId: string, deployRequestId: string, source: string) =>
+    ['org', orgId, 'deploy-requests', deployRequestId, 'logs', source] as const,
   disasters: (orgId: string) => ['org', orgId, 'disasters'] as const,
   evacuation: (orgId: string) => ['org', orgId, 'evacuation'] as const,
   prechecks: (orgId: string) => ['org', orgId, 'prechecks'] as const,
