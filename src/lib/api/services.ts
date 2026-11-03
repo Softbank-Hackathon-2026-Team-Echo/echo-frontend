@@ -13,6 +13,7 @@ import type {
   DeployRequestStatus,
   LogSource,
   ServiceDetail,
+  UpdateService,
 } from './types';
 
 const PAGE_SIZE = 100;
@@ -107,6 +108,24 @@ export function useCreateService(orgId: string) {
       ),
     // 저장소 접근 오류(설치 안내)·칸 오류는 폼이 보여 준다
     meta: { skipGlobalErrorToast: true },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.services(orgId) }),
+  });
+}
+
+/** 설명·저장소·헬스 체크·포트 수정. 바뀐 값은 다음 배포 요청부터 쓴다 */
+export function useUpdateService(orgId: string, serviceId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: UpdateService) =>
+      unwrap(
+        api.PATCH('/api/v1/orgs/{org_id}/services/{service_id}', {
+          params: { path: { org_id: orgId, service_id: serviceId } },
+          body,
+        }),
+      ),
+    // 저장소 접근 오류·칸 오류는 폼이 보여 준다
+    meta: { skipGlobalErrorToast: true },
+    // 목록 키가 상세 키의 앞부분이라 둘 다 다시 불러온다
     onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.services(orgId) }),
   });
 }

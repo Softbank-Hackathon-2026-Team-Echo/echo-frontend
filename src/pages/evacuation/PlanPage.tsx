@@ -9,10 +9,16 @@ import { StageList } from '@/components/StageList';
 import { StatusBadge } from '@/components/StatusBadge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useActiveDisasters } from '@/lib/api/disasters';
 import { useEnvironments } from '@/lib/api/environments';
-import { describeApiError } from '@/lib/api/errors';
+import { describeApiError, isApiError } from '@/lib/api/errors';
 import { useCurrentOrg } from '@/lib/api/me';
-import { isActivePlan, useMigrationPlan, usePlanAction } from '@/lib/api/migrations';
+import {
+  isActivePlan,
+  useMigrationLogs,
+  useMigrationPlan,
+  usePlanAction,
+} from '@/lib/api/migrations';
 import { useService } from '@/lib/api/services';
 import type { MigrationPlan } from '@/lib/api/types';
 import { dateTime } from '@/lib/format';
@@ -32,6 +38,26 @@ const CLOSED_TEXT: Partial<Record<MigrationPlan['status'], string>> = {
   EXPIRED: 'This plan expired after 24 hours without approval.',
   STALE: 'Environments or deployments changed after this plan was made, so it can no longer run.',
 };
+
+// 지문 항목(API 서버 8, PLAN_STALE details · 로그 STALE.data.changed) → 사람이 읽는 말
+const STALE_FIELDS: Record<string, string> = {
+  serviceStatus: 'Service status changed',
+  connections: 'A deployment or traffic weight changed',
+  sourceEnvironment: 'Source environment settings or connection changed',
+  targetEnvironment: 'Target environment settings or connection changed',
+  openDeployRequests: 'A deploy started or finished',
+};
+
+/** 낡은 계획이 된 이유. 승인 409 의 details 가 있으면 그것을, 없으면 실행 로그의 STALE 줄을 쓴다 */
+function staleChanges(error: unknown, logChanged: unknown): string[] {
+  const fields =
+    isApiError(error) && error.code === 'PLAN_STALE'
+      ? error.details.map((detail) => detail.field)
+      : Array.isArray(logChanged)
+        ? logChanged.filter((item): item is string => typeof item === 'string')
+        : [];
+  return fields.map((field) => STALE_FIELDS[field] ?? field);
+}
 
 function Kv({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -58,6 +84,8 @@ export default function PlanPage() {
   const approve = usePlanAction(orgId ?? '', serviceId ?? '', 'approve');
   const reject = usePlanAction(orgId ?? '', serviceId ?? '', 'reject');
   const cancel = usePlanAction(orgId ?? '', serviceId ?? '', 'cancel');
+  const disasters = useActiveDisasters(orgId);
+  const logs = useMigrationLogs(orgId, plan.data?.status === 'STALE' ? planId : undefined, false);
 
   if (!serviceId || !targetId) {
     return (
@@ -98,6 +126,11 @@ export default function PlanPage() {
   const sourceName = names.get(plan.data?.sourceEnvironmentId ?? servingId ?? '') ?? 'source';
   const targetName = names.get(plan.data?.targetEnvironmentId ?? targetId) ?? 'target';
   const restartUrl = `/o/${organization.slug}/evacuation/plan?service=${serviceId}&target=${targetId}`;
+  // 재난이 끝나지 않은 지역으로는 옮기지 않는다(ADR 11/2). 주소로 바로 들어와도 여기서 막는다
+  const targetAtRisk = (disasters.data ?? []).some((disaster) =>
+    disaster.affectedEnvironmentIds.includes(plan.data?.targetEnvironmentId ?? targetId),
+  );
+  const riskReason = targetAtRisk ? `${targetName} is inside an active disaster radius` : undefined;
 
   if (!planId || !plan.data) {
     return (
@@ -107,6 +140,7 @@ export default function PlanPage() {
         targetId={targetId}
         sourceName={sourceName}
         targetName={targetName}
+        blockedReason={riskReason}
         onCreated={(created) =>
           setSearchParams({ service: serviceId, target: targetId, plan: created.id })
         }
@@ -119,11 +153,13 @@ export default function PlanPage() {
   const mine = current.createdBy.id === me.user.id;
   const selfBlocked = mine && !organization.allowSelfApproval;
   const mismatches = securityMismatches();
-  const approveReason = selfBlocked
-    ? 'Self-approval is off. Ask another developer, or turn it on in Settings › Members.'
-    : mismatches.length
-      ? 'Fix the security mismatch first'
-      : undefined;
+  const approveReason = riskReason
+    ? riskReason
+    : selfBlocked
+      ? 'Self-approval is off. Ask another developer, or turn it on in Settings › Members.'
+      : mismatches.length
+        ? 'Fix the security mismatch first'
+        : undefined;
   const actionError = approve.error ?? reject.error ?? cancel.error;
   const migrationUrl = `/o/${organization.slug}/migrations/${current.id}`;
 
@@ -201,10 +237,27 @@ export default function PlanPage() {
           {describeApiError(actionError)}
         </p>
       ) : null}
+      {(() => {
+        const changes = staleChanges(
+          approve.error,
+          logs.data?.pages.flatMap((page) => page.items).find((line) => line.code === 'STALE')?.data
+            ?.changed,
+        );
+        return changes.length > 0 ? (
+          <div className="flex flex-col gap-1 rounded-lg bg-subtle px-3 py-2 text-small text-fg-secondary">
+            <span className="text-body-medium text-fg">What changed after the plan was made</span>
+            <ul className="list-disc pl-5">
+              {changes.map((change) => (
+                <li key={change}>{change}</li>
+              ))}
+            </ul>
+          </div>
+        ) : null;
+      })()}
 
       <div className="flex items-start gap-3 max-wide:flex-col">
         <div className="flex min-w-0 flex-1 flex-col gap-3 max-wide:w-full">
-          <section className="flex flex-col gap-3.5 rounded-xl border border-line bg-surface p-4">
+          <section className="flex flex-col gap-3 rounded-xl border border-line bg-surface p-4">
             <h2 className="text-title">Stages</h2>
             <StageList stages={planStages(current.steps, current.rollbackConditions, targetName)} />
           </section>
@@ -232,7 +285,7 @@ export default function PlanPage() {
           </section>
         </div>
 
-        <div className="flex w-[27.5rem] shrink-0 flex-col gap-3 max-wide:w-full">
+        <div className="flex w-110 shrink-0 flex-col gap-3 max-wide:w-full">
           <SecurityComparison sourceName={sourceName} targetName={targetName} />
           <section className="flex flex-col gap-2 rounded-xl border border-line bg-surface p-4">
             <h2 className="text-title">Approval</h2>

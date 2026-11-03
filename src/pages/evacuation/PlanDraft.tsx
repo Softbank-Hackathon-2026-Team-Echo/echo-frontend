@@ -33,6 +33,8 @@ type PlanDraftProps = {
   targetId: string;
   sourceName: string;
   targetName: string;
+  /** 재난 반경 안 등으로 만들 수 없을 때 이유 */
+  blockedReason?: string;
   onCreated: (plan: MigrationPlan) => void;
 };
 
@@ -74,6 +76,7 @@ export function PlanDraft({
   targetId,
   sourceName,
   targetName,
+  blockedReason,
   onCreated,
 }: PlanDraftProps) {
   const create = useCreateMigrationPlan(orgId, serviceId);
@@ -105,7 +108,12 @@ export function PlanDraft({
         title="Plan the migration"
         description={`${sourceName} → ${targetName} · est. ${duration(total)} · approval needed within 24 hours`}
         actions={
-          <RoleButton requires="DEVELOPER" type="submit" disabled={create.isPending}>
+          <RoleButton
+            requires="DEVELOPER"
+            type="submit"
+            disabledReason={blockedReason}
+            disabled={create.isPending}
+          >
             Create plan
           </RoleButton>
         }
@@ -113,7 +121,7 @@ export function PlanDraft({
       <WizardSteps current={2} />
       <FormError message={formErrorMessage(create.error, FIELDS)} />
       <div className="flex items-start gap-3 max-wide:flex-col">
-        <section className="flex flex-1 flex-col gap-3.5 rounded-xl border border-line bg-surface p-4 max-wide:w-full">
+        <section className="flex flex-1 flex-col gap-3 rounded-xl border border-line bg-surface p-4 max-wide:w-full">
           <h2 className="text-title">Stages</h2>
           <StageList stages={planStages(steps, conditions, targetName)} />
         </section>

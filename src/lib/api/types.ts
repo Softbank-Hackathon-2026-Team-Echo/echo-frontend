@@ -55,7 +55,9 @@ export type UpdateEnvironment = Schemas['UpdateEnvironmentRequest'];
 export type ServiceSummary = Schemas['ServiceSummaryResponse'];
 export type ServiceDetail = Schemas['ServiceDetailResponse'];
 export type ServiceEnvironment = Schemas['ServiceEnvironmentResponse'];
+export type CreateOrganization = Schemas['CreateOrganizationRequest'];
 export type CreateService = Schemas['CreateServiceRequest'];
+export type UpdateService = Schemas['UpdateServiceRequest'];
 
 export type DeployRequestStatus = Schemas['DeployRequestStatus'];
 export type DeployRequestSummary = Schemas['DeployRequestSummaryResponse'];

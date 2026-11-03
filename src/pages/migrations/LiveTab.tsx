@@ -119,7 +119,7 @@ export function LiveTab({
         </div>
       </div>
 
-      <div className="flex w-[25rem] shrink-0 flex-col gap-3 max-wide:w-full">
+      <div className="flex w-100 shrink-0 flex-col gap-3 max-wide:w-full">
         {plan.progress && (
           <StepProgress
             progress={plan.progress}

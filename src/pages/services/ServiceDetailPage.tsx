@@ -1,4 +1,4 @@
-import { GitBranch, Lock, MoreHorizontal, RotateCcw, Trash2 } from 'lucide-react';
+import { GitBranch, Lock, MoreHorizontal, Pencil, RotateCcw, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
@@ -32,13 +32,16 @@ import type { DeployRequestSummary, ServiceDetail } from '@/lib/api/types';
 import { timeAgo } from '@/lib/format';
 import { hasRole } from '@/lib/roles';
 import {
+  deployErrorLabel,
   deployStatusView,
   deployTriggerLabel,
   envRoleView,
   shortSha,
+  teardownErrorLabel,
   versionStatusView,
 } from '@/lib/status';
 import { DeployDialog } from './DeployDialog';
+import { EditServiceDialog } from './EditServiceDialog';
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -99,14 +102,31 @@ function EnvironmentLinks({ service, orgSlug }: { service: ServiceDetail; orgSlu
                   {link.trafficWeight}%
                 </TableCell>
                 <TableCell>
-                  <span className="flex flex-wrap items-center gap-1.5">
-                    <span className="font-mono text-mono">
-                      {shortSha(link.currentDeployment?.commitSha)}
+                  <span className="flex flex-col gap-0.5">
+                    <span className="flex flex-wrap items-center gap-1.5">
+                      <span className="font-mono text-mono">
+                        {shortSha(link.currentDeployment?.commitSha)}
+                      </span>
+                      {link.versionStatus && (
+                        <StatusBadge {...versionStatusView(link.versionStatus)} />
+                      )}
+                      {link.simulated && <SimulatedBadge />}
                     </span>
-                    {link.versionStatus && (
-                      <StatusBadge {...versionStatusView(link.versionStatus)} />
+                    {/* 예비 따라가기: 성공하면 걸린 초, 실패하면 그 이유 */}
+                    {link.lastSyncError ? (
+                      <span className="text-caption text-warning-fg">
+                        Standby sync failed: {deployErrorLabel(link.lastSyncError)}
+                      </span>
+                    ) : link.lastSyncSeconds !== null ? (
+                      <span className="text-caption text-fg-muted">
+                        Synced {link.lastSyncSeconds}s after the source
+                      </span>
+                    ) : null}
+                    {link.teardownError && (
+                      <span className="text-caption text-danger-fg">
+                        {teardownErrorLabel(link.teardownError)}
+                      </span>
                     )}
-                    {link.simulated && <SimulatedBadge />}
                   </span>
                 </TableCell>
                 <TableCell className="max-w-72">
@@ -236,6 +256,7 @@ export default function ServiceDetailPage() {
   const deleteService = useDeleteService(organization?.id ?? '');
   const [deployOpen, setDeployOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
 
   if (isError) return <ErrorState error={error} onRetry={() => refetch()} />;
   if (isPending || !organization) {
@@ -290,6 +311,16 @@ export default function ServiceDetailPage() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
               <DropdownMenuItem
+                disabled={!hasRole(role, 'DEVELOPER') || deleting}
+                onSelect={() => setEditOpen(true)}
+              >
+                <Pencil aria-hidden />
+                <span className="flex-1">Edit settings</span>
+                {!hasRole(role, 'DEVELOPER') && (
+                  <span className="text-caption text-fg-muted">Developer</span>
+                )}
+              </DropdownMenuItem>
+              <DropdownMenuItem
                 variant="destructive"
                 disabled={!hasRole(role, 'ADMIN') || deleting}
                 onSelect={() => setDeleteOpen(true)}
@@ -308,7 +339,7 @@ export default function ServiceDetailPage() {
       {deleting && (
         <p role="status" className="rounded-md bg-warning-bg px-3 py-2 text-body text-warning-fg">
           This service is being removed from every environment.
-          {service.deleteError && ` Last error: ${service.deleteError}.`}
+          {service.deleteError && ` Last error: ${teardownErrorLabel(service.deleteError)}`}
         </p>
       )}
 
@@ -332,6 +363,12 @@ export default function ServiceDetailPage() {
         orgSlug={organization.slug}
         serviceId={service.id}
         serviceName={service.name}
+      />
+      <EditServiceDialog
+        open={editOpen}
+        onOpenChange={setEditOpen}
+        orgId={organization.id}
+        service={service}
       />
       <ConfirmDeleteDialog
         open={deleteOpen}

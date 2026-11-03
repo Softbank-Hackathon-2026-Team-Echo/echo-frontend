@@ -55,7 +55,8 @@ src/
 │  │                     #   me(useMe · 로그인 전에도 쓰는 조용한 useSession) · environments · services(서비스·배포 요청) · disasters(🆕 API 전까지 브라우저 시뮬레이션) · auth
 │  │                     #   events(실시간 채널 → 쿼리 무효화) · evacuation(🆕 대피 후보 규칙 점수, API 전까지 브라우저 계산)
 │  ├─ roles.ts           # hasRole · 역할 표기
-│  ├─ status.ts          # 서버 상태 값 → 화면 문구·색 (StatusBadge 와 짝)
+│  ├─ status.ts          # 서버 상태 값 → 화면 문구·색 (StatusBadge 와 짝), 오류 코드 → 문구
+│  ├─ migration-*.ts     # 이전 단계 시간(stages) · 결과 숫자(metrics) · Failback 판정(mode). 두 화면 이상에서 쓴다
 │  ├─ geo.ts             # 리전·도시 → 좌표(계약 4-1 🆕 전까지), 거리 계산
 │  ├─ format.ts          # 상대 시각·경과 시간
 │  └─ utils.ts           # cn() (커스텀 글자 스타일을 아는 tailwind-merge)
@@ -175,3 +176,7 @@ docs/                    # api-contract.md, PR.md(커밋 안 함)
 | 11/3 | 대시보드 완료 카드는 30분 안에 성공한 이전이 있으면 한 번 뜬다(탭마다 닫은 것을 기억). "View full result" 를 눌러야 M02 Result 로 간다 | IA 11/2: 자동으로 넘어가지 않는다. 쓰기 정지 시간·RPO 는 API 전까지 `—` |
 | 11/3 | 대시보드 "Requests · A vs B" 는 실행 중인 이전이 있으면 그 A·B 비율선을 그린다. 실행 중 계획이 있으면 서비스별 계획 목록을 2초마다 다시 부른다 | 반분할 시연에서 대시보드만 보고 있어도 이전과 완료가 보이게 |
 | 11/3 | 소개 지구본 점 색은 환경 종류(AWS · GCP · Azure · On-prem, provider 토큰). Azure 는 provider 토큰이 없어 `chart-1` 을 임시로 쓴다. 울릉도 · 독도 · 제주도는 110m 육지 데이터에 없어 실제 크기(°)로 그리되 화면 최소 크기를 둔다 | 히어로 범례를 4가지 환경 종류로. 한국 섬이 빠지지 않게. Azure 색은 Figma `provider-azure` 변수가 생기면 바꾼다 |
+| 11/3 | 이전 계획은 API 서버 8-1 건수 판정을 따른다: 단계마다 도착이 받아야 할 요청 수(`requiredRequests` 20·50·50)와 최대 대기(30초)를 정하고, 실행 중에는 `progress` 를 1초 폴링해 "X / Y requests · 5xx a / b" 로 보인다. p95 는 참고 값으로만 보인다 | 운영 API 가 `observeSeconds` 를 없앴다(보내면 422). 시간 대신 건수로 판정해야 조용한 서비스에서도 결과가 정해진다 |
+| 11/3 | 데모 실패 주입(`simulate`)은 E01-3 계획 만들기의 선택 칸으로 둔다. 이유별로 고를 수 있는 단계만 보인다 | F9 자동 롤백 시연. 서버가 가짜 실행기일 때만 받고, 아니면 422 `SIMULATE_NOT_ALLOWED` 를 칸 아래에 보인다 |
+| 11/3 | 재난 반경 안 환경으로는 계획 만들기·승인을 막는다(E01-3, 주소로 바로 들어와도) | 11/2 결정(재난 미종료 지역 복귀 금지)을 버튼 하나가 아니라 계획 화면에서도 지키게 |
+| 11/3 | Failback 표시는 서버 `mode` 칸이 생기기 전까지 "같은 서비스의 앞선 성공 이전을 거꾸로 되짚는 계획" 으로 가린다 | API 서버 8 에 종류 칸이 없다. 계약 4-6 `mode` 🆕 |

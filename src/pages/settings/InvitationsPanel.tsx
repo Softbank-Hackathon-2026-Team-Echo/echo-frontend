@@ -1,6 +1,6 @@
 import { ErrorState } from '@/components/ErrorState';
+import { RoleButton } from '@/components/RoleButton';
 import { StatusBadge } from '@/components/StatusBadge';
-import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useInvitations, useMembers, useRevokeInvitation } from '@/lib/api/members';
 import { dateTime } from '@/lib/format';
@@ -43,7 +43,8 @@ export function InvitationsPanel({ orgId, isAdmin }: { orgId: string; isAdmin: b
                     invited by @{logins.get(invitation.invitedByUserId) ?? 'unknown'} · expires{' '}
                     {dateTime(invitation.expiresAt)}
                   </span>
-                  <Button
+                  <RoleButton
+                    requires="ADMIN"
                     variant="ghost"
                     size="sm"
                     className="ml-auto"
@@ -51,7 +52,7 @@ export function InvitationsPanel({ orgId, isAdmin }: { orgId: string; isAdmin: b
                     onClick={() => revoke.mutate(invitation.id)}
                   >
                     Revoke
-                  </Button>
+                  </RoleButton>
                 </li>
               ))}
             </ul>
