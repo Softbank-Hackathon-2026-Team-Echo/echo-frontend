@@ -7,15 +7,23 @@ export type GlobeRegion = {
   label: string;
   lat: number;
   lng: number;
-  /** 강조 점(시연 환경). 없으면 작은 회색 점 */
-  tone?: 'danger' | 'migrating' | 'success' | 'brand';
+  /** 점 색: 환경 종류(provider 토큰). Azure 는 provider 토큰이 없어 chart-1 을 쓴다 */
+  provider: GlobeProvider;
+  /** 시연 환경: 큰 점 + 테두리 */
+  highlight?: boolean;
 };
+
+export type GlobeProvider = 'aws' | 'gcp' | 'azure' | 'onprem';
+
+/** 지도 데이터(110m)에 없는 작은 섬. 반경(°)이 화면에서 너무 작으면 최소 크기로 그린다 */
+export type GlobeIsland = { key: string; lat: number; lng: number; rx: number; ry: number };
 
 export type GlobeArc = { from: string; to: string };
 
 type OrthoGlobeProps = {
   regions: GlobeRegion[];
   arcs: GlobeArc[];
+  islands?: GlobeIsland[];
   /** 처음 정면에 올 경도·위도 */
   center: [number, number];
   /** 움직임 줄이기면 돌지 않고 곡선도 멈춘 채 다 그린다 */
@@ -31,11 +39,11 @@ const TOKENS = {
   coast: '--ep-color-globe-coast',
   arc: '--ep-color-globe-arc',
   arcSoft: '--ep-color-globe-arc-soft',
-  muted: '--ep-color-globe-land-far',
-  danger: '--ep-color-status-danger-solid',
-  migrating: '--ep-color-status-migrating-solid',
-  success: '--ep-color-status-success-solid',
-  brand: '--ep-color-brand-default',
+  aws: '--ep-color-provider-aws',
+  gcp: '--ep-color-provider-gcp',
+  // TODO(김도영, 2026-11-03): Figma 에 provider-azure 변수가 생기면 바꾼다
+  azure: '--ep-color-chart-1',
+  onprem: '--ep-color-provider-onprem',
 } as const;
 
 const SPIN_DEG_PER_SECOND = 2.5;
@@ -65,7 +73,14 @@ function readColors() {
  * 정사영 지구본(d3-geo + canvas). 육지는 면으로 채우고, 리전은 점, 노드 사이는 대원 경로를 따라
  * 표면 위로 떠오르는 곡선이 항로처럼 그려진다. three.js·cobe 없이 그린다
  */
-export function OrthoGlobe({ regions, arcs, center, animate, className }: OrthoGlobeProps) {
+export function OrthoGlobe({
+  regions,
+  arcs,
+  islands = [],
+  center,
+  animate,
+  className,
+}: OrthoGlobeProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -134,6 +149,30 @@ export function OrthoGlobe({ regions, arcs, center, animate, className }: OrthoG
         context.stroke();
       }
 
+      // 작은 섬(울릉도 · 독도 · 제주도 등). 육지와 같은 면 색, 화면에서 최소 크기 보장
+      const degree = projection.scale() * (Math.PI / 180);
+      for (const island of islands) {
+        const point: [number, number] = [island.lng, island.lat];
+        if (geoDistance(point, front) > Math.PI / 2) continue;
+        const projected = projection(point);
+        if (!projected) continue;
+        context.beginPath();
+        context.ellipse(
+          projected[0],
+          projected[1],
+          Math.max(2.4, island.rx * degree),
+          Math.max(2.4, island.ry * degree),
+          0,
+          0,
+          Math.PI * 2,
+        );
+        context.fillStyle = colors.land;
+        context.fill();
+        context.strokeStyle = colors.coast;
+        context.lineWidth = 0.6;
+        context.stroke();
+      }
+
       // 항로: 대원 경로를 따라 가운데가 표면에서 떠오른 곡선. 앞면에 있는 구간만 그린다
       const [cx, cy] = [size / 2, size / 2];
       const lifted = (point: [number, number], t: number) => {
@@ -173,19 +212,19 @@ export function OrthoGlobe({ regions, arcs, center, animate, className }: OrthoG
         }
       });
 
-      // 리전 점. 시연 환경은 색 · 테두리(이름은 지구본 위 칩이 보여 준다)
+      // 리전 점: 환경 종류 색. 시연 환경은 크게 + 테두리(이름은 지구본 위 칩이 보여 준다)
       for (const region of regions) {
         const point: [number, number] = [region.lng, region.lat];
         if (geoDistance(point, front) > Math.PI / 2 - 0.05) continue;
         const projected = projection(point);
         if (!projected) continue;
         const [x, y] = projected;
-        const color = region.tone ? colors[region.tone] : colors.muted;
+        const color = colors[region.provider];
         context.beginPath();
-        context.arc(x, y, region.tone ? 4 : 2.4, 0, Math.PI * 2);
+        context.arc(x, y, region.highlight ? 4.2 : 2.8, 0, Math.PI * 2);
         context.fillStyle = color;
         context.fill();
-        if (region.tone) {
+        if (region.highlight) {
           context.beginPath();
           context.arc(x, y, 7.5, 0, Math.PI * 2);
           context.strokeStyle = color;
@@ -213,7 +252,7 @@ export function OrthoGlobe({ regions, arcs, center, animate, className }: OrthoG
       stopped = true;
       cancelAnimationFrame(frame);
     };
-  }, [regions, arcs, center, animate]);
+  }, [regions, arcs, islands, center, animate]);
 
   return <canvas ref={canvasRef} aria-hidden className={className} />;
 }

@@ -174,3 +174,4 @@ docs/                    # api-contract.md, PR.md(커밋 안 함)
 | 11/3 | L01 ⑥ 숫자(0 · 0 · ≤ 90 s · 3m 17s)는 "Demo targets · to be replaced with rehearsal measurements" 로 밝히고, 미니 UI·제품 화면 그림에는 `Illustration` 캡션을 단다 | 아직 잰 값이 아니다. 예시 값을 실데이터로 오해하지 않게(심사 규칙) |
 | 11/3 | 대시보드 완료 카드는 30분 안에 성공한 이전이 있으면 한 번 뜬다(탭마다 닫은 것을 기억). "View full result" 를 눌러야 M02 Result 로 간다 | IA 11/2: 자동으로 넘어가지 않는다. 쓰기 정지 시간·RPO 는 API 전까지 `—` |
 | 11/3 | 대시보드 "Requests · A vs B" 는 실행 중인 이전이 있으면 그 A·B 비율선을 그린다. 실행 중 계획이 있으면 서비스별 계획 목록을 2초마다 다시 부른다 | 반분할 시연에서 대시보드만 보고 있어도 이전과 완료가 보이게 |
+| 11/3 | 소개 지구본 점 색은 환경 종류(AWS · GCP · Azure · On-prem, provider 토큰). Azure 는 provider 토큰이 없어 `chart-1` 을 임시로 쓴다. 울릉도 · 독도 · 제주도는 110m 육지 데이터에 없어 실제 크기(°)로 그리되 화면 최소 크기를 둔다 | 히어로 범례를 4가지 환경 종류로. 한국 섬이 빠지지 않게. Azure 색은 Figma `provider-azure` 변수가 생기면 바꾼다 |

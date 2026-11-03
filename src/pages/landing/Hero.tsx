@@ -6,13 +6,15 @@ import { DashboardPreview } from './DashboardPreview';
 import { HeroGlobe } from './HeroGlobe';
 import { Illustration } from './Illustration';
 
+// 지구본 점 색 범례 (환경 종류). Azure 는 provider 토큰이 없어 chart-1 을 쓴다
 const PLACES = [
-  { label: 'GCP · Seoul', dot: 'bg-migrating-solid' },
-  { label: 'AWS · Tokyo', dot: 'bg-danger-solid' },
-  { label: 'On-prem · Fukuoka', dot: 'bg-success-solid' },
+  { label: 'AWS', dot: 'bg-aws' },
+  { label: 'GCP', dot: 'bg-gcp' },
+  { label: 'Azure', dot: 'bg-chart-1' },
+  { label: 'On-prem', dot: 'bg-onprem' },
 ];
 
-/** L01 히어로: 제목 · CTA · 도는 지구본(시연 3곳) · 대시보드 그림 */
+/** L01 히어로: 제목 · CTA · 도는 지구본(환경 종류별 리전 · 대피 경로) · 대시보드 그림 */
 export function Hero() {
   return (
     <section aria-labelledby="hero-title" className="relative overflow-hidden">
@@ -53,7 +55,7 @@ export function Hero() {
           />
           <HeroGlobe className="relative mx-auto aspect-square w-full max-w-4xl" />
           <ul
-            aria-label="Demo environments"
+            aria-label="Environment types on the globe"
             className="absolute inset-x-0 top-6 flex flex-wrap justify-center gap-2"
           >
             {PLACES.map((place) => (
