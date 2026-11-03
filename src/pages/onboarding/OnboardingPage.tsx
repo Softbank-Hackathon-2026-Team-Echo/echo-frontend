@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { ErrorState } from '@/components/ErrorState';
 import { Logo } from '@/components/Logo';
@@ -36,10 +36,15 @@ export default function OnboardingPage() {
   useEffect(() => {
     if (!loading && step === undefined) setStep(progress.next);
   }, [loading, step, progress.next]);
-  // 주 환경을 등록하면 다음 단계로 넘어간다
+  // 주 환경을 방금 등록했을 때만 다음 단계로 넘어간다. 끝난 단계를 다시 눌러 볼 때는 머문다
+  const hadPrimary = useRef<boolean | undefined>(undefined);
   useEffect(() => {
-    if (step === 'primary' && progress.done.primary) setStep('standby');
-  }, [step, progress.done.primary]);
+    if (loading) return;
+    if (hadPrimary.current === false && progress.done.primary && step === 'primary') {
+      setStep('standby');
+    }
+    hadPrimary.current = progress.done.primary;
+  }, [loading, step, progress.done.primary]);
 
   const shown = step ?? progress.next;
   const index = ONBOARDING_STEPS.findIndex((item) => item.key === shown);
@@ -91,7 +96,12 @@ export default function OnboardingPage() {
             <Skeleton className="h-80 w-140" />
           </div>
         ) : shown === 'primary' || shown === 'signin' ? (
-          <PrimaryStep orgId={organization.id} orgSlug={organization.slug} />
+          <PrimaryStep
+            orgId={organization.id}
+            orgSlug={organization.slug}
+            primaryName={progress.primary?.name}
+            onContinue={() => setStep('standby')}
+          />
         ) : shown === 'standby' ? (
           <StandbyStep
             orgId={organization.id}

@@ -86,4 +86,16 @@ describe('OnboardingPage', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Continue' }));
     expect(await screen.findByRole('heading', { name: 'Deploy your app' })).toBeInTheDocument();
   });
+
+  it('끝난 단계를 누르면 그 단계에 머문다', async () => {
+    serve([environment('e1', 'aws-tokyo-prod', 'ap-northeast-1')]);
+    renderPage();
+
+    await screen.findByText('Where can it evacuate to?');
+    await userEvent.click(screen.getByRole('button', { name: 'Connect primary' }));
+    expect(await screen.findByText('Where does your app run today?')).toBeInTheDocument();
+    expect(screen.getByText(/is connected/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Continue' }));
+    expect(await screen.findByText('Where can it evacuate to?')).toBeInTheDocument();
+  });
 });
