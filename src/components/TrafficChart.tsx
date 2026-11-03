@@ -1,4 +1,4 @@
-import type { WeightPoint } from './run-metrics';
+import type { WeightPoint } from '@/lib/migration-metrics';
 
 const WIDTH = 560;
 const HEIGHT = 180;

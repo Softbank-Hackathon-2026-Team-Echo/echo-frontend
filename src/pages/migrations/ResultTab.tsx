@@ -8,15 +8,15 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import type { MigrationPlan, MigrationStep } from '@/lib/api/types';
-import { duration } from '@/lib/migration-stages';
-import { Kpi } from './Kpi';
 import {
   failedRequests,
   maxReplicationLag,
   requestCount,
   stepSeconds,
   totalSeconds,
-} from './run-metrics';
+} from '@/lib/migration-metrics';
+import { duration } from '@/lib/migration-stages';
+import { Kpi } from './Kpi';
 
 const clock = (iso: string | null | undefined) =>
   iso ? new Date(iso).toLocaleTimeString('en-GB') : '—';

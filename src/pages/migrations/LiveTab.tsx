@@ -1,13 +1,13 @@
+import { TrafficChart } from '@/components/TrafficChart';
 import type { MigrationPlan } from '@/lib/api/types';
-import { Kpi } from './Kpi';
 import {
   currentWeights,
   failedRequests,
   latestP95,
   maxReplicationLag,
   weightTimeline,
-} from './run-metrics';
-import { TrafficChart } from './TrafficChart';
+} from '@/lib/migration-metrics';
+import { Kpi } from './Kpi';
 
 /** M02 Live: A·B 비율 그래프 · 판정 숫자 · 지금 비율 · 롤백 조건 */
 export function LiveTab({

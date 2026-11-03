@@ -1,4 +1,4 @@
-import { ArrowRight, ChartLine, History } from 'lucide-react';
+import { ArrowRight, History } from 'lucide-react';
 import { Link, useParams } from 'react-router';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorState } from '@/components/ErrorState';
@@ -10,11 +10,14 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useActiveDisasters } from '@/lib/api/disasters';
 import { useEnvironments } from '@/lib/api/environments';
 import { useCurrentOrg } from '@/lib/api/me';
+import { isActivePlan, useOrgMigrationPlans } from '@/lib/api/migrations';
 import { useServiceDetails, useServices } from '@/lib/api/services';
 import { envRoleView } from '@/lib/status';
 import { ActiveDisasterCard } from './ActiveDisasterCard';
+import { CompletionCard, recentCompletion } from './CompletionCard';
 import { KpiTiles } from './KpiTiles';
 import { LiveEvents } from './LiveEvents';
+import { LiveMigrationPanel } from './LiveMigrationPanel';
 import { Topology } from './Topology';
 import type { ServiceOnEnvironment } from './types';
 
@@ -31,6 +34,10 @@ export default function DashboardPage() {
   const services = useServices(orgId);
   const details = useServiceDetails(orgId, services.data?.items.map((service) => service.id) ?? []);
   const disasters = useActiveDisasters(orgId);
+  const plans = useOrgMigrationPlans(
+    orgId,
+    services.data?.items.map((service) => service.id) ?? [],
+  );
 
   if (environments.isError) {
     return <ErrorState error={environments.error} onRetry={() => environments.refetch()} />;
@@ -54,6 +61,8 @@ export default function DashboardPage() {
   const active = disasters.data ?? [];
   const latest = active.at(-1);
   const atRisk = new Set(active.flatMap((disaster) => disaster.affectedEnvironmentIds));
+  const running = plans.data.find((plan) => isActivePlan(plan.status));
+  const completed = recentCompletion(organization.id, plans.data);
   const byEnvironment = new Map<string, ServiceOnEnvironment[]>();
   let serving: ServiceOnEnvironment | undefined;
   for (const service of details.data) {
@@ -109,14 +118,13 @@ export default function DashboardPage() {
           <LiveEvents disasters={active} environments={envList} />
         </div>
 
-        <Panel title="Requests · A vs B" className="col-span-4 max-wide:col-span-12">
-          {/* 지표 API(계약 4-2)와 이전 실행이 생기면 원 환경·대상 환경 요청 그래프를 그린다 */}
-          <EmptyState
-            icon={ChartLine}
-            title="No migration running"
-            description="Request graphs appear while traffic moves between environments."
-          />
-        </Panel>
+        <LiveMigrationPanel
+          orgId={organization.id}
+          orgSlug={organization.slug}
+          planId={running?.id}
+          names={names}
+          className="col-span-4 max-wide:col-span-12"
+        />
         <Panel title="Environments" className="col-span-4 max-wide:col-span-12">
           <ul className="flex flex-col gap-2">
             {envList.map((environment) => {
@@ -148,6 +156,16 @@ export default function DashboardPage() {
           />
         </Panel>
       </div>
+      {completed && (
+        <CompletionCard
+          key={completed.id}
+          orgId={organization.id}
+          orgSlug={organization.slug}
+          planId={completed.id}
+          sourceName={names.get(completed.sourceEnvironmentId) ?? 'source'}
+          targetName={names.get(completed.targetEnvironmentId) ?? 'target'}
+        />
+      )}
     </>
   );
 }
