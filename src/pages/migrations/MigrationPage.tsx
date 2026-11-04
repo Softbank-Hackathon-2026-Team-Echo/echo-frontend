@@ -27,12 +27,10 @@ import {
   isActivePlan,
   useMigrationLogs,
   useMigrationPlan,
-  useMigrationPlans,
   usePlanAction,
 } from '@/lib/api/migrations';
 import type { MigrationPlan } from '@/lib/api/types';
 import { totalSeconds } from '@/lib/migration-metrics';
-import { isFailback } from '@/lib/migration-mode';
 import { duration, planStages } from '@/lib/migration-stages';
 import { migrationErrorLabel, migrationPlanStatusView } from '@/lib/status';
 import { cn } from '@/lib/utils';
@@ -44,9 +42,9 @@ const clock = (iso: string | null | undefined) =>
 
 const FINISHED: MigrationPlan['status'][] = ['SUCCEEDED', 'ROLLED_BACK', 'FAILED'];
 
-function title(plan: MigrationPlan, failback: boolean) {
+function title(plan: MigrationPlan) {
   const id = plan.id.slice(0, 8);
-  if (failback) return failbackTitle(plan, id);
+  if (plan.mode === 'FAILBACK') return failbackTitle(plan, id);
   if (plan.status === 'SUCCEEDED') return `Migration ${id} completed`;
   if (plan.status === 'ROLLED_BACK') return `Migration ${id} rolled back`;
   if (plan.status === 'FAILED') return `Migration ${id} failed`;
@@ -157,7 +155,6 @@ export default function MigrationPage() {
   const plan = useMigrationPlan(orgId, planId);
   const environments = useEnvironments(orgId);
   const disasters = useActiveDisasters(orgId);
-  const history = useMigrationPlans(orgId, plan.data?.serviceId);
   const abort = usePlanAction(orgId ?? '', plan.data?.serviceId ?? '', 'abort');
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [tab, setTab] = useState<string>();
@@ -205,7 +202,7 @@ export default function MigrationPage() {
   return (
     <>
       <PageHeader
-        title={title(current, isFailback(current, history.data?.items ?? []))}
+        title={title(current)}
         description={`${sourceName} → ${targetName} · started ${clock(current.startedAt)}${elapsed === null ? '' : ` · ${current.finishedAt ? 'took' : 'elapsed'} ${duration(elapsed)}`}${current.approvedBy ? ` · approved by ${current.approvedBy.login}` : ''}`}
         actions={
           active ? (

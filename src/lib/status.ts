@@ -99,10 +99,25 @@ const DEPLOY_ERRORS: Record<string, string> = {
   PUBLIC_URL_UNREACHABLE: 'The public URL could not be reached.',
   WORKER_LOST: 'The deploy worker stopped responding.',
   INTERNAL_ERROR: 'An internal error occurred.',
+  BUILD_DISPATCH_FAILED: 'The build could not be started.',
+  CLUSTER_UNAUTHORIZED: 'The cluster rejected the deploy credentials.',
+  IMAGE_PULL_FAILED: 'The cluster could not pull the image.',
+  CONTAINER_START_FAILED: 'The container failed to start.',
 };
 
 export function deployErrorLabel(code: string): string {
   return DEPLOY_ERRORS[code] ?? code;
+}
+
+// 이전 종류 (서버가 만들 때 판정한 mode)
+const MIGRATION_MODES: Record<string, string> = {
+  PLANNED: 'Planned',
+  EMERGENCY: 'Emergency',
+  FAILBACK: 'Failback',
+};
+
+export function migrationModeLabel(mode: string): string {
+  return MIGRATION_MODES[mode] ?? mode;
 }
 
 // 이전 실패·되돌림 이유 (echo-was docs/api/migration-plans.md, MigrationErrorCode)
@@ -155,4 +170,15 @@ const CONNECTION_ERRORS: Record<string, string> = {
 export function connectionErrorLabel(code: string | null | undefined): string | null {
   if (!code) return null;
   return CONNECTION_ERRORS[code] ?? code;
+}
+
+/** 접속은 되는데 노드 목록 권한만 없으면 서버가 CONNECTED 로 둔다. 이때는 접속 실패 문구를 쓰지 않는다 */
+export function clusterInfoErrorLabel(
+  connectionStatus: string | undefined,
+  code: string | null | undefined,
+): string | null {
+  if (code && connectionStatus === 'CONNECTED') {
+    return 'Connected, but the version and node count could not be read with this account.';
+  }
+  return connectionErrorLabel(code);
 }

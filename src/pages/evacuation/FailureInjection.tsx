@@ -37,10 +37,13 @@ export function FailureInjection({
   value,
   onChange,
   error,
+  unavailableReason,
 }: {
   value: Simulate | null;
   onChange: (value: Simulate | null) => void;
   error?: string;
+  /** 실제 실행기라 서버가 받지 않을 때 이유. 있으면 고르지 못한다 */
+  unavailableReason?: string;
 }) {
   const reason = REASONS.find((item) => item.value === value?.reason);
   return (
@@ -48,11 +51,15 @@ export function FailureInjection({
       <FormField
         id="plan-simulate-reason"
         label="Inject a failure (demo)"
-        hint="The run fails on purpose and rolls back to the source automatically."
+        hint={
+          unavailableReason ??
+          'The run fails on purpose and rolls back to the source automatically.'
+        }
         error={error}
       >
         <Select
           value={value?.reason ?? NONE}
+          disabled={Boolean(unavailableReason)}
           onValueChange={(next) => {
             const picked = REASONS.find((item) => item.value === next);
             onChange(picked ? { reason: picked.value, failAtStep: picked.steps[0] ?? 1 } : null);

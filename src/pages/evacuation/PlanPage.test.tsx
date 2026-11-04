@@ -28,7 +28,23 @@ function me(allowSelfApproval: boolean): Me {
   };
 }
 
-const service = (activeMigrationPlanId: string | null) =>
+const link = (simulated: boolean) => ({
+  serviceEnvironmentId: 'se2',
+  environment: { id: 'e2', name: 'gcp-seoul', kind: 'gcp' },
+  role: 'STANDBY' as const,
+  trafficWeight: 0,
+  url: 'https://shop-api-gcp.echoport.uk',
+  currentDeployment: null,
+  versionStatus: null,
+  lastSyncError: null,
+  activeRequestId: null,
+  queuedRequestId: null,
+  simulated,
+  teardownError: null,
+  lastSyncSeconds: null,
+});
+
+const service = (activeMigrationPlanId: string | null, targetSimulated = true) =>
   ({
     id: 's1',
     name: 'shop-api',
@@ -44,7 +60,7 @@ const service = (activeMigrationPlanId: string | null) =>
     simulated: true,
     createdAt: AT,
     updatedAt: AT,
-    environments: [],
+    environments: [link(targetSimulated)],
     activeMigrationPlanId,
   }) satisfies ServiceDetail;
 
@@ -77,6 +93,7 @@ const plan: MigrationPlan = {
   sourceServiceEnvironmentId: 'se1',
   targetServiceEnvironmentId: 'se2',
   status: 'PENDING_APPROVAL',
+  mode: 'PLANNED',
   currentStep: 0,
   expectedSeconds: 25,
   createdBy: { id: 'u1', login: 'echoport' },
@@ -117,15 +134,17 @@ function serve({
   allowSelfApproval,
   active,
   stale = false,
+  targetSimulated = true,
 }: {
   allowSelfApproval: boolean;
   active: string | null;
   stale?: boolean;
+  targetSimulated?: boolean;
 }) {
   const calls: { path: string; body?: unknown }[] = [];
   server.use(
     http.get(`${API}/me`, () => ok(me(allowSelfApproval))),
-    http.get(`${API}/orgs/o1/services/s1`, () => ok(service(active))),
+    http.get(`${API}/orgs/o1/services/s1`, () => ok(service(active, targetSimulated))),
     http.get(`${API}/orgs/o1/environments`, () => ok({ items: [], total: 0, page: 0, size: 100 })),
     http.get(`${API}/orgs/o1/migration-plans/:id`, () => ok(plan)),
     http.post(`${API}/orgs/o1/migration-plans/:id/approve`, () => {
@@ -204,6 +223,28 @@ describe('PlanPage', () => {
       maxWaitSeconds: 30,
       rollbackConditions: { maxErrorRatePercent: 1, maxP95Ms: 800, maxReplicationLagSeconds: 1 },
     });
+  });
+
+  it('도착 환경이 실제 실행기면 실패 주입을 고를 수 없고 이유를 보여 준다', async () => {
+    serve({ allowSelfApproval: false, active: null, targetSimulated: false });
+    renderPage();
+
+    expect(await screen.findByLabelText('Inject a failure (demo)')).toBeDisabled();
+    expect(screen.getByText(/runs on real executors/)).toBeInTheDocument();
+  });
+
+  it('AI 사전 점검 없이 바로 오면 그 단계를 완료로 그리지 않는다', async () => {
+    serve({ allowSelfApproval: false, active: null });
+    renderPage();
+
+    expect(await screen.findByText('skipped')).toBeInTheDocument();
+  });
+
+  it('도착 환경이 가짜 실행기면 실패 주입을 고를 수 있다', async () => {
+    serve({ allowSelfApproval: false, active: null });
+    renderPage();
+
+    expect(await screen.findByLabelText('Inject a failure (demo)')).toBeEnabled();
   });
 
   it('승인이 PLAN_STALE 이면 무엇이 바뀌었는지 보여 준다', async () => {

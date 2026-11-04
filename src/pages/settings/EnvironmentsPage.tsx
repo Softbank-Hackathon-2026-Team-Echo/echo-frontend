@@ -37,7 +37,7 @@ import {
 import { useCurrentOrg } from '@/lib/api/me';
 import type { EnvironmentSummary } from '@/lib/api/types';
 import { hasRole } from '@/lib/roles';
-import { connectionErrorLabel, connectionStatusView } from '@/lib/status';
+import { clusterInfoErrorLabel, connectionErrorLabel, connectionStatusView } from '@/lib/status';
 import { SettingsTabs } from './SettingsTabs';
 
 const SKELETON_ROWS = 5;
@@ -63,8 +63,8 @@ function ClusterCell({ orgId, environment }: { orgId: string; environment: Envir
           {data.clusterInfo.simulated && <SimulatedBadge />}
         </span>
       ) : (
-        <span className="text-caption text-fg-muted">
-          {connectionErrorLabel(data?.clusterInfoError) ?? '—'}
+        <span className="max-w-80 whitespace-normal text-caption text-fg-muted">
+          {clusterInfoErrorLabel(data?.connectionStatus, data?.clusterInfoError) ?? '—'}
         </span>
       )}
     </div>
@@ -218,7 +218,7 @@ export default function EnvironmentsPage() {
               <TableRow>
                 <TableHead>Environment</TableHead>
                 <TableHead>Provider · region</TableHead>
-                <TableHead>Cluster (simulated)</TableHead>
+                <TableHead>Cluster</TableHead>
                 <TableHead>Connection</TableHead>
                 <TableHead className="w-10">
                   <span className="sr-only">Actions</span>

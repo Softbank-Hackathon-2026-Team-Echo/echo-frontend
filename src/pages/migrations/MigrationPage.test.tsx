@@ -104,4 +104,22 @@ describe('MigrationPage', () => {
       'true',
     );
   });
+
+  it('제목은 서버 mode 를 따른다: 앞선 복귀를 되짚어도 PLANNED 면 Failback 이 아니다', async () => {
+    serve(migrationPlan({ status: 'ROLLED_BACK', mode: 'PLANNED' }));
+    renderPage();
+
+    expect(
+      await screen.findByRole('heading', { name: 'Migration plan-123 rolled back' }),
+    ).toBeInTheDocument();
+  });
+
+  it('mode 가 FAILBACK 이면 제목이 Failback 이다', async () => {
+    serve(migrationPlan({ status: 'ROLLED_BACK', mode: 'FAILBACK' }));
+    renderPage();
+
+    expect(
+      await screen.findByRole('heading', { name: 'Failback plan-123 rolled back' }),
+    ).toBeInTheDocument();
+  });
 });

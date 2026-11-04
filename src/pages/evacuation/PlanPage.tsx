@@ -19,6 +19,7 @@ import {
   useMigrationPlan,
   usePlanAction,
 } from '@/lib/api/migrations';
+import { usePrecheck } from '@/lib/api/prechecks';
 import { useService } from '@/lib/api/services';
 import type { MigrationPlan } from '@/lib/api/types';
 import { dateTime } from '@/lib/format';
@@ -85,6 +86,8 @@ export default function PlanPage() {
   const reject = usePlanAction(orgId ?? '', serviceId ?? '', 'reject');
   const cancel = usePlanAction(orgId ?? '', serviceId ?? '', 'cancel');
   const disasters = useActiveDisasters(orgId);
+  const precheck = usePrecheck(orgId, serviceId, targetId);
+  const precheckSkipped = precheck.data === null;
   const logs = useMigrationLogs(orgId, plan.data?.status === 'STALE' ? planId : undefined, false);
 
   if (!serviceId || !targetId) {
@@ -141,6 +144,11 @@ export default function PlanPage() {
         sourceName={sourceName}
         targetName={targetName}
         blockedReason={riskReason}
+        realTarget={
+          service.data.environments.find((link) => link.environment.id === targetId)?.simulated ===
+          false
+        }
+        precheckSkipped={precheckSkipped}
         onCreated={(created) =>
           setSearchParams({ service: serviceId, target: targetId, plan: created.id })
         }
@@ -202,7 +210,7 @@ export default function PlanPage() {
           )
         }
       />
-      <WizardSteps current={2} />
+      <WizardSteps current={2} precheckSkipped={precheckSkipped} />
 
       <div className="flex flex-wrap items-center gap-2">
         <StatusBadge {...migrationPlanStatusView(current.status)} />

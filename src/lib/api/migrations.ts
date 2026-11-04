@@ -24,22 +24,6 @@ export function isOpenPlan(status: MigrationPlanStatus | undefined): boolean {
   return status !== undefined && OPEN.includes(status);
 }
 
-export function useMigrationPlans(orgId: string | undefined, serviceId: string | undefined) {
-  return useQuery({
-    queryKey: queryKeys.migrationPlans(orgId ?? '', serviceId ?? ''),
-    queryFn: () =>
-      unwrap(
-        api.GET('/api/v1/orgs/{org_id}/services/{service_id}/migration-plans', {
-          params: {
-            path: { org_id: orgId ?? '', service_id: serviceId ?? '' },
-            query: { page: 0, size: 20 },
-          },
-        }),
-      ),
-    enabled: Boolean(orgId && serviceId),
-  });
-}
-
 /** 조직 전체 이전 기록(M01). 조직 단위 목록 API 가 없어 서비스마다 목록을 불러 합친다 */
 export function useOrgMigrationPlans(orgId: string | undefined, serviceIds: string[]) {
   return useQueries({

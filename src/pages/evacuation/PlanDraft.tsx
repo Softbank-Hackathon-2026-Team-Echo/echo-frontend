@@ -35,6 +35,9 @@ type PlanDraftProps = {
   targetName: string;
   /** 재난 반경 안 등으로 만들 수 없을 때 이유 */
   blockedReason?: string;
+  /** 도착 환경이 실제 실행기로 배포됐으면 서버가 실패 주입을 거절한다 */
+  realTarget: boolean;
+  precheckSkipped: boolean;
   onCreated: (plan: MigrationPlan) => void;
 };
 
@@ -77,13 +80,16 @@ export function PlanDraft({
   sourceName,
   targetName,
   blockedReason,
+  realTarget,
+  precheckSkipped,
   onCreated,
 }: PlanDraftProps) {
   const create = useCreateMigrationPlan(orgId, serviceId);
   const [required, setRequired] = useState<number[]>([...DEFAULT_REQUIRED_REQUESTS]);
   const [maxWaitSeconds, setMaxWaitSeconds] = useState(DEFAULT_MAX_WAIT_SECONDS);
   const [conditions, setConditions] = useState(DEFAULT_CONDITIONS);
-  const [simulate, setSimulate] = useState<Simulate | null>(null);
+  const [picked, setSimulate] = useState<Simulate | null>(null);
+  const simulate = realTarget ? null : picked;
   const errors = fieldErrors(create.error);
   const steps = draftSteps(required, maxWaitSeconds);
   const total = steps.reduce((sum, step) => sum + step.expectedSeconds, 0);
@@ -118,7 +124,7 @@ export function PlanDraft({
           </RoleButton>
         }
       />
-      <WizardSteps current={2} />
+      <WizardSteps current={2} precheckSkipped={precheckSkipped} />
       <FormError message={formErrorMessage(create.error, FIELDS)} />
       <div className="flex items-start gap-3 max-wide:flex-col">
         <section className="flex flex-1 flex-col gap-3 rounded-xl border border-line bg-surface p-4 max-wide:w-full">
@@ -180,7 +186,16 @@ export function PlanDraft({
             A failed health check always rolls back. p95 is shown for reference and does not fail a
             step.
           </p>
-          <FailureInjection value={simulate} onChange={setSimulate} error={errors.simulate} />
+          <FailureInjection
+            value={simulate}
+            onChange={setSimulate}
+            error={errors.simulate}
+            unavailableReason={
+              realTarget
+                ? `Not available: ${targetName} runs on real executors, which refuse injected failures.`
+                : undefined
+            }
+          />
         </section>
       </div>
     </form>

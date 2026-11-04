@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { hasRole } from './roles';
-import { connectionStatusView } from './status';
+import { clusterInfoErrorLabel, connectionStatusView, migrationModeLabel } from './status';
 
 describe('connectionStatusView', () => {
   it('아는 값은 정해진 문구와 색으로 바꾼다', () => {
@@ -9,6 +9,31 @@ describe('connectionStatusView', () => {
 
   it('모르는 값은 원래 값을 중립 색으로 보여 준다', () => {
     expect(connectionStatusView('DEGRADED')).toEqual({ label: 'DEGRADED', tone: 'neutral' });
+  });
+});
+
+describe('clusterInfoErrorLabel', () => {
+  it('접속이 됐는데 정보만 못 읽었으면 자격 증명 거부라고 하지 않는다', () => {
+    expect(clusterInfoErrorLabel('CONNECTED', 'AUTH_FAILED')).toBe(
+      'Connected, but the version and node count could not be read with this account.',
+    );
+  });
+
+  it('접속 실패면 접속 오류 문구를 그대로 쓴다', () => {
+    expect(clusterInfoErrorLabel('FAILED', 'AUTH_FAILED')).toBe(
+      'The cluster rejected the credentials.',
+    );
+  });
+
+  it('오류가 없으면 비운다', () => {
+    expect(clusterInfoErrorLabel('CONNECTED', null)).toBeNull();
+  });
+});
+
+describe('migrationModeLabel', () => {
+  it('모르는 종류는 원래 값을 보여 준다', () => {
+    expect(migrationModeLabel('FAILBACK')).toBe('Failback');
+    expect(migrationModeLabel('DRILL')).toBe('DRILL');
   });
 });
 
