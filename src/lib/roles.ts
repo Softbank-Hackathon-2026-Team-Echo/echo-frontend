@@ -1,4 +1,5 @@
 import { MEMBER_ROLES, type MemberRole } from './api/types';
+import { t } from './i18n';
 
 const RANK: Record<MemberRole, number> = { VIEWER: 0, DEVELOPER: 1, ADMIN: 2 };
 
@@ -11,10 +12,17 @@ export function hasRole(role: unknown, min: MemberRole): boolean {
   return isMemberRole(role) && RANK[role] >= RANK[min];
 }
 
+// 화면이 표를 바로 읽으므로 읽는 순간의 언어로 답하게 getter 로 둔다
 export const ROLE_LABELS: Record<MemberRole, string> = {
-  VIEWER: 'Viewer',
-  DEVELOPER: 'Developer',
-  ADMIN: 'Admin',
+  get VIEWER() {
+    return t('Viewer');
+  },
+  get DEVELOPER() {
+    return t('Developer');
+  },
+  get ADMIN() {
+    return t('Admin');
+  },
 };
 
 export function roleLabel(role: unknown): string {

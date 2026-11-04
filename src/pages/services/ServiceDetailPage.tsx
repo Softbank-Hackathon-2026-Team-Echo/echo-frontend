@@ -40,6 +40,7 @@ import { useCurrentOrg } from '@/lib/api/me';
 import { useDeleteService, useDeployRequests, useRollback, useService } from '@/lib/api/services';
 import type { DeployRequestSummary, ServiceDetail } from '@/lib/api/types';
 import { timeAgo } from '@/lib/format';
+import { t } from '@/lib/i18n';
 import { hasRole } from '@/lib/roles';
 import {
   deployErrorLabel,
@@ -66,8 +67,8 @@ function EnvironmentLinks({ service, orgSlug }: { service: ServiceDetail; orgSlu
     return (
       <EmptyState
         icon={GitBranch}
-        title="Not deployed yet"
-        description="Deploy this service to an environment to get a public URL."
+        title={t('Not deployed yet')}
+        description={t('Deploy this service to an environment to get a public URL.')}
       />
     );
   }
@@ -76,10 +77,10 @@ function EnvironmentLinks({ service, orgSlug }: { service: ServiceDetail; orgSlu
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Environment</TableHead>
-            <TableHead>Role</TableHead>
-            <TableHead className="text-right">Traffic</TableHead>
-            <TableHead>Version</TableHead>
+            <TableHead>{t('Environment')}</TableHead>
+            <TableHead>{t('Role')}</TableHead>
+            <TableHead className="text-right">{t('Traffic')}</TableHead>
+            <TableHead>{t('Version')}</TableHead>
             <TableHead>URL</TableHead>
           </TableRow>
         </TableHeader>
@@ -102,7 +103,7 @@ function EnvironmentLinks({ service, orgSlug }: { service: ServiceDetail; orgSlu
                         to={`/o/${orgSlug}/services/${service.id}/deploys/${runningId}`}
                         className="text-caption text-migrating-fg hover:underline"
                       >
-                        {link.activeRequestId ? 'Deploying…' : 'Queued'}
+                        {link.activeRequestId ? t('Deploying…') : t('Queued')}
                       </Link>
                     )}
                   </span>
@@ -124,11 +125,15 @@ function EnvironmentLinks({ service, orgSlug }: { service: ServiceDetail; orgSlu
                     {/* 예비 따라가기: 성공하면 걸린 초, 실패하면 그 이유 */}
                     {link.lastSyncError ? (
                       <span className="text-caption text-warning-fg">
-                        Standby sync failed: {deployErrorLabel(link.lastSyncError)}
+                        {t('Standby sync failed: {{reason}}', {
+                          reason: deployErrorLabel(link.lastSyncError),
+                        })}
                       </span>
                     ) : link.lastSyncSeconds !== null ? (
                       <span className="text-caption text-fg-muted">
-                        Synced {link.lastSyncSeconds}s after the source
+                        {t('Synced {{seconds}}s after the source', {
+                          seconds: link.lastSyncSeconds,
+                        })}
                       </span>
                     ) : null}
                     {link.teardownError && (
@@ -171,7 +176,7 @@ function DeployHistory({
     return <ErrorState error={history.error} onRetry={() => history.refetch()} />;
   if (history.isPending) return <Skeleton className="h-32 w-full" />;
   if (history.data.items.length === 0) {
-    return <p className="text-body text-fg-muted">No deploys yet.</p>;
+    return <p className="text-body text-fg-muted">{t('No deploys yet.')}</p>;
   }
 
   return (
@@ -179,13 +184,13 @@ function DeployHistory({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Started</TableHead>
-            <TableHead>Environment</TableHead>
-            <TableHead>Ref</TableHead>
-            <TableHead>Commit</TableHead>
-            <TableHead>Status</TableHead>
+            <TableHead>{t('Started')}</TableHead>
+            <TableHead>{t('Environment')}</TableHead>
+            <TableHead>{t('Ref')}</TableHead>
+            <TableHead>{t('Commit')}</TableHead>
+            <TableHead>{t('Status')}</TableHead>
             <TableHead className="w-0">
-              <span className="sr-only">Actions</span>
+              <span className="sr-only">{t('Actions')}</span>
             </TableHead>
           </TableRow>
         </TableHeader>
@@ -210,7 +215,7 @@ function DeployHistory({
               <TableCell>
                 <span className="flex items-center gap-1.5">
                   <StatusBadge {...deployStatusView(request.status)} />
-                  {request.isCurrent && <StatusBadge label="Current" tone="success" />}
+                  {request.isCurrent && <StatusBadge label={t('Current')} tone="success" />}
                   {request.simulated && <SimulatedBadge />}
                 </span>
               </TableCell>
@@ -218,7 +223,7 @@ function DeployHistory({
                 <span className="flex items-center justify-end gap-1">
                   <Button asChild variant="ghost" size="sm">
                     <Link to={`/o/${orgSlug}/services/${serviceId}/deploys/${request.id}`}>
-                      View
+                      {t('View')}
                     </Link>
                   </Button>
                   {/* 서버가 되돌릴 수 있다고 한 행(성공 · 현재 아님 · 연결 살아 있음)에만 단다 */}
@@ -236,7 +241,7 @@ function DeployHistory({
                       }
                     >
                       <RotateCcw aria-hidden />
-                      Roll back
+                      {t('Roll back')}
                     </RoleButton>
                   )}
                 </span>
@@ -296,26 +301,26 @@ export default function ServiceDetailPage() {
               rel="noreferrer"
               className="inline-flex items-center gap-1 font-mono hover:underline"
             >
-              {service.private && <Lock aria-label="Private repository" className="size-3" />}
+              {service.private && <Lock aria-label={t('Private repository')} className="size-3" />}
               {service.repoUrl.replace(/^https:\/\//, '')}
             </a>
             <span>
-              Health <span className="font-mono">{service.healthCheckPath}</span> · port{' '}
-              <span className="font-mono">{service.containerPort}</span>
+              {t('Health')} <span className="font-mono">{service.healthCheckPath}</span> ·{' '}
+              {t('port')} <span className="font-mono">{service.containerPort}</span>
             </span>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <RoleButton
             requires="DEVELOPER"
-            disabledReason={deleting ? 'This service is being deleted' : undefined}
+            disabledReason={deleting ? t('This service is being deleted') : undefined}
             onClick={() => setDeployOpen(true)}
           >
-            Deploy
+            {t('Deploy')}
           </RoleButton>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon" aria-label="More actions">
+              <Button variant="outline" size="icon" aria-label={t('More actions')}>
                 <MoreHorizontal aria-hidden />
               </Button>
             </DropdownMenuTrigger>
@@ -331,17 +336,19 @@ export default function ServiceDetailPage() {
                   }
                 >
                   <ArrowRightLeft aria-hidden />
-                  <span className="flex-1 truncate">Migrate to {link.environment.name}</span>
+                  <span className="flex-1 truncate">
+                    {t('Migrate to {{name}}', { name: link.environment.name })}
+                  </span>
                   {!hasRole(role, 'DEVELOPER') && (
-                    <span className="text-caption text-fg-muted">Developer</span>
+                    <span className="text-caption text-fg-muted">{t('Developer')}</span>
                   )}
                 </DropdownMenuItem>
               ))}
               {standbys.length === 0 && (
                 <DropdownMenuItem disabled>
                   <ArrowRightLeft aria-hidden />
-                  <span className="flex-1">Migrate to…</span>
-                  <span className="text-caption text-fg-muted">No standby</span>
+                  <span className="flex-1">{t('Migrate to…')}</span>
+                  <span className="text-caption text-fg-muted">{t('No standby')}</span>
                 </DropdownMenuItem>
               )}
               <DropdownMenuSeparator />
@@ -350,9 +357,9 @@ export default function ServiceDetailPage() {
                 onSelect={() => setEditOpen(true)}
               >
                 <Pencil aria-hidden />
-                <span className="flex-1">Edit settings</span>
+                <span className="flex-1">{t('Edit settings')}</span>
                 {!hasRole(role, 'DEVELOPER') && (
-                  <span className="text-caption text-fg-muted">Developer</span>
+                  <span className="text-caption text-fg-muted">{t('Developer')}</span>
                 )}
               </DropdownMenuItem>
               <DropdownMenuItem
@@ -361,9 +368,9 @@ export default function ServiceDetailPage() {
                 onSelect={() => setDeleteOpen(true)}
               >
                 <Trash2 aria-hidden />
-                <span className="flex-1">Delete service</span>
+                <span className="flex-1">{t('Delete service')}</span>
                 {!hasRole(role, 'ADMIN') && (
-                  <span className="text-caption text-fg-muted">Admin</span>
+                  <span className="text-caption text-fg-muted">{t('Admin')}</span>
                 )}
               </DropdownMenuItem>
             </DropdownMenuContent>
@@ -373,21 +380,22 @@ export default function ServiceDetailPage() {
 
       {deleting && (
         <p role="status" className="rounded-md bg-warning-bg px-3 py-2 text-body text-warning-fg">
-          This service is being removed from every environment.
-          {service.deleteError && ` Last error: ${teardownErrorLabel(service.deleteError)}`}
+          {t('This service is being removed from every environment.')}
+          {service.deleteError &&
+            ` ${t('Last error: {{error}}', { error: teardownErrorLabel(service.deleteError) })}`}
         </p>
       )}
 
       <div className="flex flex-col gap-1">
-        <span className="text-overline uppercase text-fg-muted">Public URL</span>
+        <span className="text-overline uppercase text-fg-muted">{t('Public URL')}</span>
         <ExternalLink href={service.url} className="text-body" />
       </div>
 
-      <Section title="Environments">
+      <Section title={t('Environments')}>
         <EnvironmentLinks service={service} orgSlug={organization.slug} />
       </Section>
 
-      <Section title="Deploy history">
+      <Section title={t('Deploy history')}>
         <DeployHistory orgId={organization.id} orgSlug={organization.slug} serviceId={service.id} />
       </Section>
 
@@ -409,8 +417,10 @@ export default function ServiceDetailPage() {
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
         name={service.name}
-        title={`Delete ${service.name}?`}
-        description="EchoPort removes it from every environment, then deletes it. Deploy history is kept."
+        title={t('Delete {{name}}?', { name: service.name })}
+        description={t(
+          'EchoPort removes it from every environment, then deletes it. Deploy history is kept.',
+        )}
         pending={deleteService.isPending}
         onConfirm={() =>
           deleteService.mutate(service.id, {

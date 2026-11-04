@@ -9,25 +9,26 @@ import {
 } from 'lucide-react';
 import type { ComponentType } from 'react';
 import { Logo } from '@/components/Logo';
+import { k, t } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
 type NavItem = { label: string; icon: ComponentType<{ className?: string }>; count?: number };
 
 const GROUPS: { title?: string; items: NavItem[] }[] = [
-  { items: [{ label: 'Dashboard', icon: LayoutDashboard, count: 2 }] },
-  { title: 'Operate', items: [{ label: 'Services', icon: Server }] },
+  { items: [{ label: k('Dashboard'), icon: LayoutDashboard, count: 2 }] },
+  { title: k('Operate'), items: [{ label: k('Services'), icon: Server }] },
   {
-    title: 'Resilience',
+    title: k('Resilience'),
     items: [
-      { label: 'Evacuation', icon: MapPin },
-      { label: 'Migrations', icon: ArrowLeftRight },
+      { label: k('Evacuation'), icon: MapPin },
+      { label: k('Migrations'), icon: ArrowLeftRight },
     ],
   },
   {
-    title: 'Govern',
+    title: k('Govern'),
     items: [
-      { label: 'Security', icon: ShieldCheck },
-      { label: 'Audit log', icon: History },
+      { label: k('Security'), icon: ShieldCheck },
+      { label: k('Audit log'), icon: History },
     ],
   },
 ];
@@ -43,7 +44,9 @@ export function PreviewSidebar() {
         {GROUPS.map((group) => (
           <div key={group.title ?? 'top'} className="flex flex-col gap-0.5">
             {group.title && (
-              <span className="px-2 pb-1 text-overline text-fg-muted uppercase">{group.title}</span>
+              <span className="px-2 pb-1 text-overline text-fg-muted uppercase">
+                {t(group.title)}
+              </span>
             )}
             {group.items.map(({ label, icon: Icon, count }, index) => (
               <span
@@ -56,7 +59,7 @@ export function PreviewSidebar() {
                 )}
               >
                 <Icon className="size-4" />
-                <span className="flex-1">{label}</span>
+                <span className="flex-1">{t(label)}</span>
                 {count !== undefined && (
                   <span className="rounded-full bg-danger-solid px-1.5 text-caption text-fg-on-brand">
                     {count}
@@ -69,7 +72,7 @@ export function PreviewSidebar() {
       </nav>
       <span className="flex items-center gap-2 px-2 text-body text-fg-secondary">
         <Settings className="size-4" />
-        Settings
+        {t('Settings')}
       </span>
       <span className="flex items-center gap-2 px-2">
         <span className="flex size-7 items-center justify-center rounded-full bg-brand-subtle text-label text-brand-on-subtle">
@@ -77,7 +80,7 @@ export function PreviewSidebar() {
         </span>
         <span className="flex flex-col">
           <span className="text-body-medium">echoport</span>
-          <span className="text-caption text-fg-muted">Admin</span>
+          <span className="text-caption text-fg-muted">{t('Admin')}</span>
         </span>
       </span>
     </div>

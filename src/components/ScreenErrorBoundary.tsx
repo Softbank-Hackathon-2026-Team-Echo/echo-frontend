@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { ErrorBoundary, type FallbackProps } from 'react-error-boundary';
 import { useLocation } from 'react-router';
 import { Button } from '@/components/ui/button';
+import { t } from '@/lib/i18n';
 import { reportError } from '@/lib/monitoring';
 import { EmptyState } from './EmptyState';
 
@@ -10,11 +11,11 @@ function Fallback({ error, resetErrorBoundary }: FallbackProps) {
   return (
     <EmptyState
       icon={CircleAlert}
-      title="This screen hit an error"
-      description={error instanceof Error ? error.message : 'Unexpected error'}
+      title={t('This screen hit an error')}
+      description={error instanceof Error ? error.message : t('Unexpected error')}
       action={
         <Button variant="outline" size="sm" onClick={resetErrorBoundary}>
-          Try again
+          {t('Try again')}
         </Button>
       }
     />

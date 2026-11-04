@@ -1,4 +1,5 @@
 import type { SecurityCompareRow } from '@/lib/api/security';
+import { t } from '@/lib/i18n';
 import { securityCompareNote, securityControlLabel } from '@/lib/status';
 import { cn } from '@/lib/utils';
 import { SecurityCheckCell } from './SecurityCheckCell';
@@ -25,10 +26,10 @@ export function SecurityCompareTable({
         showResult ? 'grid-cols-[7rem_1fr_1fr_9rem]' : 'grid-cols-[7rem_1fr_1fr]',
       )}
     >
-      <span className="text-caption text-fg-muted">Control</span>
+      <span className="text-caption text-fg-muted">{t('Control')}</span>
       <span className="truncate font-mono text-mono text-fg-muted">{sourceName}</span>
       <span className="truncate font-mono text-mono text-fg-muted">{targetName}</span>
-      {showResult && <span className="text-caption text-fg-muted">Result</span>}
+      {showResult && <span className="text-caption text-fg-muted">{t('Result')}</span>}
       {rows.map((row) => (
         <div key={row.control} className="contents">
           <span className="text-body-medium">{securityControlLabel(row.control)}</span>

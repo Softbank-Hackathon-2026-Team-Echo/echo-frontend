@@ -27,6 +27,7 @@ import {
 import { fieldErrors } from '@/lib/api/form-errors';
 import type { EnvironmentKind, EnvironmentSummary } from '@/lib/api/types';
 import { placeLabel } from '@/lib/geo';
+import { k, t } from '@/lib/i18n';
 import { providerLabel } from '@/lib/status';
 import { cn } from '@/lib/utils';
 
@@ -46,6 +47,15 @@ type ConfigField = {
   hint?: string;
 };
 
+// 서버 스키마의 칸 이름. 표에 없는 칸은 키를 풀어 쓴 영어로 나온다
+const CONFIG_LABELS: Record<string, string> = {
+  region: k('Region'),
+  location: k('Location'),
+  projectId: k('Project ID'),
+  clusterName: k('Cluster name'),
+  kubeContext: k('Kube context'),
+};
+
 /** 종류별 configSchema(JSON Schema) → 입력칸 목록. 문자열 enum 은 선택 상자, 나머지는 글 입력 */
 export function configFields(kind: EnvironmentKind | undefined): ConfigField[] {
   const schema = kind?.configSchema as
@@ -54,20 +64,22 @@ export function configFields(kind: EnvironmentKind | undefined): ConfigField[] {
   const required = new Set(schema?.required ?? []);
   return Object.entries(schema?.properties ?? {}).map(([key, property]) => ({
     key,
-    label: humanizeKey(key),
+    label: t(CONFIG_LABELS[key] ?? humanizeKey(key)),
     required: required.has(key),
     options: property.enum?.filter((value): value is string => typeof value === 'string'),
     hint:
       property.description ??
-      (property.examples?.[0] !== undefined ? `e.g. ${String(property.examples[0])}` : undefined),
+      (property.examples?.[0] !== undefined
+        ? t('e.g. {{example}}', { example: String(property.examples[0]) })
+        : undefined),
   }));
 }
 
 // 와이어프레임: 프로바이더 카드에 연결 방식을 한 줄로 적는다
 const PROVIDER_HINTS: Record<string, string> = {
-  aws: 'IAM role',
-  gcp: 'Service account',
-  onprem: 'K3s agent',
+  aws: k('IAM role'),
+  gcp: k('Service account'),
+  onprem: k('K3s agent'),
 };
 
 function ProviderCards({
@@ -83,7 +95,7 @@ function ProviderCards({
 }) {
   return (
     <fieldset className="grid grid-cols-3 gap-2">
-      <legend className="sr-only">Provider</legend>
+      <legend className="sr-only">{t('Provider')}</legend>
       {kinds.map((item) => {
         const selected = item.kind === value;
         const Icon = item.kind === 'onprem' ? Server : Cloud;
@@ -111,7 +123,7 @@ function ProviderCards({
               {providerLabel(item.kind)}
             </span>
             <span className="text-caption text-fg-muted">
-              {PROVIDER_HINTS[item.kind] ?? item.kind}
+              {t(PROVIDER_HINTS[item.kind] ?? item.kind)}
             </span>
           </label>
         );
@@ -204,10 +216,15 @@ export function EnvironmentFormDialog({
       <SheetContent className="w-full overflow-y-auto sm:max-w-lg">
         <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-6">
           <SheetHeader className="p-0">
-            <SheetTitle>{isEdit ? `Edit ${environment?.name}` : 'Add environment'}</SheetTitle>
+            <SheetTitle>
+              {isEdit
+                ? t('Edit {{name}}', { name: environment?.name ?? '' })
+                : t('Add environment')}
+            </SheetTitle>
             <SheetDescription>
-              Each environment is one cloud region or one on-prem site. EchoPort checks the
-              connection as soon as you save.
+              {t(
+                'Each environment is one cloud region or one on-prem site. EchoPort checks the connection as soon as you save.',
+              )}
             </SheetDescription>
           </SheetHeader>
 
@@ -227,8 +244,8 @@ export function EnvironmentFormDialog({
 
           <FormField
             id="env-name"
-            label="Name"
-            hint="Lowercase letters, numbers and -"
+            label={t('Name')}
+            hint={t('Lowercase letters, numbers and -')}
             error={errors.name}
           >
             <Input
@@ -258,7 +275,9 @@ export function EnvironmentFormDialog({
                 {field.options ? (
                   <Select value={value} onValueChange={setValue}>
                     <SelectTrigger id={id} className="w-full" aria-invalid={Boolean(error)}>
-                      <SelectValue placeholder={`Choose ${field.label.toLowerCase()}`} />
+                      <SelectValue
+                        placeholder={t('Choose {{field}}', { field: field.label.toLowerCase() })}
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       {field.options.map((option) => {
@@ -294,8 +313,11 @@ export function EnvironmentFormDialog({
           {kind && (
             <FormField
               id="env-secret-ref"
-              label="Secret reference"
-              hint={`Where the kubeconfig is stored. EchoPort keeps only this reference, never the secret itself. env: names start with ${orgSecretPrefix(orgSlug)}`}
+              label={t('Secret reference')}
+              hint={t(
+                'Where the kubeconfig is stored. EchoPort keeps only this reference, never the secret itself. env: names start with {{prefix}}',
+                { prefix: orgSecretPrefix(orgSlug) },
+              )}
               error={errors.secretRef}
             >
               <Input
@@ -311,10 +333,14 @@ export function EnvironmentFormDialog({
 
           <SheetFooter className="flex-row justify-end p-0">
             <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-              Cancel
+              {t('Cancel')}
             </Button>
             <Button type="submit" disabled={!kind || mutation.isPending}>
-              {mutation.isPending ? 'Checking connection…' : isEdit ? 'Save' : 'Add environment'}
+              {mutation.isPending
+                ? t('Checking connection…')
+                : isEdit
+                  ? t('Save')
+                  : t('Add environment')}
             </Button>
           </SheetFooter>
         </form>

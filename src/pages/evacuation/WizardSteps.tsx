@@ -1,10 +1,11 @@
 import { Check, LoaderCircle, Minus } from 'lucide-react';
+import { k, t } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
 const STEPS = [
-  { title: 'Choose target', meta: 'rule score' },
-  { title: 'AI pre-check', meta: 'sandbox test' },
-  { title: 'Approve plan', meta: 'Developer+' },
+  { title: k('Choose target'), meta: k('rule score') },
+  { title: k('AI pre-check'), meta: k('sandbox test') },
+  { title: k('Approve plan'), meta: k('Developer+') },
 ] as const;
 
 const PRECHECK_STEP = 1;
@@ -62,7 +63,7 @@ export function WizardSteps({
                     state === 'pending' || state === 'skipped' ? 'text-fg-secondary' : 'text-fg',
                   )}
                 >
-                  {step.title}
+                  {t(step.title)}
                 </span>
                 <span
                   className={cn(
@@ -70,7 +71,7 @@ export function WizardSteps({
                     state === 'current' ? 'text-migrating-fg' : 'text-fg-muted',
                   )}
                 >
-                  {skipped ? 'skipped' : step.meta}
+                  {skipped ? t('skipped') : t(step.meta)}
                 </span>
               </span>
             </span>

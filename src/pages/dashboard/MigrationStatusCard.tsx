@@ -5,14 +5,15 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMigrationPlan } from '@/lib/api/migrations';
 import type { MigrationStep } from '@/lib/api/types';
+import { t } from '@/lib/i18n';
 import { currentWeights } from '@/lib/migration-metrics';
 import { migrationPlanStatusView } from '@/lib/status';
 
 function stepTitle(step: MigrationStep | undefined) {
   if (!step) return '—';
-  if (step.kind === 'PREFLIGHT') return 'pre-check';
-  if (step.kind === 'DATA_SYNC_CHECK') return 'data sync check';
-  return `traffic shift → ${step.targetWeight}%`;
+  if (step.kind === 'PREFLIGHT') return t('pre-check');
+  if (step.kind === 'DATA_SYNC_CHECK') return t('data sync check');
+  return t('traffic shift → {{weight}}%', { weight: step.targetWeight ?? '—' });
 }
 
 /**
@@ -35,20 +36,24 @@ export function MigrationStatusCard({
   const plan = useMigrationPlan(orgId, planId);
   if (!plan.data) {
     return (
-      <Panel title="Migration" className={className}>
+      <Panel title={t('Migration')} className={className}>
         <Skeleton className="h-12 w-full" />
       </Panel>
     );
   }
   const { source, target } = currentWeights(plan.data);
-  const sourceName = names.get(plan.data.sourceEnvironmentId) ?? 'source';
-  const targetName = names.get(plan.data.targetEnvironmentId) ?? 'target';
+  const sourceName = names.get(plan.data.sourceEnvironmentId) ?? t('source');
+  const targetName = names.get(plan.data.targetEnvironmentId) ?? t('target');
   const step = plan.data.steps[plan.data.currentStep];
   return (
     <Panel
       title={
         <Link to={`/o/${orgSlug}/migrations/${plan.data.id}`} className="hover:underline">
-          Migration {plan.data.id.slice(0, 8)} · {sourceName} → {targetName}
+          {t('Migration {{id}} · {{source}} → {{target}}', {
+            id: plan.data.id.slice(0, 8),
+            source: sourceName,
+            target: targetName,
+          })}
         </Link>
       }
       action={plan.data.simulated ? <SimulatedBadge /> : undefined}
@@ -74,8 +79,11 @@ export function MigrationStatusCard({
       </div>
       <p className="flex flex-wrap items-center gap-1.5 text-small text-fg-secondary">
         <StatusBadge {...migrationPlanStatusView(plan.data.status)} />
-        Step {Math.min(plan.data.currentStep + 1, plan.data.steps.length)} /{' '}
-        {plan.data.steps.length} · {stepTitle(step)}
+        {t('Step {{current}} / {{total}} · {{title}}', {
+          current: Math.min(plan.data.currentStep + 1, plan.data.steps.length),
+          total: plan.data.steps.length,
+          title: stepTitle(step),
+        })}
       </p>
     </Panel>
   );

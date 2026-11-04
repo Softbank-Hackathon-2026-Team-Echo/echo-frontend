@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/sheet';
 import type { SecurityCell, SecurityControl, SecurityFinding } from '@/lib/api/security';
 import { dateTime } from '@/lib/format';
+import { t } from '@/lib/i18n';
 import { securityControlLabel, securityResultView, securitySeverityLabel } from '@/lib/status';
 
 export type FindingSelection = { environmentId: string; control: SecurityControl };
@@ -33,9 +34,10 @@ function Json({ label, value }: { label: string; value: unknown }) {
 }
 
 function emptyText(result: string | undefined) {
-  if (result === 'UNKNOWN') return 'This control has not been collected yet, so it has no verdict.';
-  if (result === 'NA') return 'This control does not apply to this environment.';
-  return 'No findings. This control passed the last check.';
+  if (result === 'UNKNOWN')
+    return t('This control has not been collected yet, so it has no verdict.');
+  if (result === 'NA') return t('This control does not apply to this environment.');
+  return t('No findings. This control passed the last check.');
 }
 
 /** 칸을 누르면 여는 근거. 원본(evidence)과 공통 모양(normalized)을 같이 보여 준다 */
@@ -54,7 +56,7 @@ export function FindingSheet({
             <SheetTitle>
               {environmentName} · {control ? securityControlLabel(control) : ''}
             </SheetTitle>
-            <SheetDescription>Evidence behind this cell.</SheetDescription>
+            <SheetDescription>{t('Evidence behind this cell.')}</SheetDescription>
           </SheetHeader>
           <div className="flex items-center gap-2">
             {cell && <StatusBadge {...securityResultView(cell.result)} />}
@@ -71,12 +73,12 @@ export function FindingSheet({
                 <h3 className="text-title">{finding.title}</h3>
                 <p className="text-small text-fg-secondary">
                   {securitySeverityLabel(finding.severity)} ·{' '}
-                  <span className="font-mono">{finding.source}</span> · checked{' '}
-                  {dateTime(finding.checkedAt)}
+                  <span className="font-mono">{finding.source}</span> ·{' '}
+                  {t('checked {{time}}', { time: dateTime(finding.checkedAt) })}
                 </p>
                 <p className="text-body">{finding.suggestedFix}</p>
-                <Json label="Normalized" value={finding.normalized} />
-                <Json label="Evidence" value={finding.evidence} />
+                <Json label={t('Normalized')} value={finding.normalized} />
+                <Json label={t('Evidence')} value={finding.evidence} />
               </article>
             ))
           )}

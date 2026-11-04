@@ -24,6 +24,7 @@ import { useSecurityCompare } from '@/lib/api/security';
 import { useService } from '@/lib/api/services';
 import type { MigrationPlan } from '@/lib/api/types';
 import { dateTime } from '@/lib/format';
+import { k, t } from '@/lib/i18n';
 import { duration, planStages } from '@/lib/migration-stages';
 import { hasRole, roleLabel } from '@/lib/roles';
 import { migrationPlanStatusView, securityControlLabel } from '@/lib/status';
@@ -35,19 +36,21 @@ const clock = (iso: string | null) => (iso ? new Date(iso).toLocaleTimeString('e
 
 // 승인 대기에서 끝난 계획의 안내 (다시 만들어야 한다)
 const CLOSED_TEXT: Partial<Record<MigrationPlan['status'], string>> = {
-  REJECTED: 'This plan was rejected.',
-  CANCELLED: 'This plan was cancelled.',
-  EXPIRED: 'This plan expired after 24 hours without approval.',
-  STALE: 'Environments or deployments changed after this plan was made, so it can no longer run.',
+  REJECTED: k('This plan was rejected.'),
+  CANCELLED: k('This plan was cancelled.'),
+  EXPIRED: k('This plan expired after 24 hours without approval.'),
+  STALE: k(
+    'Environments or deployments changed after this plan was made, so it can no longer run.',
+  ),
 };
 
 // 지문 항목(API 서버 8, PLAN_STALE details · 로그 STALE.data.changed) → 사람이 읽는 말
 const STALE_FIELDS: Record<string, string> = {
-  serviceStatus: 'Service status changed',
-  connections: 'A deployment or traffic weight changed',
-  sourceEnvironment: 'Source environment settings or connection changed',
-  targetEnvironment: 'Target environment settings or connection changed',
-  openDeployRequests: 'A deploy started or finished',
+  serviceStatus: k('Service status changed'),
+  connections: k('A deployment or traffic weight changed'),
+  sourceEnvironment: k('Source environment settings or connection changed'),
+  targetEnvironment: k('Target environment settings or connection changed'),
+  openDeployRequests: k('A deploy started or finished'),
 };
 
 /** 낡은 계획이 된 이유. 승인 409 의 details 가 있으면 그것을, 없으면 실행 로그의 STALE 줄을 쓴다 */
@@ -58,7 +61,10 @@ function staleChanges(error: unknown, logChanged: unknown): string[] {
       : Array.isArray(logChanged)
         ? logChanged.filter((item): item is string => typeof item === 'string')
         : [];
-  return fields.map((field) => STALE_FIELDS[field] ?? field);
+  return fields.map((field) => {
+    const label = STALE_FIELDS[field];
+    return label ? t(label) : field;
+  });
 }
 
 function Kv({ label, children }: { label: string; children: React.ReactNode }) {
@@ -100,11 +106,11 @@ export default function PlanPage() {
     return (
       <EmptyState
         icon={Route}
-        title="Choose a target first"
-        description="Pick an evacuation target and run the AI pre-check before planning."
+        title={t('Choose a target first')}
+        description={t('Pick an evacuation target and run the AI pre-check before planning.')}
         action={
           <Button asChild variant="outline" size="sm">
-            <Link to={`/o/${slug}/evacuation`}>Choose target</Link>
+            <Link to={`/o/${slug}/evacuation`}>{t('Choose target')}</Link>
           </Button>
         }
       />
@@ -132,14 +138,16 @@ export default function PlanPage() {
   const names = new Map(environments.data?.items.map((item) => [item.id, item.name]));
   const servingId = service.data.environments.find((link) => link.role === 'SERVING')?.environment
     .id;
-  const sourceName = names.get(plan.data?.sourceEnvironmentId ?? servingId ?? '') ?? 'source';
-  const targetName = names.get(plan.data?.targetEnvironmentId ?? targetId) ?? 'target';
+  const sourceName = names.get(plan.data?.sourceEnvironmentId ?? servingId ?? '') ?? t('source');
+  const targetName = names.get(plan.data?.targetEnvironmentId ?? targetId) ?? t('target');
   const restartUrl = `/o/${organization.slug}/evacuation/plan?service=${serviceId}&target=${targetId}`;
   // 재난이 끝나지 않은 지역으로는 옮기지 않는다(ADR 11/2). 주소로 바로 들어와도 여기서 막는다
   const targetAtRisk = (disasters.data ?? []).some((disaster) =>
     disaster.affectedEnvironmentIds.includes(plan.data?.targetEnvironmentId ?? targetId),
   );
-  const riskReason = targetAtRisk ? `${targetName} is inside an active disaster radius` : undefined;
+  const riskReason = targetAtRisk
+    ? t('{{name}} is inside an active disaster radius', { name: targetName })
+    : undefined;
 
   if (!planId || !plan.data) {
     return (
@@ -171,18 +179,32 @@ export default function PlanPage() {
   const approveReason = riskReason
     ? riskReason
     : selfBlocked
-      ? 'Self-approval is off. Ask another developer, or turn it on in Settings › Members.'
+      ? t('Self-approval is off. Ask another developer, or turn it on in Settings › Members.')
       : mismatches.length
-        ? 'Fix the security mismatch first'
+        ? t('Fix the security mismatch first')
         : undefined;
   const actionError = approve.error ?? reject.error ?? cancel.error;
+  const closedText = CLOSED_TEXT[current.status];
+  const mismatchValues = {
+    n: mismatches.length,
+    controls: mismatches.map((row) => securityControlLabel(row.control)).join(', '),
+  };
   const migrationUrl = `/o/${organization.slug}/migrations/${current.id}`;
 
   return (
     <>
       <PageHeader
-        title={`Migration plan ${current.id.slice(0, 8)}`}
-        description={`${sourceName} → ${targetName} · est. ${duration(current.expectedSeconds)} · created ${clock(current.createdAt)} by ${current.createdBy.login}`}
+        title={t('Migration plan {{id}}', { id: current.id.slice(0, 8) })}
+        description={t(
+          '{{source}} → {{target}} · est. {{duration}} · created {{time}} by {{login}}',
+          {
+            source: sourceName,
+            target: targetName,
+            duration: duration(current.expectedSeconds),
+            time: clock(current.createdAt),
+            login: current.createdBy.login,
+          },
+        )}
         actions={
           pending ? (
             <>
@@ -193,7 +215,7 @@ export default function PlanPage() {
                 disabled={reject.isPending}
                 onClick={() => reject.mutate(current.id)}
               >
-                Reject
+                {t('Reject')}
               </RoleButton>
               <RoleButton
                 requires="DEVELOPER"
@@ -203,16 +225,16 @@ export default function PlanPage() {
                   approve.mutate(current.id, { onSuccess: () => navigate(migrationUrl) })
                 }
               >
-                Approve plan
+                {t('Approve plan')}
               </RoleButton>
             </>
           ) : isActivePlan(current.status) || current.status === 'SUCCEEDED' ? (
             <Button asChild>
-              <Link to={migrationUrl}>Open migration</Link>
+              <Link to={migrationUrl}>{t('Open migration')}</Link>
             </Button>
           ) : (
             <Button variant="outline" onClick={() => navigate(restartUrl)}>
-              Create a new plan
+              {t('Create a new plan')}
             </Button>
           )
         }
@@ -224,7 +246,7 @@ export default function PlanPage() {
         {current.simulated && <SimulatedBadge />}
         {pending && (
           <span className="text-small text-fg-muted">
-            Approve before {dateTime(current.expiresAt)}
+            {t('Approve before {{time}}', { time: dateTime(current.expiresAt) })}
           </span>
         )}
       </div>
@@ -236,15 +258,15 @@ export default function PlanPage() {
         >
           <CircleAlert aria-hidden className="mt-0.5 size-4 shrink-0" />
           <p className="text-body-medium">
-            Approval locked: {mismatches.length} security mismatch
-            {mismatches.length === 1 ? '' : 'es'} (
-            {mismatches.map((row) => securityControlLabel(row.control)).join(', ')}).
+            {mismatches.length === 1
+              ? t('Approval locked: {{n}} security mismatch ({{controls}}).', mismatchValues)
+              : t('Approval locked: {{n}} security mismatches ({{controls}}).', mismatchValues)}
           </p>
         </div>
       )}
-      {CLOSED_TEXT[current.status] && (
+      {closedText && (
         <p role="status" className="rounded-lg bg-subtle px-3 py-2 text-body text-fg-secondary">
-          {CLOSED_TEXT[current.status]} Create a new plan to continue.
+          {t(closedText)} {t('Create a new plan to continue.')}
         </p>
       )}
       {actionError ? (
@@ -260,7 +282,9 @@ export default function PlanPage() {
         );
         return changes.length > 0 ? (
           <div className="flex flex-col gap-1 rounded-lg bg-subtle px-3 py-2 text-small text-fg-secondary">
-            <span className="text-body-medium text-fg">What changed after the plan was made</span>
+            <span className="text-body-medium text-fg">
+              {t('What changed after the plan was made')}
+            </span>
             <ul className="list-disc pl-5">
               {changes.map((change) => (
                 <li key={change}>{change}</li>
@@ -273,29 +297,33 @@ export default function PlanPage() {
       <div className="flex items-start gap-3 max-wide:flex-col">
         <div className="flex min-w-0 flex-1 flex-col gap-3 max-wide:w-full">
           <section className="flex flex-col gap-3 rounded-xl border border-line bg-surface p-4">
-            <h2 className="text-title">Stages</h2>
+            <h2 className="text-title">{t('Stages')}</h2>
             <StageList stages={planStages(current.steps, current.rollbackConditions, targetName)} />
           </section>
           <section className="flex flex-col gap-2 rounded-xl border border-line bg-surface p-4">
-            <h2 className="text-title">Automatic rollback when</h2>
+            <h2 className="text-title">{t('Automatic rollback when')}</h2>
             <ul className="flex list-disc flex-col gap-1 pl-5 text-small">
               <li>
-                error rate &gt; {current.rollbackConditions.maxErrorRatePercent}% at any traffic
-                step
+                {t('error rate > {{percent}}% at any traffic step', {
+                  percent: current.rollbackConditions.maxErrorRatePercent,
+                })}
               </li>
               {!current.rollbackConditions.p95Advisory && (
-                <li>p95 latency &gt; {current.rollbackConditions.maxP95Ms} ms</li>
+                <li>{t('p95 latency > {{ms}} ms', { ms: current.rollbackConditions.maxP95Ms })}</li>
               )}
-              <li>the target does not receive traffic while the source still does</li>
+              <li>{t('the target does not receive traffic while the source still does')}</li>
               <li>
-                replication lag &gt; {current.rollbackConditions.maxReplicationLagSeconds} s before
-                the last step
+                {t('replication lag > {{seconds}} s before the last step', {
+                  seconds: current.rollbackConditions.maxReplicationLagSeconds,
+                })}
               </li>
-              {current.rollbackConditions.healthCheck && <li>the health check fails</li>}
+              {current.rollbackConditions.healthCheck && <li>{t('the health check fails')}</li>}
             </ul>
             <p className="text-caption text-fg-muted">
-              Each traffic step waits up to {current.maxWaitSeconds}s for the target to handle its
-              requests before EchoPort moves on.
+              {t(
+                'Each traffic step waits up to {{seconds}}s for the target to handle its requests before EchoPort moves on.',
+                { seconds: current.maxWaitSeconds },
+              )}
             </p>
           </section>
         </div>
@@ -303,10 +331,10 @@ export default function PlanPage() {
         <div className="flex w-110 shrink-0 flex-col gap-3 max-wide:w-full">
           <SecurityComparison rows={securityRows} sourceName={sourceName} targetName={targetName} />
           <section className="flex flex-col gap-2 rounded-xl border border-line bg-surface p-4">
-            <h2 className="text-title">Approval</h2>
+            <h2 className="text-title">{t('Approval')}</h2>
             <dl className="flex flex-col gap-1.5">
-              <Kv label="Required role">Developer or above</Kv>
-              <Kv label="Your role">
+              <Kv label={t('Required role')}>{t('Developer or above')}</Kv>
+              <Kv label={t('Your role')}>
                 <span
                   className={
                     hasRole(organization.role, 'DEVELOPER') ? 'text-success-fg' : 'text-danger-fg'
@@ -315,24 +343,28 @@ export default function PlanPage() {
                   {roleLabel(organization.role)}
                 </span>
               </Kv>
-              <Kv label="Self-approval">
+              <Kv label={t('Self-approval')}>
                 {organization.allowSelfApproval
-                  ? 'Allowed in this organization'
-                  : 'Off · another developer approves'}
+                  ? t('Allowed in this organization')
+                  : t('Off · another developer approves')}
               </Kv>
-              <Kv label="Plan validity">
+              <Kv label={t('Plan validity')}>
                 {current.status === 'STALE' ? (
-                  <span className="text-danger-fg">Stale · environments changed</span>
+                  <span className="text-danger-fg">{t('Stale · environments changed')}</span>
                 ) : pending ? (
-                  <span className="text-success-fg">Checked again when approved</span>
+                  <span className="text-success-fg">{t('Checked again when approved')}</span>
                 ) : (
                   migrationPlanStatusView(current.status).label
                 )}
               </Kv>
               {current.approvedBy && (
-                <Kv label="Approved by">
-                  @{current.approvedBy.login}
-                  {current.selfApproved && ' (self)'} · {clock(current.approvedAt)}
+                <Kv label={t('Approved by')}>
+                  {current.selfApproved
+                    ? t('@{{login}} (self) · {{time}}', {
+                        login: current.approvedBy.login,
+                        time: clock(current.approvedAt),
+                      })
+                    : `@${current.approvedBy.login} · ${clock(current.approvedAt)}`}
                 </Kv>
               )}
             </dl>
@@ -344,7 +376,7 @@ export default function PlanPage() {
                 disabled={cancel.isPending}
                 onClick={() => cancel.mutate(current.id)}
               >
-                Cancel this plan
+                {t('Cancel this plan')}
               </Button>
             )}
           </section>

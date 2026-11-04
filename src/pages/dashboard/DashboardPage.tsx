@@ -10,6 +10,7 @@ import { useEnvironments } from '@/lib/api/environments';
 import { useCurrentOrg } from '@/lib/api/me';
 import { isActivePlan, useMigrationPlan, useOrgMigrationPlans } from '@/lib/api/migrations';
 import { useServiceDetails, useServices } from '@/lib/api/services';
+import { t } from '@/lib/i18n';
 import { currentWeights } from '@/lib/migration-metrics';
 import { onboardingProgress } from '@/lib/onboarding';
 import { ActiveDisasterCard } from './ActiveDisasterCard';
@@ -80,12 +81,12 @@ export default function DashboardPage() {
   return (
     <>
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-h1">Dashboard</h1>
+        <h1 className="text-h1">{t('Dashboard')}</h1>
         <StatusPill
           migrating={
             runningPlan.data && weights
               ? {
-                  target: names.get(runningPlan.data.targetEnvironmentId) ?? 'target',
+                  target: names.get(runningPlan.data.targetEnvironmentId) ?? t('target'),
                   weight: weights.target,
                 }
               : undefined
@@ -93,18 +94,18 @@ export default function DashboardPage() {
           disaster={latest}
           names={names}
         />
-        <span className="ml-auto text-small text-fg-muted max-wide:hidden">Last 15 min</span>
+        <span className="ml-auto text-small text-fg-muted max-wide:hidden">{t('Last 15 min')}</span>
         {running && (
           <Button asChild variant="secondary" size="sm" className="max-wide:ml-auto">
             <Link to={`/o/${organization.slug}/migrations/${running.id}`}>
-              Open migration <ArrowRight aria-hidden />
+              {t('Open migration')} <ArrowRight aria-hidden />
             </Link>
           </Button>
         )}
         {latest && latest.affectedEnvironmentIds.length > 0 && (
           <Button asChild variant="destructive" size="sm">
             <Link to={`/o/${organization.slug}/evacuation`}>
-              View evacuation options <ArrowRight aria-hidden />
+              {t('View evacuation options')} <ArrowRight aria-hidden />
             </Link>
           </Button>
         )}
@@ -117,7 +118,7 @@ export default function DashboardPage() {
         target={
           runningPlan.data && weights
             ? {
-                name: names.get(runningPlan.data.targetEnvironmentId) ?? 'target',
+                name: names.get(runningPlan.data.targetEnvironmentId) ?? t('target'),
                 weight: weights.target,
               }
             : undefined
@@ -125,7 +126,7 @@ export default function DashboardPage() {
       />
 
       <div className="grid grid-cols-12 gap-4">
-        <Panel title="Topology" className="col-span-8 max-wide:col-span-12">
+        <Panel title={t('Topology')} className="col-span-8 max-wide:col-span-12">
           <Topology
             environments={envList}
             byEnvironment={byEnvironment}
@@ -174,12 +175,12 @@ export default function DashboardPage() {
           atRisk={atRisk}
           className="col-span-4 max-wide:hidden"
         />
-        <Panel title="Recent activity" className="col-span-4 max-wide:hidden">
+        <Panel title={t('Recent activity')} className="col-span-4 max-wide:hidden">
           {/* 감사 로그 조회 API(계약 4-8, API 서버 7)가 생기면 size=3 으로 부른다 */}
           <EmptyState
             icon={History}
-            title="Activity log is coming"
-            description="Approvals, deploys and agent actions will show here."
+            title={t('Activity log is coming')}
+            description={t('Approvals, deploys and agent actions will show here.')}
           />
         </Panel>
       </div>
@@ -189,8 +190,8 @@ export default function DashboardPage() {
           orgId={organization.id}
           orgSlug={organization.slug}
           planId={completed.id}
-          sourceName={names.get(completed.sourceEnvironmentId) ?? 'source'}
-          targetName={names.get(completed.targetEnvironmentId) ?? 'target'}
+          sourceName={names.get(completed.sourceEnvironmentId) ?? t('source')}
+          targetName={names.get(completed.targetEnvironmentId) ?? t('target')}
         />
       )}
     </>

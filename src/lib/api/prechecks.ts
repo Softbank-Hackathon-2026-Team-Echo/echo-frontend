@@ -2,6 +2,7 @@
 // 모양은 계약 초안(steps · featureGaps · configDiff · patches · blockedAttempts)과 같고 항상 simulated 다.
 // 데모 증거(F14~F16): 샌드박스 id · 검증 실패 1건 차단 + 통과 1건은 사람 승인 · 운영 변경 시도 1건 거부
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { k, t } from '../i18n';
 import { queryKeys } from './query-keys';
 
 export const PRECHECK_API_READY = false;
@@ -79,20 +80,31 @@ const CLOUD_SCENARIO: Scenario = {
   featureGaps: [
     {
       source: 'RDS max_connections 200',
-      target: 'Cloud SQL default 100',
-      gap: 'capacity',
-      action: 'patch #3',
+      target: k('Cloud SQL default 100'),
+      gap: k('capacity'),
+      action: k('patch #3'),
     },
-    { source: 'Secrets Manager', target: 'Secret Manager', gap: 'name format', action: 'mapped' },
-    { source: 'CloudWatch alarms', target: 'Cloud Monitoring', gap: 'no alarm', action: 'manual' },
+    {
+      source: 'Secrets Manager',
+      target: 'Secret Manager',
+      gap: k('name format'),
+      action: k('mapped'),
+    },
+    {
+      source: k('CloudWatch alarms'),
+      target: 'Cloud Monitoring',
+      gap: k('no alarm'),
+      action: k('manual'),
+    },
   ],
   patches: [
     {
       id: 'patch-2',
       number: 2,
       file: 'k8s/hpa.yaml',
-      reason:
+      reason: k(
         'Feature gap: scale-out signal differs on the target. The proposed HPA rule failed load tests.',
+      ),
       diff: [
         { line: 12, kind: 'context', text: 'minReplicas: 2' },
         { line: 13, kind: 'removed', text: 'targetCPUUtilizationPercentage: 70' },
@@ -104,8 +116,9 @@ const CLOUD_SCENARIO: Scenario = {
       id: 'patch-3',
       number: 3,
       file: 'postgresql.conf',
-      reason:
+      reason: k(
         'Feature gap: connection limit on the target database is lower than the source. Raising it keeps peak traffic within capacity.',
+      ),
       diff: [
         { line: 41, kind: 'context', text: 'shared_buffers = 4GB' },
         { line: 42, kind: 'removed', text: 'max_connections = 100' },
@@ -145,6 +158,7 @@ export function viewPrecheck(
   const scenario = CLOUD_SCENARIO;
   const patches = scenario.patches.map((patch) => ({
     ...patch,
+    reason: t(patch.reason),
     status: patchStatus(patch, precheck, elapsed),
   }));
   const verified = reached(AT.VERIFY_PASS);
@@ -178,38 +192,42 @@ export function viewPrecheck(
           action: 'kubectl apply -f k8s/hpa.yaml',
           target: sourceName,
           at: at(AT.BLOCKED),
-          reason: 'Agent role allows sandbox write + production read only.',
+          reason: t('Agent role allows sandbox write + production read only.'),
         },
       ]
     : [];
 
   const logs: PrecheckView['logs'] = [
-    { seconds: 0, level: 'INFO', message: `sandbox ${precheck.sandboxId} requested` },
-    { seconds: AT.SANDBOX, level: 'INFO', message: 'sandbox ready · image copied from source' },
+    {
+      seconds: 0,
+      level: 'INFO',
+      message: t('sandbox {{id}} requested', { id: precheck.sandboxId }),
+    },
+    { seconds: AT.SANDBOX, level: 'INFO', message: t('sandbox ready · image copied from source') },
     {
       seconds: AT.CONFIG_DIFF,
       level: 'INFO',
-      message: `${scenario.configDiff.length} config keys differ`,
+      message: t('{{total}} config keys differ', { total: scenario.configDiff.length }),
     },
     {
       seconds: AT.FEATURE_GAPS,
       level: 'INFO',
-      message: `${scenario.featureGaps.length} feature gaps mapped`,
+      message: t('{{total}} feature gaps mapped', { total: scenario.featureGaps.length }),
     },
     {
       seconds: AT.BLOCKED,
       level: 'ERROR',
-      message: `blocked: agent tried to change production (${sourceName})`,
+      message: t('blocked: agent tried to change production ({{source}})', { source: sourceName }),
     },
     {
       seconds: AT.VERIFY_FAIL,
       level: 'WARN',
-      message: 'patch #2 failed verification (9/12) · blocked',
+      message: t('patch #2 failed verification (9/12) · blocked'),
     },
     {
       seconds: AT.VERIFY_PASS,
       level: 'INFO',
-      message: 'patch #3 passed verification (12/12) · waiting for approval',
+      message: t('patch #3 passed verification (12/12) · waiting for approval'),
     },
   ]
     .filter((line) => reached(line.seconds))
@@ -223,7 +241,15 @@ export function viewPrecheck(
     ...precheck,
     steps,
     configDiff: reached(AT.CONFIG_DIFF) ? scenario.configDiff : [],
-    featureGaps: reached(AT.FEATURE_GAPS) ? scenario.featureGaps : [],
+    // action 은 화면이 값을 비교하므로 영어 그대로 두고 그릴 때 번역한다
+    featureGaps: reached(AT.FEATURE_GAPS)
+      ? scenario.featureGaps.map((item) => ({
+          ...item,
+          source: t(item.source),
+          target: t(item.target),
+          gap: t(item.gap),
+        }))
+      : [],
     patches: reached(AT.FEATURE_GAPS) ? patches : [],
     blockedAttempts,
     logs,

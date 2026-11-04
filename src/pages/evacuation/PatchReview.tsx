@@ -2,6 +2,7 @@ import { CircleCheck, CircleX, LoaderCircle } from 'lucide-react';
 import { RoleButton } from '@/components/RoleButton';
 import { StatusBadge } from '@/components/StatusBadge';
 import type { Patch } from '@/lib/api/prechecks';
+import { t } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
 const DIFF_CLASS = {
@@ -35,11 +36,12 @@ export function PatchReview({
         <span className="flex flex-wrap items-center gap-2">
           <StatusBadge label="AI" tone="ai" />
           <h3 className="text-title">
-            Patch #{patch.number} · <span className="font-mono">{patch.file}</span>
+            {t('Patch #{{n}}', { n: patch.number })} ·{' '}
+            <span className="font-mono">{patch.file}</span>
           </h3>
-          {patch.status === 'APPROVED' && <StatusBadge label="Approved" tone="success" />}
-          {patch.status === 'REJECTED' && <StatusBadge label="Rejected" tone="neutral" />}
-          {patch.status === 'BLOCKED' && <StatusBadge label="Blocked" tone="danger" />}
+          {patch.status === 'APPROVED' && <StatusBadge label={t('Approved')} tone="success" />}
+          {patch.status === 'REJECTED' && <StatusBadge label={t('Rejected')} tone="neutral" />}
+          {patch.status === 'BLOCKED' && <StatusBadge label={t('Blocked')} tone="danger" />}
         </span>
         <p className="text-small text-fg-secondary">{patch.reason}</p>
       </header>
@@ -57,7 +59,7 @@ export function PatchReview({
         {patch.status === 'VERIFYING' ? (
           <span className="flex items-center gap-1.5 text-small text-migrating-fg">
             <LoaderCircle aria-hidden className="size-3.5 motion-safe:animate-spin" />
-            Verifying in sandbox…
+            {t('Verifying in sandbox…')}
           </span>
         ) : (
           <span
@@ -71,8 +73,13 @@ export function PatchReview({
             ) : (
               <CircleCheck aria-hidden className="size-3.5" />
             )}
-            Sandbox verification {failed ? 'failed' : 'passed'} ({patch.verification.passed}/
-            {patch.verification.total}){failed && ' · not applied'}
+            {failed
+              ? t('Sandbox verification failed ({{passed}}/{{total}}) · not applied', {
+                  ...patch.verification,
+                })
+              : t('Sandbox verification passed ({{passed}}/{{total}})', {
+                  ...patch.verification,
+                })}
           </span>
         )}
         {patch.status === 'PROPOSED' && (
@@ -84,7 +91,7 @@ export function PatchReview({
               disabled={pending}
               onClick={() => onDecide('REJECTED')}
             >
-              Reject
+              {t('Reject')}
             </RoleButton>
             <RoleButton
               requires="DEVELOPER"
@@ -92,7 +99,7 @@ export function PatchReview({
               disabled={pending}
               onClick={() => onDecide('APPROVED')}
             >
-              Approve patch
+              {t('Approve patch')}
             </RoleButton>
           </span>
         )}

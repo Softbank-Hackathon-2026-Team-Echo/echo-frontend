@@ -30,6 +30,7 @@ import {
   usePlanAction,
 } from '@/lib/api/migrations';
 import type { MigrationPlan } from '@/lib/api/types';
+import { t } from '@/lib/i18n';
 import { totalSeconds } from '@/lib/migration-metrics';
 import { duration, planStages } from '@/lib/migration-stages';
 import { migrationErrorLabel, migrationPlanStatusView } from '@/lib/status';
@@ -45,20 +46,21 @@ const FINISHED: MigrationPlan['status'][] = ['SUCCEEDED', 'ROLLED_BACK', 'FAILED
 function title(plan: MigrationPlan) {
   const id = plan.id.slice(0, 8);
   if (plan.mode === 'FAILBACK') return failbackTitle(plan, id);
-  if (plan.status === 'SUCCEEDED') return `Migration ${id} completed`;
-  if (plan.status === 'ROLLED_BACK') return `Migration ${id} rolled back`;
-  if (plan.status === 'FAILED') return `Migration ${id} failed`;
-  if (plan.status === 'ROLLING_BACK') return `Rolling back · plan ${id}`;
-  if (plan.status === 'PENDING_APPROVAL') return `Plan ${id} · waiting for approval`;
-  return `Migrating · plan ${id}`;
+  if (plan.status === 'SUCCEEDED') return t('Migration {{id}} completed', { id });
+  if (plan.status === 'ROLLED_BACK') return t('Migration {{id}} rolled back', { id });
+  if (plan.status === 'FAILED') return t('Migration {{id}} failed', { id });
+  if (plan.status === 'ROLLING_BACK') return t('Rolling back · plan {{id}}', { id });
+  if (plan.status === 'PENDING_APPROVAL') return t('Plan {{id}} · waiting for approval', { id });
+  return t('Migrating · plan {{id}}', { id });
 }
 
 function failbackTitle(plan: MigrationPlan, id: string) {
-  if (plan.status === 'SUCCEEDED') return `Failback ${id} completed`;
-  if (plan.status === 'ROLLED_BACK') return `Failback ${id} rolled back`;
-  if (plan.status === 'FAILED') return `Failback ${id} failed`;
-  if (plan.status === 'PENDING_APPROVAL') return `Failback ${id} · waiting for approval`;
-  return `Failing back · plan ${id}`;
+  if (plan.status === 'SUCCEEDED') return t('Failback {{id}} completed', { id });
+  if (plan.status === 'ROLLED_BACK') return t('Failback {{id}} rolled back', { id });
+  if (plan.status === 'FAILED') return t('Failback {{id}} failed', { id });
+  if (plan.status === 'PENDING_APPROVAL')
+    return t('Failback {{id}} · waiting for approval', { id });
+  return t('Failing back · plan {{id}}', { id });
 }
 
 /** 가로 단계 표시: 승인 → 사전 확인 → 10% → 50% → 데이터 확인 → 100% */
@@ -66,7 +68,7 @@ function Stepper({ plan, targetName }: { plan: MigrationPlan; targetName: string
   const stages = [
     {
       key: 'approved',
-      title: 'Plan approved',
+      title: t('Plan approved'),
       meta: clock(plan.approvedAt),
       state: plan.approvedAt ? ('done' as const) : ('pending' as const),
     },
@@ -74,7 +76,7 @@ function Stepper({ plan, targetName }: { plan: MigrationPlan; targetName: string
       ...stage,
       title:
         plan.steps[index]?.kind === 'SHIFT'
-          ? `Shift → ${plan.steps[index]?.targetWeight}%`
+          ? t('Shift → {{weight}}%', { weight: plan.steps[index]?.targetWeight ?? '—' })
           : stage.title,
       meta: `${plan.steps[index]?.expectedSeconds ?? 0}s`,
     })),
@@ -107,7 +109,7 @@ function LogsTab({ orgId, plan }: { orgId: string; plan: MigrationPlan }) {
   return (
     <div className="flex flex-col gap-2">
       <ol className="flex max-h-128 flex-col gap-1 overflow-y-auto rounded-xl border border-line bg-subtle p-4 font-mono text-mono">
-        {lines.length === 0 && <li className="text-fg-muted">No log lines yet.</li>}
+        {lines.length === 0 && <li className="text-fg-muted">{t('No log lines yet.')}</li>}
         {lines.map((line) => (
           <li key={line.seq} className="flex gap-4">
             <span className="shrink-0 text-fg-muted">{clock(line.at)}</span>
@@ -124,7 +126,7 @@ function LogsTab({ orgId, plan }: { orgId: string; plan: MigrationPlan }) {
               {line.level}
             </span>
             <span className="w-12 shrink-0 text-fg-muted">
-              {line.step === null ? '—' : `step ${line.step}`}
+              {line.step === null ? '—' : t('step {{step}}', { step: line.step })}
             </span>
             <span className="break-all">
               <span className="text-fg-secondary">{line.code}</span> {line.message}
@@ -139,7 +141,7 @@ function LogsTab({ orgId, plan }: { orgId: string; plan: MigrationPlan }) {
           className="self-start"
           onClick={() => logs.fetchNextPage()}
         >
-          Load more
+          {t('Load more')}
         </Button>
       )}
     </div>
@@ -181,16 +183,16 @@ export default function MigrationPage() {
     return (
       <EmptyState
         icon={Route}
-        title="Migration not found"
-        description="It may belong to another organization."
+        title={t('Migration not found')}
+        description={t('It may belong to another organization.')}
       />
     );
   }
 
   const current = plan.data;
   const names = new Map(environments.data?.items.map((item) => [item.id, item.name]));
-  const sourceName = names.get(current.sourceEnvironmentId) ?? 'source';
-  const targetName = names.get(current.targetEnvironmentId) ?? 'target';
+  const sourceName = names.get(current.sourceEnvironmentId) ?? t('source');
+  const targetName = names.get(current.targetEnvironmentId) ?? t('target');
   const elapsed = totalSeconds(current, now);
   // 재난이 끝나지 않은 지역으로는 돌아가지 않는다(ADR 11/2)
   const sourceAtRisk = (disasters.data ?? []).some((disaster) =>
@@ -198,12 +200,26 @@ export default function MigrationPage() {
   );
   const failbackUrl = `/o/${organization.slug}/evacuation/plan?service=${current.serviceId}&target=${current.sourceEnvironmentId}`;
   const selectedTab = tab ?? (finished ? 'result' : 'live');
+  const description = [
+    t('{{source}} → {{target}} · started {{time}}', {
+      source: sourceName,
+      target: targetName,
+      time: clock(current.startedAt),
+    }),
+    elapsed !== null &&
+      (current.finishedAt
+        ? t('took {{duration}}', { duration: duration(elapsed) })
+        : t('elapsed {{duration}}', { duration: duration(elapsed) })),
+    current.approvedBy && t('approved by {{login}}', { login: current.approvedBy.login }),
+  ]
+    .filter(Boolean)
+    .join(' · ');
 
   return (
     <>
       <PageHeader
         title={title(current)}
-        description={`${sourceName} → ${targetName} · started ${clock(current.startedAt)}${elapsed === null ? '' : ` · ${current.finishedAt ? 'took' : 'elapsed'} ${duration(elapsed)}`}${current.approvedBy ? ` · approved by ${current.approvedBy.login}` : ''}`}
+        description={description}
         actions={
           active ? (
             <RoleButton
@@ -216,24 +232,26 @@ export default function MigrationPage() {
               }
               onClick={() => setConfirmOpen(true)}
             >
-              Roll back
+              {t('Roll back')}
             </RoleButton>
           ) : current.status === 'SUCCEEDED' ? (
             <RoleButton
               requires="DEVELOPER"
               disabledReason={
-                sourceAtRisk ? `${sourceName} is still inside an active disaster radius` : undefined
+                sourceAtRisk
+                  ? t('{{name}} is still inside an active disaster radius', { name: sourceName })
+                  : undefined
               }
               onClick={() => navigate(failbackUrl)}
             >
-              Start failback
+              {t('Start failback')}
             </RoleButton>
           ) : current.status === 'PENDING_APPROVAL' ? (
             <Button asChild>
               <Link
                 to={`/o/${organization.slug}/evacuation/plan?service=${current.serviceId}&target=${current.targetEnvironmentId}&plan=${current.id}`}
               >
-                Review plan
+                {t('Review plan')}
               </Link>
             </Button>
           ) : null
@@ -245,7 +263,7 @@ export default function MigrationPage() {
         {current.simulated && <SimulatedBadge />}
         {current.abortRequestedAt && current.status !== 'ROLLED_BACK' && (
           <span className="text-small text-warning-fg">
-            Rollback requested at {clock(current.abortRequestedAt)}
+            {t('Rollback requested at {{time}}', { time: clock(current.abortRequestedAt) })}
           </span>
         )}
       </div>
@@ -261,16 +279,20 @@ export default function MigrationPage() {
           <div className="flex flex-col gap-0.5">
             <p className="text-body-medium">
               {current.status === 'ROLLING_BACK'
-                ? `Rolling back: ${sourceName} is taking 100% of traffic again`
+                ? t('Rolling back: {{source}} is taking 100% of traffic again', {
+                    source: sourceName,
+                  })
                 : current.status === 'ROLLED_BACK'
-                  ? `Rolled back: ${sourceName} serves 100% again`
-                  : 'Migration failed'}
+                  ? t('Rolled back: {{source}} serves 100% again', { source: sourceName })
+                  : t('Migration failed')}
             </p>
             <p className="text-small">
-              {current.errorCode ? `${migrationErrorLabel(current.errorCode)}.` : ''}{' '}
+              {current.errorCode
+                ? t('{{reason}}.', { reason: migrationErrorLabel(current.errorCode) })
+                : ''}{' '}
               {current.errorMessage ?? ''}
               {current.rollbackStatus === 'FAILED' &&
-                ' The rollback itself did not finish. Check the logs.'}
+                ` ${t('The rollback itself did not finish. Check the logs.')}`}
             </p>
           </div>
         </div>
@@ -278,10 +300,10 @@ export default function MigrationPage() {
 
       <Tabs value={selectedTab} onValueChange={setTab}>
         <TabsList>
-          <TabsTrigger value="live">Live</TabsTrigger>
-          <TabsTrigger value="result">Result</TabsTrigger>
-          <TabsTrigger value="plan">Plan</TabsTrigger>
-          <TabsTrigger value="logs">Logs</TabsTrigger>
+          <TabsTrigger value="live">{t('Live')}</TabsTrigger>
+          <TabsTrigger value="result">{t('Result')}</TabsTrigger>
+          <TabsTrigger value="plan">{t('Plan')}</TabsTrigger>
+          <TabsTrigger value="logs">{t('Logs')}</TabsTrigger>
         </TabsList>
         <div className="mt-3">
           <Stepper plan={current} targetName={targetName} />
@@ -294,18 +316,24 @@ export default function MigrationPage() {
             <ResultTab plan={current} />
           ) : (
             <p className="rounded-lg bg-subtle px-3 py-2 text-body text-fg-secondary">
-              The result table appears when the migration finishes.
+              {t('The result table appears when the migration finishes.')}
             </p>
           )}
         </TabsContent>
         <TabsContent value="plan" className="mt-3">
           <section className="flex flex-col gap-3 rounded-xl border border-line bg-surface p-4">
-            <h2 className="text-title">Stages · planned vs actual</h2>
+            <h2 className="text-title">{t('Stages · planned vs actual')}</h2>
             <StageList stages={planStages(current.steps, current.rollbackConditions, targetName)} />
             <p className="text-caption text-fg-muted">
-              Planned {duration(current.expectedSeconds)} · wait up to {current.maxWaitSeconds}s per
-              traffic step · created by {current.createdBy.login}
-              {current.selfApproved && ' · self-approved'}
+              {t(
+                'Planned {{duration}} · wait up to {{seconds}}s per traffic step · created by {{login}}',
+                {
+                  duration: duration(current.expectedSeconds),
+                  seconds: current.maxWaitSeconds,
+                  login: current.createdBy.login,
+                },
+              )}
+              {current.selfApproved && ` · ${t('self-approved')}`}
             </p>
           </section>
         </TabsContent>
@@ -317,22 +345,24 @@ export default function MigrationPage() {
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Roll back to {sourceName}?</DialogTitle>
+            <DialogTitle>{t('Roll back to {{source}}?', { source: sourceName })}</DialogTitle>
             <DialogDescription>
-              EchoPort stops the migration and sends 100% of traffic back to {sourceName}.{' '}
-              {targetName} stays as a standby.
+              {t(
+                'EchoPort stops the migration and sends 100% of traffic back to {{source}}. {{target}} stays as a standby.',
+                { source: sourceName, target: targetName },
+              )}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setConfirmOpen(false)}>
-              Keep migrating
+              {t('Keep migrating')}
             </Button>
             <Button
               variant="destructive"
               disabled={abort.isPending}
               onClick={() => abort.mutate(current.id, { onSuccess: () => setConfirmOpen(false) })}
             >
-              Roll back
+              {t('Roll back')}
             </Button>
           </DialogFooter>
         </DialogContent>

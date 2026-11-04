@@ -1,3 +1,4 @@
+import { k, t } from '@/lib/i18n';
 import type { Tone } from '@/lib/status';
 import { cn } from '@/lib/utils';
 
@@ -28,35 +29,35 @@ const BARS = [3, 5, 4, 6, 5, 7, 4, 6, 5, 8, 6, 9, 7, 10];
 const PREVIEW_KPIS: Record<'alert' | 'evacuating', Kpi[]> = {
   alert: [
     {
-      label: 'Success rate',
+      label: k('Success rate'),
       value: '99.98%',
       chip: '+0.0%',
       chipTone: 'success',
       trend: { kind: 'line', points: LINE_A },
     },
     {
-      label: 'p95 latency',
+      label: k('p95 latency'),
       value: '182 ms',
       chip: '−4 ms',
       chipTone: 'success',
       trend: { kind: 'line', points: LINE_B },
     },
     {
-      label: 'Replication lag',
+      label: k('Replication lag'),
       value: '120 ms',
       chip: '+40 ms',
       chipTone: 'warning',
       trend: { kind: 'bars', points: BARS },
     },
     {
-      label: 'Traffic on primary',
+      label: k('Traffic on primary'),
       value: '100%',
       chip: 'AWS Tokyo',
       chipTone: 'success',
       trend: { kind: 'progress', value: 100 },
     },
     {
-      label: 'Error budget left',
+      label: k('Error budget left'),
       value: '72%',
       chip: '30 d',
       chipTone: 'success',
@@ -65,35 +66,35 @@ const PREVIEW_KPIS: Record<'alert' | 'evacuating', Kpi[]> = {
   ],
   evacuating: [
     {
-      label: 'Success rate',
+      label: k('Success rate'),
       value: '99.97%',
       chip: '−0.01%',
       chipTone: 'success',
       trend: { kind: 'line', points: LINE_A },
     },
     {
-      label: 'p95 latency',
+      label: k('p95 latency'),
       value: '196 ms',
       chip: '+14 ms',
       chipTone: 'success',
       trend: { kind: 'line', points: LINE_B },
     },
     {
-      label: 'Replication lag',
+      label: k('Replication lag'),
       value: '160 ms',
       chip: '+40 ms',
       chipTone: 'warning',
       trend: { kind: 'bars', points: BARS },
     },
     {
-      label: 'Traffic on target',
+      label: k('Traffic on target'),
       value: '70%',
       chip: 'GCP Seoul',
       chipTone: 'success',
       trend: { kind: 'progress', value: 70 },
     },
     {
-      label: 'Error budget left',
+      label: k('Error budget left'),
       value: '72%',
       chip: '30 d',
       chipTone: 'success',
@@ -159,7 +160,7 @@ export function PreviewKpis({ variant }: { variant: 'alert' | 'evacuating' }) {
           key={kpi.label}
           className="flex min-h-24 flex-col gap-1 rounded-lg border border-line bg-surface p-2.5"
         >
-          <span className="text-caption text-fg-secondary">{kpi.label}</span>
+          <span className="text-caption text-fg-secondary">{t(kpi.label)}</span>
           <span className="flex flex-wrap items-center gap-1.5">
             <span className="text-metric tabular-nums">{kpi.value}</span>
             <span className={cn('rounded-sm px-1 text-caption', CHIP[kpi.chipTone])}>

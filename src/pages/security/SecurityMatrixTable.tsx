@@ -4,6 +4,7 @@ import {
   type SecurityControl,
   type SecurityMatrixRow,
 } from '@/lib/api/security';
+import { t } from '@/lib/i18n';
 import { securityControlLabel } from '@/lib/status';
 
 type SecurityMatrixTableProps = {
@@ -20,7 +21,7 @@ export function SecurityMatrixTable({ rows, names, onSelect }: SecurityMatrixTab
         <thead>
           <tr>
             <th scope="col" className="w-40 text-caption font-normal text-fg-muted">
-              Environment
+              {t('Environment')}
             </th>
             {SECURITY_CONTROLS.map((control) => (
               <th key={control} scope="col" className="text-caption font-normal text-fg-muted">

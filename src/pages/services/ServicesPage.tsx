@@ -18,6 +18,7 @@ import {
 import { useCurrentOrg } from '@/lib/api/me';
 import { useServiceDetails, useServices, useServicesDeployRequests } from '@/lib/api/services';
 import type { DeployRequestSummary, ServiceDetail } from '@/lib/api/types';
+import { t } from '@/lib/i18n';
 import { shortSha } from '@/lib/status';
 import { cn } from '@/lib/utils';
 import { ServicePanel } from './ServicePanel';
@@ -75,14 +76,14 @@ function StatStrip({
       : `${Math.floor(average / 60)}m ${String(Math.round(average % 60)).padStart(2, '0')}s`;
   return (
     <div className="flex divide-x divide-line rounded-lg border border-line bg-surface p-4 max-compact:flex-wrap max-compact:divide-x-0 max-compact:gap-4">
-      <StatItem icon={Globe} label="Services" value={services.length} />
+      <StatItem icon={Globe} label={t('Services')} value={services.length} />
       <StatItem
         icon={ArrowLeftRight}
-        label="Serving"
+        label={t('Serving')}
         value={`${servingCount} / ${services.length}`}
       />
-      <StatItem icon={Activity} label="Deploys today" value={deploysToday} />
-      <StatItem icon={ShieldCheck} label="Avg deploy time" value={averageText} />
+      <StatItem icon={Activity} label={t('Deploys today')} value={deploysToday} />
+      <StatItem icon={ShieldCheck} label={t('Avg deploy time')} value={averageText} />
     </div>
   );
 }
@@ -102,15 +103,15 @@ export default function ServicesPage() {
 
   const registerButton = (
     <RoleButton requires="DEVELOPER" onClick={() => setRegisterOpen(true)}>
-      Deploy new service
+      {t('Deploy new service')}
     </RoleButton>
   );
 
   return (
     <>
       <PageHeader
-        title="Services"
-        description="Apps deployed by EchoPort and where each one runs."
+        title={t('Services')}
+        description={t('Apps deployed by EchoPort and where each one runs.')}
         actions={registerButton}
       />
       {services.isError ? (
@@ -123,8 +124,8 @@ export default function ServicesPage() {
       ) : services.data.items.length === 0 ? (
         <EmptyState
           icon={Boxes}
-          title="No services yet"
-          description="Connect a GitHub repository, then deploy it to an environment."
+          title={t('No services yet')}
+          description={t('Connect a GitHub repository, then deploy it to an environment.')}
           action={registerButton}
         />
       ) : (
@@ -135,10 +136,10 @@ export default function ServicesPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Service</TableHead>
-                    <TableHead>Running on</TableHead>
-                    <TableHead>Version</TableHead>
-                    <TableHead>Public URL</TableHead>
+                    <TableHead>{t('Service')}</TableHead>
+                    <TableHead>{t('Running on')}</TableHead>
+                    <TableHead>{t('Version')}</TableHead>
+                    <TableHead>{t('Public URL')}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -167,7 +168,9 @@ export default function ServicesPage() {
                             {summary.name}
                           </button>
                           {summary.status === 'DELETING' && (
-                            <span className="ml-2 text-caption text-warning-fg">deleting</span>
+                            <span className="ml-2 text-caption text-warning-fg">
+                              {t('deleting')}
+                            </span>
                           )}
                         </TableCell>
                         <TableCell>

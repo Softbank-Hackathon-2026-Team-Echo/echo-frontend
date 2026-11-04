@@ -24,6 +24,7 @@ import { useEnvironments } from '@/lib/api/environments';
 import { fieldErrors } from '@/lib/api/form-errors';
 import { useCreateDeploy } from '@/lib/api/services';
 import type { SimulatedFailureStage } from '@/lib/api/types';
+import { t } from '@/lib/i18n';
 
 type RefKind = 'branch' | 'commit';
 const NO_FAILURE = 'none';
@@ -91,10 +92,11 @@ export function DeployDialog({
       <DialogContent className="sm:max-w-md">
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <DialogHeader>
-            <DialogTitle>Deploy {serviceName}</DialogTitle>
+            <DialogTitle>{t('Deploy {{name}}', { name: serviceName })}</DialogTitle>
             <DialogDescription>
-              Build the branch or commit and roll it out to one environment. The first environment
-              that succeeds starts serving traffic; others follow as standby.
+              {t(
+                'Build the branch or commit and roll it out to one environment. The first environment that succeeds starts serving traffic; others follow as standby.',
+              )}
             </DialogDescription>
           </DialogHeader>
 
@@ -102,29 +104,31 @@ export function DeployDialog({
 
           {noEnvironments ? (
             <div className="flex flex-col items-start gap-2 rounded-md bg-subtle p-3 text-body">
-              <span>There are no environments to deploy to yet.</span>
+              <span>{t('There are no environments to deploy to yet.')}</span>
               <Link
                 to={`/o/${orgSlug}/settings/environments`}
                 className="text-brand hover:underline"
                 onClick={() => onOpenChange(false)}
               >
-                Add an environment first →
+                {t('Add an environment first →')}
               </Link>
             </div>
           ) : (
             <FormField
               id="deploy-env"
-              label="Environment"
+              label={t('Environment')}
               error={errors.environmentId}
               hint={
                 allFailed
-                  ? 'Every environment failed its last connection check. Fix one in Settings first.'
+                  ? t(
+                      'Every environment failed its last connection check. Fix one in Settings first.',
+                    )
                   : undefined
               }
             >
               <Select value={environmentId} onValueChange={setEnvironmentId}>
                 <SelectTrigger id="deploy-env" className="w-full">
-                  <SelectValue placeholder="Choose an environment" />
+                  <SelectValue placeholder={t('Choose an environment')} />
                 </SelectTrigger>
                 <SelectContent>
                   {items.map((environment) => {
@@ -139,7 +143,9 @@ export function DeployDialog({
                         <ProviderLabel kind={environment.kind} showLocation={false} />
                         <span>{environment.name}</span>
                         {failed && (
-                          <span className="text-caption text-danger-fg">connection failed</span>
+                          <span className="text-caption text-danger-fg">
+                            {t('connection failed')}
+                          </span>
                         )}
                       </SelectItem>
                     );
@@ -151,7 +157,7 @@ export function DeployDialog({
 
           <FormField
             id="deploy-ref"
-            label={refKind === 'branch' ? 'Branch' : 'Commit SHA'}
+            label={refKind === 'branch' ? t('Branch') : t('Commit SHA')}
             error={errors.branch ?? errors.commitSha}
           >
             <Tabs
@@ -162,8 +168,8 @@ export function DeployDialog({
               }}
             >
               <TabsList>
-                <TabsTrigger value="branch">Branch</TabsTrigger>
-                <TabsTrigger value="commit">Commit</TabsTrigger>
+                <TabsTrigger value="branch">{t('Branch')}</TabsTrigger>
+                <TabsTrigger value="commit">{t('Commit')}</TabsTrigger>
               </TabsList>
             </Tabs>
             <Input
@@ -178,8 +184,8 @@ export function DeployDialog({
 
           <FormField
             id="deploy-simulate"
-            label="Simulate a failure (demo)"
-            hint="Only works while the API runs simulated executors."
+            label={t('Simulate a failure (demo)')}
+            hint={t('Only works while the API runs simulated executors.')}
             error={errors.simulate}
           >
             <Select value={failAt} onValueChange={setFailAt}>
@@ -187,20 +193,20 @@ export function DeployDialog({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={NO_FAILURE}>No failure</SelectItem>
-                <SelectItem value="BUILDING">Fail while building</SelectItem>
-                <SelectItem value="DEPLOYING">Fail while deploying</SelectItem>
-                <SelectItem value="VERIFYING">Fail health check</SelectItem>
+                <SelectItem value={NO_FAILURE}>{t('No failure')}</SelectItem>
+                <SelectItem value="BUILDING">{t('Fail while building')}</SelectItem>
+                <SelectItem value="DEPLOYING">{t('Fail while deploying')}</SelectItem>
+                <SelectItem value="VERIFYING">{t('Fail health check')}</SelectItem>
               </SelectContent>
             </Select>
           </FormField>
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
+              {t('Cancel')}
             </Button>
             <Button type="submit" disabled={!environmentId || !ref.trim() || deploy.isPending}>
-              {deploy.isPending ? 'Starting…' : 'Deploy'}
+              {deploy.isPending ? t('Starting…') : t('Deploy')}
             </Button>
           </DialogFooter>
         </form>

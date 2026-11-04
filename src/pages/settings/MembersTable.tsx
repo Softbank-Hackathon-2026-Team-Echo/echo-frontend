@@ -31,6 +31,7 @@ import {
 import { useMembers, useRemoveMember, useUpdateMemberRole } from '@/lib/api/members';
 import { MEMBER_ROLES, type Member, type MemberRole } from '@/lib/api/types';
 import { dateTime } from '@/lib/format';
+import { t } from '@/lib/i18n';
 import { hasRole, ROLE_LABELS, roleLabel } from '@/lib/roles';
 
 type MembersTableProps = {
@@ -61,11 +62,11 @@ export function MembersTable({ orgId, myUserId, myRole, onLeft }: MembersTablePr
           <TableHeader>
             <TableRow>
               <TableHead>GitHub</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead>Can approve</TableHead>
-              <TableHead>Joined</TableHead>
+              <TableHead>{t('Role')}</TableHead>
+              <TableHead>{t('Can approve')}</TableHead>
+              <TableHead>{t('Joined')}</TableHead>
               <TableHead className="w-0">
-                <span className="sr-only">Actions</span>
+                <span className="sr-only">{t('Actions')}</span>
               </TableHead>
             </TableRow>
           </TableHeader>
@@ -83,7 +84,7 @@ export function MembersTable({ orgId, myUserId, myRole, onLeft }: MembersTablePr
                         </AvatarFallback>
                       </Avatar>
                       <span className="font-mono text-mono">@{member.githubLogin}</span>
-                      {isMe && <span className="text-caption text-fg-muted">You</span>}
+                      {isMe && <span className="text-caption text-fg-muted">{t('You')}</span>}
                     </span>
                   </TableCell>
                   <TableCell>
@@ -98,7 +99,7 @@ export function MembersTable({ orgId, myUserId, myRole, onLeft }: MembersTablePr
                       >
                         <SelectTrigger
                           className="h-7 w-32"
-                          aria-label={`Role of ${member.githubLogin}`}
+                          aria-label={t('Role of {{login}}', { login: member.githubLogin })}
                         >
                           <SelectValue />
                         </SelectTrigger>
@@ -115,14 +116,14 @@ export function MembersTable({ orgId, myUserId, myRole, onLeft }: MembersTablePr
                     )}
                   </TableCell>
                   <TableCell className="font-mono text-mono">
-                    {hasRole(member.role, 'DEVELOPER') ? 'yes' : 'no'}
+                    {hasRole(member.role, 'DEVELOPER') ? t('yes') : t('no')}
                   </TableCell>
                   <TableCell className="text-fg-secondary">{dateTime(member.joinedAt)}</TableCell>
                   <TableCell>
                     {isMe ? (
                       <Button variant="ghost" size="sm" onClick={() => setRemoving(member)}>
                         <LogOut aria-hidden />
-                        Leave
+                        {t('Leave')}
                       </Button>
                     ) : (
                       <RoleButton
@@ -132,7 +133,7 @@ export function MembersTable({ orgId, myUserId, myRole, onLeft }: MembersTablePr
                         onClick={() => setRemoving(member)}
                       >
                         <UserMinus aria-hidden />
-                        Remove
+                        {t('Remove')}
                       </RoleButton>
                     )}
                   </TableCell>
@@ -147,17 +148,19 @@ export function MembersTable({ orgId, myUserId, myRole, onLeft }: MembersTablePr
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {leaving ? 'Leave this organization?' : `Remove @${removing?.githubLogin}?`}
+              {leaving
+                ? t('Leave this organization?')
+                : t('Remove @{{login}}?', { login: removing?.githubLogin ?? '' })}
             </DialogTitle>
             <DialogDescription>
               {leaving
-                ? 'You lose access right away. An admin has to invite you again to come back.'
-                : 'They lose access right away. You can invite them again later.'}
+                ? t('You lose access right away. An admin has to invite you again to come back.')
+                : t('They lose access right away. You can invite them again later.')}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
             <Button variant="outline" onClick={() => setRemoving(undefined)}>
-              Cancel
+              {t('Cancel')}
             </Button>
             <Button
               variant="destructive"
@@ -172,7 +175,7 @@ export function MembersTable({ orgId, myUserId, myRole, onLeft }: MembersTablePr
                 })
               }
             >
-              {leaving ? 'Leave' : 'Remove'}
+              {leaving ? t('Leave') : t('Remove')}
             </Button>
           </DialogFooter>
         </DialogContent>

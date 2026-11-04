@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { isApiError } from '@/lib/api/errors';
 import { fieldErrors } from '@/lib/api/form-errors';
 import { useCreateService } from '@/lib/api/services';
+import { t } from '@/lib/i18n';
 
 const DEFAULTS = {
   healthCheckPath: '/healthz',
@@ -81,9 +82,9 @@ export function RegisterServiceDialog({
       <DialogContent className="sm:max-w-lg">
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <DialogHeader>
-            <DialogTitle>Register service</DialogTitle>
+            <DialogTitle>{t('Register service')}</DialogTitle>
             <DialogDescription>
-              Connect a GitHub repository. You choose where to deploy it on the next step.
+              {t('Connect a GitHub repository. You choose where to deploy it on the next step.')}
             </DialogDescription>
           </DialogHeader>
 
@@ -92,10 +93,11 @@ export function RegisterServiceDialog({
               role="alert"
               className="rounded-md bg-warning-bg px-3 py-2 text-body text-warning-fg"
             >
-              We can't reach this repository. If it is private, install the EchoPort GitHub App on
-              it first:{' '}
+              {t(
+                "We can't reach this repository. If it is private, install the EchoPort GitHub App on it first:",
+              )}{' '}
               <a href={install} target="_blank" rel="noreferrer" className="underline">
-                Install GitHub App
+                {t('Install GitHub App')}
               </a>
             </p>
           ) : (
@@ -104,8 +106,10 @@ export function RegisterServiceDialog({
 
           <FormField
             id="svc-name"
-            label="Name"
-            hint="Lowercase letters, numbers and -. It becomes part of the public URL and can't change."
+            label={t('Name')}
+            hint={t(
+              "Lowercase letters, numbers and -. It becomes part of the public URL and can't change.",
+            )}
             error={errors.name}
           >
             <Input
@@ -117,7 +121,7 @@ export function RegisterServiceDialog({
               required
             />
           </FormField>
-          <FormField id="svc-repo" label="GitHub repository" error={errors.repoUrl}>
+          <FormField id="svc-repo" label={t('GitHub repository')} error={errors.repoUrl}>
             <Input
               id="svc-repo"
               value={form.repoUrl}
@@ -127,11 +131,19 @@ export function RegisterServiceDialog({
               required
             />
           </FormField>
-          <FormField id="svc-description" label="Description (optional)" error={errors.description}>
+          <FormField
+            id="svc-description"
+            label={t('Description (optional)')}
+            error={errors.description}
+          >
             <Input id="svc-description" value={form.description} onChange={set('description')} />
           </FormField>
           <div className="grid grid-cols-3 gap-3">
-            <FormField id="svc-health" label="Health check path" error={errors.healthCheckPath}>
+            <FormField
+              id="svc-health"
+              label={t('Health check path')}
+              error={errors.healthCheckPath}
+            >
               <Input
                 id="svc-health"
                 className="font-mono text-mono"
@@ -139,7 +151,7 @@ export function RegisterServiceDialog({
                 onChange={set('healthCheckPath')}
               />
             </FormField>
-            <FormField id="svc-port" label="Container port" error={errors.containerPort}>
+            <FormField id="svc-port" label={t('Container port')} error={errors.containerPort}>
               <Input
                 id="svc-port"
                 type="number"
@@ -151,7 +163,7 @@ export function RegisterServiceDialog({
             </FormField>
             <FormField
               id="svc-timeout"
-              label="Health timeout (s)"
+              label={t('Health timeout (s)')}
               error={errors.healthCheckTimeoutSeconds}
             >
               <Input
@@ -167,10 +179,10 @@ export function RegisterServiceDialog({
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
+              {t('Cancel')}
             </Button>
             <Button type="submit" disabled={create.isPending}>
-              {create.isPending ? 'Checking repository…' : 'Register service'}
+              {create.isPending ? t('Checking repository…') : t('Register service')}
             </Button>
           </DialogFooter>
         </form>

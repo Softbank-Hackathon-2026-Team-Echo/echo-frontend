@@ -1,6 +1,7 @@
 import { CircleCheck } from 'lucide-react';
 import { StatusBadge } from '@/components/StatusBadge';
 import { buttonVariants } from '@/components/ui/button';
+import { t } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
 const LINES = [
@@ -17,11 +18,12 @@ export function PatchPreview() {
       <div className="flex flex-col gap-1 p-3">
         <span className="flex items-center gap-2">
           <StatusBadge label="AI" tone="ai" />
-          <span className="text-title">Patch #3 · postgresql.conf</span>
+          <span className="text-title">{t('Patch #3 · postgresql.conf')}</span>
         </span>
         <span className="text-small text-fg-secondary">
-          Feature gap: connection limit on GCP Cloud SQL is lower than AWS RDS. Raising it keeps
-          peak traffic within capacity.
+          {t(
+            'Feature gap: connection limit on GCP Cloud SQL is lower than AWS RDS. Raising it keeps peak traffic within capacity.',
+          )}
         </span>
       </div>
       <div className="bg-subtle py-1">
@@ -39,11 +41,11 @@ export function PatchPreview() {
       <div className="flex flex-wrap items-center justify-between gap-2 p-3">
         <span className="flex items-center gap-1.5 text-small text-success-fg">
           <CircleCheck aria-hidden className="size-4" />
-          Sandbox verification passed (12/12)
+          {t('Sandbox verification passed (12/12)')}
         </span>
         <span className="flex gap-2">
-          <span className={buttonVariants({ variant: 'outline', size: 'sm' })}>Reject</span>
-          <span className={buttonVariants({ size: 'sm' })}>Approve patch</span>
+          <span className={buttonVariants({ variant: 'outline', size: 'sm' })}>{t('Reject')}</span>
+          <span className={buttonVariants({ size: 'sm' })}>{t('Approve patch')}</span>
         </span>
       </div>
     </div>

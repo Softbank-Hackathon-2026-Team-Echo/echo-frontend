@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { ProviderLabel } from '@/components/ProviderLabel';
 import { StatusBadge } from '@/components/StatusBadge';
+import { t } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
 // 그림 안의 자리(%)는 아래 선(viewBox 100×100)과 같은 좌표계다
@@ -121,7 +122,7 @@ export function TopologyIllustration() {
         style={at(3, 40, 22)}
         className="absolute flex flex-col gap-0.5 rounded-md border border-line bg-surface p-2"
       >
-        <span className="text-body-medium">Edge proxy</span>
+        <span className="text-body-medium">{t('Edge proxy')}</span>
         <span className="truncate font-mono text-mono text-fg-muted">edge.echoport.uk</span>
       </div>
 
@@ -129,7 +130,7 @@ export function TopologyIllustration() {
         <Node
           kind="aws"
           name="aws-tokyo-prod"
-          badge={<StatusBadge label="At risk" tone="warning" className="w-fit" />}
+          badge={<StatusBadge label={t('At risk')} tone="warning" className="w-fit" />}
           traffic={100}
           isServing
         />
@@ -138,7 +139,7 @@ export function TopologyIllustration() {
         <Node
           kind="gcp"
           name="gcp-seoul-standby"
-          badge={<StatusBadge label="Standby" tone="neutral" className="w-fit" />}
+          badge={<StatusBadge label={t('Standby')} tone="neutral" className="w-fit" />}
           traffic={0}
         />
       </Region>
@@ -146,14 +147,14 @@ export function TopologyIllustration() {
         <Node
           kind="onprem"
           name="onprem-fukuoka"
-          badge={<StatusBadge label="Standby" tone="neutral" className="w-fit" />}
+          badge={<StatusBadge label={t('Standby')} tone="neutral" className="w-fit" />}
           traffic={0}
         />
       </Region>
 
       <span className="absolute bottom-2 left-2 flex gap-3 rounded-sm border border-line bg-surface px-2 py-0.5 text-caption text-fg-muted">
-        <span>traffic (width = weight)</span>
-        <span>replication</span>
+        <span>{t('traffic (width = weight)')}</span>
+        <span>{t('replication')}</span>
       </span>
     </div>
   );

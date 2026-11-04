@@ -1,3 +1,4 @@
+import { t } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import type { ServiceOnEnvironment } from './types';
 
@@ -28,7 +29,7 @@ function Pending() {
   return (
     <>
       <span className="text-metric-xl text-fg-muted">—</span>
-      <span className="text-caption text-fg-muted">Metrics API pending</span>
+      <span className="text-caption text-fg-muted">{t('Metrics API pending')}</span>
     </>
   );
 }
@@ -51,16 +52,16 @@ export function KpiTiles({
   const hasValue = Boolean(target || serving);
   return (
     <div className="grid grid-cols-5 gap-4 max-wide:grid-cols-4 max-wide:gap-3 max-sm:grid-cols-2">
-      <Tile label="Success rate">
+      <Tile label={t('Success rate')}>
         <Pending />
       </Tile>
-      <Tile label="p95 latency">
+      <Tile label={t('p95 latency')}>
         <Pending />
       </Tile>
-      <Tile label="Replication lag">
+      <Tile label={t('Replication lag')}>
         <Pending />
       </Tile>
-      <Tile label={target ? 'Traffic on target' : 'Traffic on primary'}>
+      <Tile label={target ? t('Traffic on target') : t('Traffic on primary')}>
         <span className="flex flex-wrap items-baseline gap-2">
           <span className="text-metric-xl tabular-nums">{hasValue ? `${weight}%` : '—'}</span>
           {envName && (
@@ -73,7 +74,7 @@ export function KpiTiles({
           <span className="block h-full rounded-full bg-brand" style={{ width: `${weight}%` }} />
         </span>
       </Tile>
-      <Tile label="Error budget left" className="max-wide:hidden">
+      <Tile label={t('Error budget left')} className="max-wide:hidden">
         <Pending />
       </Tile>
     </div>

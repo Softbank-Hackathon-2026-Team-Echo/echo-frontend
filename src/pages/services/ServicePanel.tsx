@@ -11,17 +11,28 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { isTerminalStatus, useDeployRequests, useRollback, useService } from '@/lib/api/services';
 import type { DeployRequestSummary, ServiceEnvironment } from '@/lib/api/types';
 import { dateTime } from '@/lib/format';
+import { t } from '@/lib/i18n';
 import { deployErrorLabel, deployTriggerLabel, shortSha } from '@/lib/status';
 
 /** 연결 하나의 오른쪽 배지: Serving 100% · Standby 0% · Out of sync */
 function linkBadge(link: ServiceEnvironment) {
   if (link.versionStatus === 'OUT_OF_SYNC')
-    return <StatusBadge label="Out of sync" tone="warning" />;
+    return <StatusBadge label={t('Out of sync')} tone="warning" />;
   if (link.role === 'SERVING')
-    return <StatusBadge label={`Serving ${link.trafficWeight}%`} tone="success" />;
+    return (
+      <StatusBadge
+        label={t('Serving {{weight}}%', { weight: link.trafficWeight })}
+        tone="success"
+      />
+    );
   if (link.role === 'STANDBY')
-    return <StatusBadge label={`Standby ${link.trafficWeight}%`} tone="neutral" />;
-  return <StatusBadge label="Not deployed" tone="neutral" />;
+    return (
+      <StatusBadge
+        label={t('Standby {{weight}}%', { weight: link.trafficWeight })}
+        tone="neutral"
+      />
+    );
+  return <StatusBadge label={t('Not deployed')} tone="neutral" />;
 }
 
 function HistoryIcon({ request }: { request: DeployRequestSummary }) {
@@ -68,9 +79,9 @@ export function ServicePanel({
       </header>
 
       <section className="flex flex-col gap-2">
-        <h3 className="text-body-medium">Environments</h3>
+        <h3 className="text-body-medium">{t('Environments')}</h3>
         {service.environments.length === 0 ? (
-          <p className="text-small text-fg-muted">Not deployed yet.</p>
+          <p className="text-small text-fg-muted">{t('Not deployed yet.')}</p>
         ) : (
           <ul className="flex flex-col gap-2">
             {service.environments.map((link) => (
@@ -85,27 +96,27 @@ export function ServicePanel({
                 <span className="truncate text-caption text-fg-muted">
                   <span className="font-mono">{shortSha(link.currentDeployment?.commitSha)}</span> ·{' '}
                   {link.activeRequestId
-                    ? 'deploying'
+                    ? t('deploying')
                     : link.queuedRequestId
-                      ? 'sync queued'
+                      ? t('sync queued')
                       : link.versionStatus === 'IN_SYNC'
-                        ? 'in sync'
+                        ? t('in sync')
                         : link.url.replace(/^https:\/\//, '')}
                 </span>
               </li>
             ))}
           </ul>
         )}
-        <span className="pt-1 text-caption text-fg-muted">Public URL (fixed)</span>
+        <span className="pt-1 text-caption text-fg-muted">{t('Public URL (fixed)')}</span>
         <ExternalLink href={service.url} />
       </section>
 
       <section className="flex flex-col gap-2">
-        <h3 className="text-body-medium">Deploy history</h3>
+        <h3 className="text-body-medium">{t('Deploy history')}</h3>
         {history.isPending ? (
           <Skeleton className="h-24 w-full" />
         ) : (history.data?.items.length ?? 0) === 0 ? (
-          <p className="text-small text-fg-muted">No deploys yet.</p>
+          <p className="text-small text-fg-muted">{t('No deploys yet.')}</p>
         ) : (
           <ul className="flex flex-col gap-2">
             {history.data?.items.slice(0, 4).map((request) => (
@@ -142,7 +153,7 @@ export function ServicePanel({
 
       <div className="flex flex-col gap-2">
         <RoleButton requires="DEVELOPER" onClick={() => setDeployOpen(true)}>
-          Deploy
+          {t('Deploy')}
         </RoleButton>
         {previous && (
           <RoleButton
@@ -156,7 +167,7 @@ export function ServicePanel({
               })
             }
           >
-            Roll back to <span className="font-mono">{shortSha(previous.commitSha)}</span>
+            {t('Roll back to {{sha}}', { sha: shortSha(previous.commitSha) })}
           </RoleButton>
         )}
       </div>

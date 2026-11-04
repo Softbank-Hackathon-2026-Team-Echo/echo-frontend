@@ -1,3 +1,4 @@
+import { t } from '@/lib/i18n';
 import type { WeightPoint } from '@/lib/migration-metrics';
 
 const WIDTH = 560;
@@ -51,19 +52,22 @@ export function TrafficChart({
         </span>
         <span className="flex items-center gap-1.5">
           <span aria-hidden className="size-2.5 rounded-xs bg-danger-solid" />
-          Error rate (judged)
+          {t('Error rate (judged)')}
         </span>
       </figcaption>
       {points.length < 2 ? (
         <p className="flex h-44 items-center justify-center text-small text-fg-muted">
-          The graph starts when the first traffic step is applied.
+          {t('The graph starts when the first traffic step is applied.')}
         </p>
       ) : (
         <svg
           viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
           className="h-44 w-full"
           role="img"
-          aria-label={`Traffic share moving from ${sourceName} to ${targetName}`}
+          aria-label={t('Traffic share moving from {{source}} to {{target}}', {
+            source: sourceName,
+            target: targetName,
+          })}
         >
           {[0, 50, 100].map((value) => (
             <g key={value}>
@@ -104,7 +108,7 @@ export function TrafficChart({
               r={3}
               className="fill-danger-solid"
             >
-              <title>error rate {point.errorRate}%</title>
+              <title>{t('error rate {{rate}}%', { rate: point.errorRate ?? 0 })}</title>
             </circle>
           ))}
         </svg>

@@ -30,14 +30,16 @@ import {
 } from '@/lib/api/evacuation';
 import { useCurrentOrg } from '@/lib/api/me';
 import { useServiceDetails, useServices } from '@/lib/api/services';
+import { t } from '@/lib/i18n';
 import { providerLabel } from '@/lib/status';
 import { CandidateCard } from './CandidateCard';
 import { WizardSteps } from './WizardSteps';
 
 const EXCLUDED_TEXT: Record<ExcludedReason, (km: number | null) => string> = {
-  INSIDE_RADIUS: (km) => `Inside impact radius (${km} km from the epicenter).`,
-  UNHEALTHY: () => 'Connection check failed. Fix the environment to use it as a target.',
-  UNKNOWN_LOCATION: () => 'Location unknown, so distance from the epicenter cannot be checked.',
+  INSIDE_RADIUS: (km) =>
+    t('Inside impact radius ({{km}} km from the epicenter).', { km: km ?? '—' }),
+  UNHEALTHY: () => t('Connection check failed. Fix the environment to use it as a target.'),
+  UNKNOWN_LOCATION: () => t('Location unknown, so distance from the epicenter cannot be checked.'),
 };
 
 function duration(seconds: number) {
@@ -78,11 +80,13 @@ export default function EvacuationPage() {
   if (!disaster) {
     return (
       <>
-        <PageHeader title="Evacuation" />
+        <PageHeader title={t('Evacuation')} />
         <EmptyState
           icon={ShieldCheck}
-          title="No active disaster"
-          description="Evacuation targets appear when a disaster puts an environment at risk. Use Simulate disaster in the top bar to try it."
+          title={t('No active disaster')}
+          description={t(
+            'Evacuation targets appear when a disaster puts an environment at risk. Use Simulate disaster in the top bar to try it.',
+          )}
         />
       </>
     );
@@ -100,11 +104,11 @@ export default function EvacuationPage() {
   if (atRisk.length === 0) {
     return (
       <>
-        <PageHeader title="Evacuation" description={`${disasterTitle} · simulated`} />
+        <PageHeader title={t('Evacuation')} description={`${disasterTitle} · simulated`} />
         <EmptyState
           icon={ShieldCheck}
-          title={details.isPending ? 'Checking services…' : 'No services at risk'}
-          description="No service is serving from an environment inside the impact radius."
+          title={details.isPending ? t('Checking services…') : t('No services at risk')}
+          description={t('No service is serving from an environment inside the impact radius.')}
         />
       </>
     );
@@ -127,15 +131,18 @@ export default function EvacuationPage() {
   return (
     <>
       <PageHeader
-        title="Choose an evacuation target"
-        description={`${source?.name ?? service.name} is at risk. Candidates are registered environments outside the ${disaster.radiusKm} km radius.`}
+        title={t('Choose an evacuation target')}
+        description={t(
+          '{{name}} is at risk. Candidates are registered environments outside the {{km}} km radius.',
+          { name: source?.name ?? service.name, km: disaster.radiusKm },
+        )}
         actions={
           <>
             <Button asChild variant="outline">
-              <Link to={`/o/${organization.slug}`}>Back to dashboard</Link>
+              <Link to={`/o/${organization.slug}`}>{t('Back to dashboard')}</Link>
             </Button>
             <RoleButton requires="DEVELOPER" disabled={!selected} onClick={startPrecheck}>
-              Run AI pre-check
+              {t('Run AI pre-check')}
             </RoleButton>
           </>
         }
@@ -154,7 +161,7 @@ export default function EvacuationPage() {
               setSearchParams({ service: value });
             }}
           >
-            <SelectTrigger className="ml-auto w-56" aria-label="Service">
+            <SelectTrigger className="ml-auto w-56" aria-label={t('Service')}>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -173,20 +180,22 @@ export default function EvacuationPage() {
           role="status"
           className="rounded-lg bg-migrating-bg px-3 py-2 text-body text-migrating-fg"
         >
-          {service.name} already has an open migration plan.{' '}
+          {t('{{name}} already has an open migration plan.', { name: service.name })}{' '}
           <Link
             className="underline"
             to={`plan?service=${service.id}&target=${selected?.environmentId ?? ''}&plan=${service.activeMigrationPlanId}`}
           >
-            Open the plan
+            {t('Open the plan')}
           </Link>
         </p>
       )}
 
       {!meetsEvacuationThreshold(disaster) && (
         <p role="status" className="rounded-lg bg-subtle px-3 py-2 text-small text-fg-secondary">
-          This earthquake is below the M{EVACUATION_MIN_MAGNITUDE.toFixed(1)} evacuation threshold,
-          so EchoPort does not propose a move. You can still plan one.
+          {t(
+            'This earthquake is below the M{{magnitude}} evacuation threshold, so EchoPort does not propose a move. You can still plan one.',
+            { magnitude: EVACUATION_MIN_MAGNITUDE.toFixed(1) },
+          )}
         </p>
       )}
 
@@ -198,12 +207,18 @@ export default function EvacuationPage() {
           <TriangleAlert aria-hidden className="mt-0.5 size-4 shrink-0" />
           <div className="flex flex-col gap-0.5">
             <p className="text-body-medium">
-              Source: {source.name} ({providerLabel(source.kind)}
-              {source.location && ` · ${source.location}`})
+              {t('Source: {{name}} ({{place}})', {
+                name: source.name,
+                place: source.location
+                  ? `${providerLabel(source.kind)} · ${source.location}`
+                  : providerLabel(source.kind),
+              })}
             </p>
             <p className="text-small">
-              Inside the impact radius ({ranking.source.distanceKm} km from the epicenter). Traffic
-              and writes must move before the disaster escalates.
+              {t(
+                'Inside the impact radius ({{km}} km from the epicenter). Traffic and writes must move before the disaster escalates.',
+                { km: ranking.source.distanceKm ?? '—' },
+              )}
             </p>
           </div>
         </div>
@@ -211,16 +226,20 @@ export default function EvacuationPage() {
 
       <div className="flex items-start gap-3 max-wide:flex-col">
         <fieldset className="grid flex-1 grid-cols-2 gap-3 max-compact:grid-cols-1 max-wide:w-full">
-          <legend className="sr-only">Evacuation target</legend>
+          <legend className="sr-only">{t('Evacuation target')}</legend>
           {ranking.candidates.length === 0 ? (
             <EmptyState
               className="col-span-full"
               icon={MapPinOff}
-              title="No safe environment"
-              description="Every registered environment is inside the radius or unavailable. Register an environment in another region."
+              title={t('No safe environment')}
+              description={t(
+                'Every registered environment is inside the radius or unavailable. Register an environment in another region.',
+              )}
               action={
                 <Button asChild variant="outline" size="sm">
-                  <Link to={`/o/${organization.slug}/settings/environments`}>Add environment</Link>
+                  <Link to={`/o/${organization.slug}/settings/environments`}>
+                    {t('Add environment')}
+                  </Link>
                 </Button>
               }
             />
@@ -244,7 +263,7 @@ export default function EvacuationPage() {
         <aside className="flex w-80 shrink-0 flex-col gap-3 max-wide:w-full">
           {ranking.excluded.length > 0 && (
             <section className="flex flex-col gap-2 rounded-xl border border-dashed border-line-strong bg-subtle p-4">
-              <h2 className="text-label text-fg-secondary">Excluded</h2>
+              <h2 className="text-label text-fg-secondary">{t('Excluded')}</h2>
               {ranking.excluded.map((item) => (
                 <div key={item.environmentId} className="flex flex-col gap-0.5">
                   <span className="font-mono text-mono">
@@ -253,14 +272,14 @@ export default function EvacuationPage() {
                   <span className="text-small text-fg-secondary">
                     {EXCLUDED_TEXT[item.reason](item.distanceKm)}
                     {item.environmentId === ranking.source?.environmentId &&
-                      ' Source of this migration.'}
+                      ` ${t('Source of this migration.')}`}
                   </span>
                 </div>
               ))}
             </section>
           )}
           <section className="flex flex-col gap-2.5 rounded-xl border border-line bg-surface p-4">
-            <h2 className="text-title">Why this ranking</h2>
+            <h2 className="text-title">{t('Why this ranking')}</h2>
             <dl className="flex flex-col gap-2.5">
               {SCORE_RULES.map((rule) => (
                 <div key={rule.key} className="flex flex-col gap-0.5">
@@ -275,7 +294,9 @@ export default function EvacuationPage() {
               ))}
             </dl>
             <p className="text-caption text-fg-muted">
-              Scores are rule-based. The AI pre-check (next) tests the chosen target in a sandbox.
+              {t(
+                'Scores are rule-based. The AI pre-check (next) tests the chosen target in a sandbox.',
+              )}
             </p>
           </section>
         </aside>
@@ -284,11 +305,14 @@ export default function EvacuationPage() {
       {selected && selectedEnv && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line bg-surface px-4 py-3">
           <p className="text-body-medium">
-            Selected: {selectedEnv.name} · score {selected.score} · est. migration{' '}
-            {duration(estimatedMigrationSeconds(selected))}
+            {t('Selected: {{name}} · score {{score}} · est. migration {{duration}}', {
+              name: selectedEnv.name,
+              score: selected.score,
+              duration: duration(estimatedMigrationSeconds(selected)),
+            })}
           </p>
           <RoleButton requires="DEVELOPER" onClick={startPrecheck}>
-            Run AI pre-check on {selectedEnv.name}
+            {t('Run AI pre-check on {{name}}', { name: selectedEnv.name })}
             <ArrowRight aria-hidden />
           </RoleButton>
         </div>

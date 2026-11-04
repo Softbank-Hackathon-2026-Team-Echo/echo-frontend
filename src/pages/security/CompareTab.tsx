@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/select';
 import { useSecurityCompare } from '@/lib/api/security';
 import type { EnvironmentSummary } from '@/lib/api/types';
+import { t } from '@/lib/i18n';
 
 type CompareTabProps = { orgId: string; environments: EnvironmentSummary[] };
 
@@ -52,14 +53,14 @@ export function CompareTab({ orgId, environments }: CompareTabProps) {
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-3">
         <EnvironmentSelect
-          label="Source environment"
+          label={t('Source environment')}
           value={source}
           onChange={(value) => setPicked({ ...picked, source: value })}
           environments={environments}
         />
-        <span className="text-body-medium text-fg-muted">vs</span>
+        <span className="text-body-medium text-fg-muted">{t('vs')}</span>
         <EnvironmentSelect
-          label="Target environment"
+          label={t('Target environment')}
           value={target}
           onChange={(value) => setPicked({ ...picked, target: value })}
           environments={environments}

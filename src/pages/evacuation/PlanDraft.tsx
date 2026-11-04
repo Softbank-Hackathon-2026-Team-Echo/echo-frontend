@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { fieldErrors, formErrorMessage } from '@/lib/api/form-errors';
 import { useCreateMigrationPlan } from '@/lib/api/migrations';
 import type { MigrationPlan } from '@/lib/api/types';
+import { t } from '@/lib/i18n';
 import {
   DEFAULT_CONDITIONS,
   DEFAULT_MAX_WAIT_SECONDS,
@@ -111,8 +112,15 @@ export function PlanDraft({
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-3">
       <PageHeader
-        title="Plan the migration"
-        description={`${sourceName} → ${targetName} · est. ${duration(total)} · approval needed within 24 hours`}
+        title={t('Plan the migration')}
+        description={t(
+          '{{source}} → {{target}} · est. {{duration}} · approval needed within 24 hours',
+          {
+            source: sourceName,
+            target: targetName,
+            duration: duration(total),
+          },
+        )}
         actions={
           <RoleButton
             requires="DEVELOPER"
@@ -120,7 +128,7 @@ export function PlanDraft({
             disabledReason={blockedReason}
             disabled={create.isPending}
           >
-            Create plan
+            {t('Create plan')}
           </RoleButton>
         }
       />
@@ -128,17 +136,17 @@ export function PlanDraft({
       <FormError message={formErrorMessage(create.error, FIELDS)} />
       <div className="flex items-start gap-3 max-wide:flex-col">
         <section className="flex flex-1 flex-col gap-3 rounded-xl border border-line bg-surface p-4 max-wide:w-full">
-          <h2 className="text-title">Stages</h2>
+          <h2 className="text-title">{t('Stages')}</h2>
           <StageList stages={planStages(steps, conditions, targetName)} />
         </section>
         <section className="flex w-96 shrink-0 flex-col gap-3 rounded-xl border border-line bg-surface p-4 max-wide:w-full">
-          <h2 className="text-title">Each traffic step passes when</h2>
+          <h2 className="text-title">{t('Each traffic step passes when')}</h2>
           <div className="grid grid-cols-3 gap-2">
             {(['10%', '50%', '100%'] as const).map((label, index) => (
               <NumberField
                 key={label}
                 id={`plan-required-${index}`}
-                label={`${label} · requests`}
+                label={t('{{weight}} · requests', { weight: label })}
                 value={required[index] ?? 0}
                 error={index === 0 ? errors.requiredRequests : undefined}
                 onChange={(value) =>
@@ -149,19 +157,21 @@ export function PlanDraft({
           </div>
           <NumberField
             id="plan-max-wait"
-            label="Wait at most per step (s)"
+            label={t('Wait at most per step (s)')}
             value={maxWaitSeconds}
             error={errors.maxWaitSeconds}
             onChange={setMaxWaitSeconds}
           />
           <p className="text-caption text-fg-muted">
-            {targetName} has to handle that many requests. A quiet service passes as low traffic; if
-            only {sourceName} keeps receiving them, the step fails.
+            {t(
+              '{{target}} has to handle that many requests. A quiet service passes as low traffic; if only {{source}} keeps receiving them, the step fails.',
+              { target: targetName, source: sourceName },
+            )}
           </p>
-          <h2 className="pt-2 text-title">Automatic rollback when</h2>
+          <h2 className="pt-2 text-title">{t('Automatic rollback when')}</h2>
           <NumberField
             id="plan-error-rate"
-            label="Error rate above (%)"
+            label={t('Error rate above (%)')}
             step="0.1"
             value={conditions.maxErrorRatePercent}
             error={errors['rollbackConditions.maxErrorRatePercent']}
@@ -169,22 +179,23 @@ export function PlanDraft({
           />
           <NumberField
             id="plan-p95"
-            label="p95 latency above (ms, advisory)"
+            label={t('p95 latency above (ms, advisory)')}
             value={conditions.maxP95Ms}
             error={errors['rollbackConditions.maxP95Ms']}
             onChange={(value) => setConditions({ ...conditions, maxP95Ms: value })}
           />
           <NumberField
             id="plan-lag"
-            label="Replication lag above (s)"
+            label={t('Replication lag above (s)')}
             step="0.1"
             value={conditions.maxReplicationLagSeconds}
             error={errors['rollbackConditions.maxReplicationLagSeconds']}
             onChange={(value) => setConditions({ ...conditions, maxReplicationLagSeconds: value })}
           />
           <p className="text-caption text-fg-muted">
-            A failed health check always rolls back. p95 is shown for reference and does not fail a
-            step.
+            {t(
+              'A failed health check always rolls back. p95 is shown for reference and does not fail a step.',
+            )}
           </p>
           <FailureInjection
             value={simulate}
@@ -192,7 +203,10 @@ export function PlanDraft({
             error={errors.simulate}
             unavailableReason={
               realTarget
-                ? `Not available: ${targetName} runs on real executors, which refuse injected failures.`
+                ? t(
+                    'Not available: {{target}} runs on real executors, which refuse injected failures.',
+                    { target: targetName },
+                  )
                 : undefined
             }
           />

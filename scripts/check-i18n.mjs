@@ -14,12 +14,12 @@ function sources(dir) {
   });
 }
 
-const unescape = (text) => text.replace(/\\(['"`\\])/g, '$1');
+const unquote = (text) => text.replace(/\\(['"`\\])/g, '$1');
 const keys = new Map();
 const dynamic = [];
 for (const path of sources('src')) {
   for (const match of readFileSync(path, 'utf8').matchAll(CALL)) {
-    const key = unescape(match[1] ?? match[2] ?? match[3]);
+    const key = unquote(match[1] ?? match[2] ?? match[3]);
     if (match[3] !== undefined && key.includes('${')) dynamic.push(`${path}: ${key}`);
     else keys.set(key, path);
   }

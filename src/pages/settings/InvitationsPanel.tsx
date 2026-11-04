@@ -4,6 +4,7 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useInvitations, useMembers, useRevokeInvitation } from '@/lib/api/members';
 import { dateTime } from '@/lib/format';
+import { t } from '@/lib/i18n';
 import { roleLabel } from '@/lib/roles';
 
 /** 초대 대기 목록(어드민만). 수락·만료·취소된 것은 목록에서 뺀다 */
@@ -16,13 +17,13 @@ export function InvitationsPanel({ orgId, isAdmin }: { orgId: string; isAdmin: b
   return (
     <section className="flex flex-col gap-3 rounded-lg border border-line bg-surface p-4">
       <header className="flex flex-col gap-0.5">
-        <h2 className="text-title">Pending invitations</h2>
+        <h2 className="text-title">{t('Pending invitations')}</h2>
         <p className="text-small text-fg-secondary">
-          Applied when the person signs in with that GitHub account. Expires after 7 days.
+          {t('Applied when the person signs in with that GitHub account. Expires after 7 days.')}
         </p>
       </header>
       {!isAdmin ? (
-        <p className="text-small text-fg-muted">Only admins can see and send invitations.</p>
+        <p className="text-small text-fg-muted">{t('Only admins can see and send invitations.')}</p>
       ) : invitations.isError ? (
         <ErrorState error={invitations.error} onRetry={() => invitations.refetch()} />
       ) : invitations.isPending ? (
@@ -31,7 +32,7 @@ export function InvitationsPanel({ orgId, isAdmin }: { orgId: string; isAdmin: b
         (() => {
           const pending = invitations.data.items.filter((item) => item.status === 'PENDING');
           if (pending.length === 0) {
-            return <p className="text-small text-fg-muted">No pending invitations.</p>;
+            return <p className="text-small text-fg-muted">{t('No pending invitations.')}</p>;
           }
           return (
             <ul className="flex flex-col divide-y divide-line border-t border-line">
@@ -40,8 +41,10 @@ export function InvitationsPanel({ orgId, isAdmin }: { orgId: string; isAdmin: b
                   <span className="font-mono text-mono">@{invitation.githubLogin}</span>
                   <StatusBadge label={roleLabel(invitation.role)} tone="neutral" />
                   <span className="text-caption text-fg-muted">
-                    invited by @{logins.get(invitation.invitedByUserId) ?? 'unknown'} · expires{' '}
-                    {dateTime(invitation.expiresAt)}
+                    {t('invited by @{{login}}', {
+                      login: logins.get(invitation.invitedByUserId) ?? t('unknown'),
+                    })}{' '}
+                    · {t('expires {{time}}', { time: dateTime(invitation.expiresAt) })}
                   </span>
                   <RoleButton
                     requires="ADMIN"
@@ -51,7 +54,7 @@ export function InvitationsPanel({ orgId, isAdmin }: { orgId: string; isAdmin: b
                     disabled={revoke.isPending}
                     onClick={() => revoke.mutate(invitation.id)}
                   >
-                    Revoke
+                    {t('Revoke')}
                   </RoleButton>
                 </li>
               ))}

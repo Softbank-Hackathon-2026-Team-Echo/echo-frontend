@@ -9,6 +9,9 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { t } from '@/lib/i18n';
+
+const NAME_SLOT = '\u0000';
 
 type ConfirmDeleteDialogProps = {
   open: boolean;
@@ -32,6 +35,8 @@ export function ConfirmDeleteDialog({
   onConfirm,
 }: ConfirmDeleteDialogProps) {
   const [typed, setTyped] = useState('');
+  // 언어마다 이름 자리가 달라서 번역문을 이름 자리에서 나눠 이름만 mono 로 그린다
+  const [before, after] = t('Type {{name}} to confirm.', { name: NAME_SLOT }).split(NAME_SLOT);
   return (
     <Dialog
       open={open}
@@ -47,7 +52,9 @@ export function ConfirmDeleteDialog({
         </DialogHeader>
         <div className="flex flex-col gap-1.5 text-body">
           <label htmlFor="confirm-delete-name">
-            Type <span className="font-mono text-mono">{name}</span> to confirm.
+            {before}
+            <span className="font-mono text-mono">{name}</span>
+            {after}
           </label>
           <Input
             id="confirm-delete-name"
@@ -58,10 +65,10 @@ export function ConfirmDeleteDialog({
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {t('Cancel')}
           </Button>
           <Button variant="destructive" disabled={typed !== name || pending} onClick={onConfirm}>
-            {pending ? 'Deleting…' : 'Delete'}
+            {pending ? t('Deleting…') : t('Delete')}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -1,26 +1,35 @@
+import { k, t } from '../i18n';
 import { describeApiError, isApiError } from './errors';
 
 // 422 details[].reason → 칸 아래 문구. 모르는 이유는 코드를 사람이 읽게 바꿔 보여 준다
 const REASONS: Record<string, string> = {
-  INVALID_SECRET_REF:
+  INVALID_SECRET_REF: k(
     'Use a secret location like env:ECHO_SECRET_…, k8s:ns/secret/key, aws-sm:… or gcp-sm:…',
-  SECRET_REF_NOT_IN_ORGANIZATION:
+  ),
+  SECRET_REF_NOT_IN_ORGANIZATION: k(
     "env: secrets must start with this organization's ECHO_SECRET_<ORG>__ prefix.",
-  INVALID_REPO_URL: 'Use https://github.com/<owner>/<repo>.',
-  EXACTLY_ONE_OF_BRANCH_OR_COMMIT_SHA: 'Enter a branch or a commit, not both.',
-  ENVIRONMENT_NAME_CONFLICT: 'This name is already used in this organization.',
-  SERVICE_NAME_CONFLICT: 'This name is already used in this organization.',
-  GITHUB_USER_NOT_FOUND: 'No GitHub user has this username.',
-  ALREADY_MEMBER: 'That GitHub user is already a member.',
-  EXPIRES_IN_DAYS_TOO_LONG: 'Tokens can last at most 90 days.',
-  SAME_ENVIRONMENT: 'The target must be a different environment from the source.',
-  NO_DEPLOYMENT: 'The target has no deployment of this service yet. Deploy to it first.',
-  VERSION_MISMATCH:
+  ),
+  INVALID_REPO_URL: k('Use https://github.com/<owner>/<repo>.'),
+  EXACTLY_ONE_OF_BRANCH_OR_COMMIT_SHA: k('Enter a branch or a commit, not both.'),
+  ENVIRONMENT_NAME_CONFLICT: k('This name is already used in this organization.'),
+  SERVICE_NAME_CONFLICT: k('This name is already used in this organization.'),
+  GITHUB_USER_NOT_FOUND: k('No GitHub user has this username.'),
+  ALREADY_MEMBER: k('That GitHub user is already a member.'),
+  EXPIRES_IN_DAYS_TOO_LONG: k('Tokens can last at most 90 days.'),
+  SAME_ENVIRONMENT: k('The target must be a different environment from the source.'),
+  NO_DEPLOYMENT: k('The target has no deployment of this service yet. Deploy to it first.'),
+  VERSION_MISMATCH: k(
     'The target runs a different version. Wait for the standby to sync, or deploy to it.',
-  LAST_SYNC_FAILED: 'The last standby sync failed.',
-  SIMULATE_NOT_ALLOWED: 'Failure injection only works while the API runs simulated executors.',
-  SIMULATE_REASON_STEP_MISMATCH: 'That failure cannot happen at this step.',
+  ),
+  LAST_SYNC_FAILED: k('The last standby sync failed.'),
+  SIMULATE_NOT_ALLOWED: k('Failure injection only works while the API runs simulated executors.'),
+  SIMULATE_REASON_STEP_MISMATCH: k('That failure cannot happen at this step.'),
 };
+
+function reasonText(reason: string): string | undefined {
+  const text = REASONS[reason];
+  return text ? t(text) : undefined;
+}
 
 function humanize(reason: string): string {
   const text = reason.toLowerCase().replaceAll('_', ' ');
@@ -38,10 +47,10 @@ export function fieldErrors(error: unknown): Record<string, string> {
   for (const detail of error.details) {
     if (detail.field === 'installUrl') continue;
     const field = detail.field.replace(/^body\./, '');
-    errors[field] = REASONS[detail.reason] ?? humanize(detail.reason);
+    errors[field] = reasonText(detail.reason) ?? humanize(detail.reason);
   }
   if (Object.keys(errors).length === 0) {
-    errors._form = REASONS[error.code] ?? describeApiError(error);
+    errors._form = reasonText(error.code) ?? describeApiError(error);
   }
   return errors;
 }
@@ -55,7 +64,7 @@ export function formErrorMessage(
   const errors = fieldErrors(error);
   if (shownFields.some((field) => errors[field])) return errors._form;
   const reasons = isApiError(error)
-    ? error.details.map((detail) => REASONS[detail.reason]).filter(Boolean)
+    ? error.details.map((detail) => reasonText(detail.reason)).filter(Boolean)
     : [];
   return [describeApiError(error), ...reasons].join(' ');
 }

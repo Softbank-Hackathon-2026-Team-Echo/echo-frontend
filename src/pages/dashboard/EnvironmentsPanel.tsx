@@ -2,6 +2,7 @@ import { Panel } from '@/components/Panel';
 import { ProviderLabel } from '@/components/ProviderLabel';
 import { StatusBadge } from '@/components/StatusBadge';
 import type { EnvironmentSummary } from '@/lib/api/types';
+import { t } from '@/lib/i18n';
 import { envRoleView } from '@/lib/status';
 import type { ServiceOnEnvironment } from './types';
 
@@ -18,7 +19,7 @@ export function EnvironmentsPanel({
   className?: string;
 }) {
   return (
-    <Panel title="Environments" className={className}>
+    <Panel title={t('Environments')} className={className}>
       <ul className="flex flex-col gap-2">
         {environments.map((environment) => {
           const role = byEnvironment.get(environment.id)?.[0]?.link.role;
@@ -29,11 +30,11 @@ export function EnvironmentsPanel({
                 <span className="truncate font-mono text-mono">{environment.name}</span>
               </span>
               {atRisk.has(environment.id) ? (
-                <StatusBadge label="At risk" tone="warning" />
+                <StatusBadge label={t('At risk')} tone="warning" />
               ) : role ? (
                 <StatusBadge {...envRoleView(role)} />
               ) : (
-                <StatusBadge label="Idle" tone="neutral" />
+                <StatusBadge label={t('Idle')} tone="neutral" />
               )}
             </li>
           );

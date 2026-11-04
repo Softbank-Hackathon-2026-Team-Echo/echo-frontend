@@ -53,7 +53,7 @@ import { useActiveDisasters } from '@/lib/api/disasters';
 import { useOrgEvents } from '@/lib/api/events';
 import { useCurrentOrg } from '@/lib/api/me';
 import type { Organization, User } from '@/lib/api/types';
-import { LOCALE_LABELS, t } from '@/lib/i18n';
+import { k, LOCALE_LABELS, t } from '@/lib/i18n';
 import { setMonitoringUser } from '@/lib/monitoring';
 import { roleLabel } from '@/lib/roles';
 import { prefetchRoute } from '@/lib/route-prefetch';
@@ -61,30 +61,31 @@ import { CreateOrgDialog } from './CreateOrgDialog';
 
 // 와이어프레임 v2 사이드바: 대시보드 + 묶음 3개, 설정은 아래 (노션 IA 1절)
 const NAV_GROUPS = [
-  { label: 'Operate', items: [{ to: 'services', label: 'Services', icon: Server }] },
+  { label: k('Operate'), items: [{ to: 'services', label: k('Services'), icon: Server }] },
   {
-    label: 'Resilience',
+    label: k('Resilience'),
     items: [
-      { to: 'evacuation', label: 'Evacuation', icon: MapPin },
-      { to: 'migrations', label: 'Migrations', icon: ArrowLeftRight },
+      { to: 'evacuation', label: k('Evacuation'), icon: MapPin },
+      { to: 'migrations', label: k('Migrations'), icon: ArrowLeftRight },
     ],
   },
   {
-    label: 'Govern',
+    label: k('Govern'),
     items: [
-      { to: 'security', label: 'Security', icon: ShieldCheck },
-      { to: 'audit', label: 'Audit log', icon: History },
+      { to: 'security', label: k('Security'), icon: ShieldCheck },
+      { to: 'audit', label: k('Audit log'), icon: History },
     ],
   },
 ] as const;
 
 const THEME_ICONS: Record<Theme, typeof Sun> = { light: Sun, dark: Moon, projector: Projector };
 const THEME_LABELS: Record<Theme, string> = {
-  light: 'Light',
-  dark: 'Dark',
-  projector: 'Projector',
+  light: k('Light'),
+  dark: k('Dark'),
+  projector: k('Projector'),
 };
 
+/** crumb 은 k 로 적은 영어 문구이고 브레드크럼이 그릴 때 번역한다 */
 export type RouteHandle = { crumb?: string };
 
 function NavItem({
@@ -157,13 +158,13 @@ function UserMenu({ user, organization }: { user: User; organization: Organizati
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent side="top" align="start" className="w-52">
-        <DropdownMenuLabel>Theme</DropdownMenuLabel>
+        <DropdownMenuLabel>{t('Theme')}</DropdownMenuLabel>
         {themes.map((name) => {
           const ItemIcon = THEME_ICONS[name];
           return (
             <DropdownMenuItem key={name} onSelect={() => setTheme(name)}>
               <ItemIcon aria-hidden />
-              <span className="flex-1">{THEME_LABELS[name]}</span>
+              <span className="flex-1">{t(THEME_LABELS[name])}</span>
               {name === theme && <Check aria-hidden />}
             </DropdownMenuItem>
           );
@@ -179,7 +180,7 @@ function UserMenu({ user, organization }: { user: User; organization: Organizati
         <DropdownMenuSeparator />
         <DropdownMenuItem disabled={logout.isPending} onSelect={() => logout.mutate()}>
           <LogOut aria-hidden />
-          Sign out
+          {t('Sign out')}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -198,26 +199,26 @@ function Sidebar({
   return (
     <aside className="flex w-sidebar shrink-0 flex-col border-r border-line bg-surface max-compact:w-sidebar-collapsed">
       <div className="flex h-16 items-center px-5 max-compact:justify-center max-compact:px-0">
-        <Link to={`/o/${organization.slug}`} aria-label="EchoPort home">
+        <Link to={`/o/${organization.slug}`} aria-label={t('EchoPort home')}>
           <Logo className="max-compact:hidden" />
           <Logo variant="app-icon" className="compact:hidden" />
         </Link>
       </div>
-      <nav aria-label="Main" className="flex flex-1 flex-col gap-1 px-3">
-        <NavItem to="" label="Dashboard" icon={LayoutDashboard} end badge={atRiskCount} />
+      <nav aria-label={t('Main')} className="flex flex-1 flex-col gap-1 px-3">
+        <NavItem to="" label={t('Dashboard')} icon={LayoutDashboard} end badge={atRiskCount} />
         {NAV_GROUPS.map((group) => (
           <div key={group.label} className="flex flex-col gap-1 pt-3">
             <span className="px-3 pb-1 text-overline uppercase text-fg-muted max-compact:sr-only">
-              {group.label}
+              {t(group.label)}
             </span>
             {group.items.map((item) => (
-              <NavItem key={item.label} {...item} />
+              <NavItem key={item.label} {...item} label={t(item.label)} />
             ))}
           </div>
         ))}
       </nav>
       <div className="flex flex-col gap-1 p-3">
-        <NavItem to="settings" label="Settings" icon={Settings} />
+        <NavItem to="settings" label={t('Settings')} icon={Settings} />
         <UserMenu user={user} organization={organization} />
       </div>
     </aside>
@@ -230,11 +231,13 @@ function Breadcrumb() {
     .map((match) => (match.handle as RouteHandle | undefined)?.crumb)
     .filter((crumb): crumb is string => Boolean(crumb));
   return (
-    <nav aria-label="Breadcrumb" className="flex min-w-0 items-center gap-1.5 text-body">
+    <nav aria-label={t('Breadcrumb')} className="flex min-w-0 items-center gap-1.5 text-body">
       {crumbs.map((crumb, index) => (
         <span key={crumb} className="flex items-center gap-1.5">
           {index > 0 && <ChevronRight aria-hidden className="size-3.5 text-fg-muted" />}
-          <span className={index === crumbs.length - 1 ? 'text-fg' : 'text-fg-muted'}>{crumb}</span>
+          <span className={index === crumbs.length - 1 ? 'text-fg' : 'text-fg-muted'}>
+            {t(crumb)}
+          </span>
         </span>
       ))}
     </nav>
@@ -259,25 +262,25 @@ function OrgSwitcher({
         <DropdownMenuTrigger asChild>
           <Button variant="outline" className="w-48 justify-between max-compact:w-auto">
             <span className="truncate">
-              <span className="text-fg-muted max-compact:hidden">Org · </span>
+              <span className="text-fg-muted max-compact:hidden">{t('Org')} · </span>
               {current.name}
             </span>
             <ChevronDown aria-hidden className="text-fg-muted" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">
-          <DropdownMenuLabel>Organizations</DropdownMenuLabel>
+          <DropdownMenuLabel>{t('Organizations')}</DropdownMenuLabel>
           {organizations.map((org) => (
             <DropdownMenuItem key={org.id} onSelect={() => navigate(`/o/${org.slug}${subPath}`)}>
               <span className="flex-1 truncate">{org.name}</span>
-              {org.personal && <span className="text-caption text-fg-muted">Personal</span>}
+              {org.personal && <span className="text-caption text-fg-muted">{t('Personal')}</span>}
               {org.id === current.id && <Check aria-hidden />}
             </DropdownMenuItem>
           ))}
           <DropdownMenuSeparator />
           <DropdownMenuItem onSelect={() => setCreateOpen(true)}>
             <Plus aria-hidden />
-            Create organization
+            {t('Create organization')}
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -302,9 +305,9 @@ function Topbar({
           <OrgSwitcher organizations={organizations} current={organization} />
           <RoleButton requires="DEVELOPER" variant="outline" onClick={() => setDisasterOpen(true)}>
             <Zap aria-hidden />
-            <span className="max-compact:sr-only">Simulate disaster</span>
+            <span className="max-compact:sr-only">{t('Simulate disaster')}</span>
           </RoleButton>
-          <Button variant="ghost" size="icon" aria-label="Notifications">
+          <Button variant="ghost" size="icon" aria-label={t('Notifications')}>
             <Bell aria-hidden />
           </Button>
         </div>
@@ -351,11 +354,13 @@ export function AppShell() {
         <EmptyState
           className="w-full"
           icon={Server}
-          title="Organization not found"
-          description={`You are not a member of "${slug}", or it does not exist.`}
+          title={t('Organization not found')}
+          description={t('You are not a member of "{{slug}}", or it does not exist.', {
+            slug: slug ?? '',
+          })}
           action={
             <Button asChild variant="outline" size="sm">
-              <Link to="/">Back to organizations</Link>
+              <Link to="/">{t('Back to organizations')}</Link>
             </Button>
           }
         />

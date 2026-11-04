@@ -1,5 +1,6 @@
 import type { Stage, StageState } from '@/components/StageList';
 import type { MigrationPlan, MigrationStep } from '@/lib/api/types';
+import { t } from './i18n';
 
 // API 서버 8 단계는 고정이다: 사전 확인 → 90/10 → 50/50 → 데이터 동기화 확인 → 0/100
 const STEP_OVERHEAD_SECONDS = 2;
@@ -60,6 +61,9 @@ const RESULT_STATE: Record<string, StageState> = {
   SKIPPED: 'skipped',
 };
 
+const metaLine = (...parts: (string | null | undefined | false)[]) =>
+  parts.filter(Boolean).join(' · ');
+
 export function planStages(
   steps: StepLike[],
   conditions: Pick<MigrationPlan['rollbackConditions'], 'maxReplicationLagSeconds'>,
@@ -67,28 +71,52 @@ export function planStages(
 ): Stage[] {
   return steps.map((step) => {
     const seconds = `${step.expectedSeconds}s`;
-    const failure = step.result?.failureCode ? ` · ${step.result.failureCode}` : '';
+    const failure = step.result?.failureCode;
     const state = RESULT_STATE[step.result?.status ?? 'PENDING'] ?? 'pending';
     if (step.kind === 'PREFLIGHT') {
       return {
         key: String(step.index),
-        title: 'Pre-check',
-        meta: `${seconds} · health check · same image on ${targetName}${failure}`,
+        title: t('Pre-check'),
+        meta: metaLine(
+          seconds,
+          t('health check'),
+          t('same image on {{target}}', { target: targetName }),
+          failure,
+        ),
         state,
       };
     }
     if (step.kind === 'DATA_SYNC_CHECK') {
       return {
         key: String(step.index),
-        title: 'Data sync check',
-        meta: `${seconds} · replication lag ≤ ${conditions.maxReplicationLagSeconds}s${failure}`,
+        title: t('Data sync check'),
+        meta: metaLine(
+          seconds,
+          t('replication lag ≤ {{seconds}}s', { seconds: conditions.maxReplicationLagSeconds }),
+          failure,
+        ),
         state,
       };
     }
+    const required = step.requiredRequests ?? '—';
     return {
       key: String(step.index),
-      title: `Shift traffic → ${step.targetWeight}% on ${targetName}`,
-      meta: `${seconds} · ${step.requiredRequests ?? '—'} requests on ${targetName}${step.maxWaitSeconds ? ` within ${step.maxWaitSeconds}s` : ''}${step.result?.metrics?.lowTraffic ? ' · low traffic' : ''}${failure}`,
+      title: t('Shift traffic → {{weight}}% on {{target}}', {
+        weight: step.targetWeight ?? '—',
+        target: targetName,
+      }),
+      meta: metaLine(
+        seconds,
+        step.maxWaitSeconds
+          ? t('{{required}} requests on {{target}} within {{seconds}}s', {
+              required,
+              target: targetName,
+              seconds: step.maxWaitSeconds,
+            })
+          : t('{{required}} requests on {{target}}', { required, target: targetName }),
+        step.result?.metrics?.lowTraffic && t('low traffic'),
+        failure,
+      ),
       state,
     };
   });

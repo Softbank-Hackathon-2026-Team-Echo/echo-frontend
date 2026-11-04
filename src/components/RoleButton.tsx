@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useRole } from '@/hooks/useRole';
 import type { MemberRole } from '@/lib/api/types';
+import { t } from '@/lib/i18n';
 import { hasRole, ROLE_LABELS } from '@/lib/roles';
 import { cn } from '@/lib/utils';
 
@@ -25,7 +26,9 @@ export function RoleButton({
   ...props
 }: RoleButtonProps) {
   const role = useRole();
-  const reason = !hasRole(role, requires) ? `Requires ${ROLE_LABELS[requires]}` : disabledReason;
+  const reason = !hasRole(role, requires)
+    ? t('Requires {{role}}', { role: ROLE_LABELS[requires] })
+    : disabledReason;
 
   if (!reason) return <Button className={className} onClick={onClick} {...props} />;
 
