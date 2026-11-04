@@ -1161,7 +1161,7 @@ export interface components {
          * @description 배포 요청 실패 이유. DB CHECK 를 걸지 않고 앱이 이 값만 쓴다.
          * @enum {string}
          */
-        DeployRequestErrorCode: "REPO_NOT_ACCESSIBLE" | "REF_NOT_FOUND" | "SOURCE_PROVIDER_UNAVAILABLE" | "BUILD_FAILED" | "BUILD_TIMEOUT" | "DEPLOY_FAILED" | "DEPLOY_TIMEOUT" | "HEALTH_CHECK_FAILED" | "HEALTH_CHECK_TIMEOUT" | "PUBLIC_URL_UNREACHABLE" | "WORKER_LOST" | "INTERNAL_ERROR";
+        DeployRequestErrorCode: "REPO_NOT_ACCESSIBLE" | "REF_NOT_FOUND" | "SOURCE_PROVIDER_UNAVAILABLE" | "BUILD_FAILED" | "BUILD_TIMEOUT" | "DEPLOY_FAILED" | "DEPLOY_TIMEOUT" | "HEALTH_CHECK_FAILED" | "HEALTH_CHECK_TIMEOUT" | "PUBLIC_URL_UNREACHABLE" | "WORKER_LOST" | "INTERNAL_ERROR" | "BUILD_DISPATCH_FAILED" | "CLUSTER_UNAUTHORIZED" | "IMAGE_PULL_FAILED" | "CONTAINER_START_FAILED";
         /**
          * DeployRequestStatus
          * @description 배포 요청 상태. 취소는 QUEUED 에서만 한다. 끝 상태는 되감지 않는다.
@@ -1567,6 +1567,7 @@ export interface components {
              */
             targetServiceEnvironmentId: string;
             status: components["schemas"]["MigrationPlanStatus"];
+            mode: components["schemas"]["MigrationPlanMode"];
             /** Currentstep */
             currentStep: number;
             /** Expectedseconds */
@@ -1610,6 +1611,15 @@ export interface components {
             errorMessage: string | null;
         };
         /**
+         * MigrationPlanMode
+         * @description 이전 계획 종류. 서버가 만들 때 한 번 판정해 저장한다(클라이언트가 정하지 않는다).
+         *
+         *     FAILBACK 은 같은 서비스의 가장 늦게 끝난 성공 계획을 출발·도착만 바꿔 거꾸로 하는 계획이다(그
+         *     계획이 FAILBACK 이면 아니다). EMERGENCY 는 재난 자동 이전(API 서버 9)이 만들 때부터 쓴다.
+         * @enum {string}
+         */
+        MigrationPlanMode: "PLANNED" | "EMERGENCY" | "FAILBACK";
+        /**
          * MigrationPlanStatus
          * @description 이전 계획 상태. 승인이 곧 실행 시작이다. 끝 상태는 되감지 않는다.
          * @enum {string}
@@ -1618,6 +1628,9 @@ export interface components {
         /**
          * MigrationPlanSummaryResponse
          * @description 이전 계획 목록 한 항목. simulated=true 면 가짜 실행기로 진행하는 계획이다.
+         *
+         *     mode 는 서버가 만들 때 판정해 저장한 계획 종류다(PLANNED·FAILBACK. EMERGENCY 는 API 서버 9
+         *     부터 쓴다).
          */
         MigrationPlanSummaryResponse: {
             /**
@@ -1651,6 +1664,7 @@ export interface components {
              */
             targetServiceEnvironmentId: string;
             status: components["schemas"]["MigrationPlanStatus"];
+            mode: components["schemas"]["MigrationPlanMode"];
             /** Currentstep */
             currentStep: number;
             /** Expectedseconds */

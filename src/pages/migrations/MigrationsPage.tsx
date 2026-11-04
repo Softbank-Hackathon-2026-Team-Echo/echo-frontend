@@ -19,12 +19,15 @@ import { useEnvironments } from '@/lib/api/environments';
 import { useCurrentOrg } from '@/lib/api/me';
 import { useOrgMigrationPlans } from '@/lib/api/migrations';
 import { useServices } from '@/lib/api/services';
-import { isFailback } from '@/lib/migration-mode';
 import { duration } from '@/lib/migration-stages';
-import { migrationErrorLabel, migrationPlanStatusView } from '@/lib/status';
+import { migrationErrorLabel, migrationModeLabel, migrationPlanStatusView } from '@/lib/status';
 
-function FailbackBadge() {
-  return <span className="rounded-sm bg-subtle px-1.5 text-label text-fg-secondary">Failback</span>;
+function ModeBadge({ mode }: { mode: string }) {
+  return (
+    <span className="rounded-sm bg-subtle px-1.5 text-label text-fg-secondary">
+      {migrationModeLabel(mode)}
+    </span>
+  );
 }
 
 function Summary({
@@ -163,7 +166,7 @@ export default function MigrationsPage() {
                             {envNames.get(plan.sourceEnvironmentId) ?? '?'} →{' '}
                             {envNames.get(plan.targetEnvironmentId) ?? '?'}
                           </span>
-                          {isFailback(plan, runs) && <FailbackBadge />}
+                          {plan.mode !== 'PLANNED' && <ModeBadge mode={plan.mode} />}
                         </span>
                       </TableCell>
                       <TableCell>

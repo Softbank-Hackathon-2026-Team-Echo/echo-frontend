@@ -1,4 +1,12 @@
-import { GitBranch, Lock, MoreHorizontal, Pencil, RotateCcw, Trash2 } from 'lucide-react';
+import {
+  ArrowRightLeft,
+  GitBranch,
+  Lock,
+  MoreHorizontal,
+  Pencil,
+  RotateCcw,
+  Trash2,
+} from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
@@ -15,6 +23,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -269,6 +278,7 @@ export default function ServiceDetailPage() {
   }
 
   const deleting = service.status === 'DELETING';
+  const standbys = service.environments.filter((link) => link.role === 'STANDBY');
 
   return (
     <>
@@ -309,7 +319,32 @@ export default function ServiceDetailPage() {
                 <MoreHorizontal aria-hidden />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuContent align="end" className="w-64">
+              {standbys.map((link) => (
+                <DropdownMenuItem
+                  key={link.serviceEnvironmentId}
+                  disabled={!hasRole(role, 'DEVELOPER') || deleting}
+                  onSelect={() =>
+                    navigate(
+                      `/o/${organization.slug}/evacuation/plan?service=${service.id}&target=${link.environment.id}`,
+                    )
+                  }
+                >
+                  <ArrowRightLeft aria-hidden />
+                  <span className="flex-1 truncate">Migrate to {link.environment.name}</span>
+                  {!hasRole(role, 'DEVELOPER') && (
+                    <span className="text-caption text-fg-muted">Developer</span>
+                  )}
+                </DropdownMenuItem>
+              ))}
+              {standbys.length === 0 && (
+                <DropdownMenuItem disabled>
+                  <ArrowRightLeft aria-hidden />
+                  <span className="flex-1">Migrate to…</span>
+                  <span className="text-caption text-fg-muted">No standby</span>
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuSeparator />
               <DropdownMenuItem
                 disabled={!hasRole(role, 'DEVELOPER') || deleting}
                 onSelect={() => setEditOpen(true)}

@@ -147,6 +147,65 @@ describe('ServiceDetailPage 배포 이력', () => {
   });
 });
 
+describe('ServiceDetailPage 이전 입구', () => {
+  const standby = {
+    serviceEnvironmentId: 'se2',
+    environment: { id: 'e2', name: 'gcp-seoul', kind: 'gcp' },
+    role: 'STANDBY' as const,
+    trafficWeight: 0,
+    url: 'https://shop-api-gcp.echoport.uk',
+    currentDeployment: null,
+    versionStatus: null,
+    lastSyncError: null,
+    activeRequestId: null,
+    queuedRequestId: null,
+    simulated: false,
+    teardownError: null,
+    lastSyncSeconds: null,
+  };
+
+  it('예비 환경마다 Migrate to 메뉴가 있다', async () => {
+    serve('DEVELOPER');
+    server.use(
+      http.get(`${API}/orgs/o1/services/s1`, () => ok({ ...service, environments: [standby] })),
+    );
+    renderPage();
+
+    await userEvent.click(await screen.findByRole('button', { name: 'More actions' }));
+
+    expect(
+      await screen.findByRole('menuitem', { name: 'Migrate to gcp-seoul' }),
+    ).not.toHaveAttribute('aria-disabled');
+  });
+
+  it('뷰어에게는 Migrate to 가 비활성이다', async () => {
+    serve('VIEWER');
+    server.use(
+      http.get(`${API}/orgs/o1/services/s1`, () => ok({ ...service, environments: [standby] })),
+    );
+    renderPage();
+
+    await userEvent.click(await screen.findByRole('button', { name: 'More actions' }));
+
+    expect(await screen.findByRole('menuitem', { name: /migrate to gcp-seoul/i })).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    );
+  });
+
+  it('예비 환경이 없으면 이유와 함께 비활성이다', async () => {
+    serve('DEVELOPER');
+    renderPage();
+
+    await userEvent.click(await screen.findByRole('button', { name: 'More actions' }));
+
+    expect(await screen.findByRole('menuitem', { name: /no standby/i })).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    );
+  });
+});
+
 describe('ServiceDetailPage 설정 수정', () => {
   it('바뀐 칸만 PATCH 로 보낸다', async () => {
     const bodies: unknown[] = [];

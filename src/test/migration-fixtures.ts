@@ -49,6 +49,7 @@ export function migrationPlan(extra: Partial<MigrationPlan> = {}): MigrationPlan
     sourceServiceEnvironmentId: 'se1',
     targetServiceEnvironmentId: 'se2',
     status: 'RUNNING',
+    mode: 'PLANNED',
     currentStep: 2,
     expectedSeconds: 25,
     createdBy: { id: 'u2', login: 'dev-a' },

@@ -43,7 +43,7 @@
 | 재난 🆕 | Disaster | `Disaster` (`EARTHQUAKE` · `TYPHOON`) | 화면 표기 Earthquake · Typhoon. 시뮬레이션이므로 항상 `simulated` |
 | 대피 후보 🆕 | Evacuation | `EvacuationCandidate` | 메뉴 이름 Evacuation |
 | AI 사전 점검 🆕 | AI pre-check | `Precheck` | 패치 = Patch, 막힌 시도 = Blocked attempt |
-| 이전 🆕 | Migration | `Migration` (`PLANNED` · `EMERGENCY` · `FAILBACK`) | 화면 표기 Planned · Emergency · Failback |
+| 이전 | Migration | `MigrationPlan.mode` (`PLANNED` · `EMERGENCY` · `FAILBACK`) | 화면 표기 Planned · Emergency · Failback. 서버가 판정한다 |
 | 쓰기 전환 🆕 | Writer cutover | `writerCutover` | 단계 Pause writes · Fence · Confirm LSN · Promote |
 | 보안 매트릭스 🆕 | Security | `SecurityMatrix`, `Finding` | 결과 PASS · WARN · FAIL · N/A |
 | 감사 로그 🆕 | Audit log | `AuditLog` | 행위자 User · Agent · System |
@@ -73,7 +73,7 @@
 
 | 필드 | 값 → 문구 · 색 |
 |---|---|
-| `connectionStatus` | `UNCHECKED` → Not checked · 중립 / `CONNECTED` → Connected · success / `FAILED` → Failed · danger (툴팁에 `clusterInfoError`) |
+| `connectionStatus` | `UNCHECKED` → Not checked · 중립 / `CONNECTED` → Connected · success (`clusterInfoError` 가 있으면 클러스터 칸은 정보만 못 읽었다는 문구) / `FAILED` → Failed · danger (툴팁에 `clusterInfoError`) |
 | 배포 요청 `trigger` | `MANUAL` → Manual / `STANDBY_SYNC` → Standby sync / `ROLLBACK` → Rollback (`rollbackOfRequestId` 가 대상) |
 | 배포 요청 `cancelReason` | `SUPERSEDED` → 새 배포에 밀림 / `SERVICE_DELETED` → 서비스 삭제 / `BASE_CHANGED` → 되돌리기 시작 전에 다른 버전이 올라감 |
 | 배포 요청 `status` | `QUEUED` → Queued · 중립 / `BUILDING` → Building · migrating / `DEPLOYING` → Deploying · migrating / `VERIFYING` → Verifying · migrating / `SUCCEEDED` → Succeeded · success / `FAILED` → Failed · danger / `CANCELLED` → Cancelled · 중립 |
