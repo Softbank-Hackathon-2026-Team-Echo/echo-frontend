@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { compareCells, matrixRow, SECURITY_CONTROLS } from './security';
-import type { EnvironmentSummary } from './types';
+import {
+  cellFindingIds,
+  cellIssueCount,
+  compareCells,
+  SECURITY_CONTROLS,
+  simulatedCells,
+} from './security';
+import type { EnvironmentSummary, SecurityMatrixCell } from './types';
 
 const AT = '2026-11-04T03:00:00Z';
 const environment = (kind: string): EnvironmentSummary => ({
@@ -18,16 +24,16 @@ const environment = (kind: string): EnvironmentSummary => ({
   updatedAt: AT,
 });
 
-describe('matrixRow', () => {
+describe('simulatedCells', () => {
   it('어떤 환경이든 네 칸을 모두 채운다', () => {
     for (const kind of ['aws', 'gcp', 'onprem', 'azure']) {
-      const { cells } = matrixRow(environment(kind));
+      const cells = simulatedCells(environment(kind));
       expect(SECURITY_CONTROLS.every((control) => cells[control].result)).toBe(true);
     }
   });
 
   it('모르는 환경 종류는 지어내지 않고 UNKNOWN 이다', () => {
-    expect(matrixRow(environment('azure')).cells.iam).toEqual({
+    expect(simulatedCells(environment('azure')).iam).toEqual({
       result: 'UNKNOWN',
       findingCount: 0,
     });
@@ -35,12 +41,12 @@ describe('matrixRow', () => {
 
   it('접속하지 못한 환경은 통과로 보이지 않는다', () => {
     const failed = { ...environment('aws'), connectionStatus: 'FAILED' as const };
-    expect(matrixRow(failed).cells.iam.result).toBe('UNKNOWN');
+    expect(simulatedCells(failed).iam.result).toBe('UNKNOWN');
   });
 
   it('시뮬레이션 값에는 이전을 막는 FAIL 이 없다', () => {
     for (const kind of ['aws', 'gcp', 'onprem']) {
-      const { cells } = matrixRow(environment(kind));
+      const cells = simulatedCells(environment(kind));
       expect(SECURITY_CONTROLS.some((control) => cells[control].result === 'FAIL')).toBe(false);
     }
   });
@@ -61,5 +67,38 @@ describe('compareCells', () => {
     expect(
       compareCells('encryption', pass, { result: 'UNKNOWN', findingCount: 0 }).blocksMigration,
     ).toBe(false);
+  });
+});
+
+describe('서버 칸', () => {
+  const check = (result: 'PASS' | 'WARN' | 'FAIL', findingIds: string[]) => ({
+    controlId: 'C-IMG-1' as const,
+    title: 'Image',
+    result,
+    isMandatory: true,
+    reasons: [],
+    findingIds,
+    mode: 'REAL' as const,
+    checkedAt: AT,
+    expiresAt: AT,
+    serviceId: null,
+  });
+  const cell: SecurityMatrixCell = {
+    result: 'WARN',
+    findingCount: 3,
+    hasException: false,
+    mode: 'REAL',
+    checkedAt: AT,
+    expiresAt: AT,
+    controls: [check('PASS', ['a', 'b']), check('WARN', ['b', 'c'])],
+  };
+
+  it('칸 건수는 증거 수가 아니라 문제 통제 수다', () => {
+    expect(cellIssueCount(cell)).toBe(1);
+  });
+
+  it('칸의 증거 id 는 겹치지 않게 모은다', () => {
+    expect(cellFindingIds(cell)).toEqual(['a', 'b', 'c']);
+    expect(cellFindingIds(undefined)).toEqual([]);
   });
 });

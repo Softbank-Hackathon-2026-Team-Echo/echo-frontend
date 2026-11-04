@@ -153,6 +153,7 @@ export function securityControlLabel(control: string): string {
 }
 
 const SECURITY_SEVERITIES: Record<string, string> = {
+  CRITICAL: k('Critical'),
   HIGH: k('High'),
   MEDIUM: k('Medium'),
   LOW: k('Low'),
@@ -160,6 +161,29 @@ const SECURITY_SEVERITIES: Record<string, string> = {
 
 export function securitySeverityLabel(severity: string): string {
   return labelOf(SECURITY_SEVERITIES, severity);
+}
+
+const SECURITY_REASONS: Record<string, string> = {
+  CONTROL_FAILED: k('Failed this control'),
+  CONTROL_WARNING: k('Warning on this control'),
+  EVIDENCE_UNKNOWN: k('Evidence could not be read'),
+  EVIDENCE_MISSING: k('No evidence collected'),
+  EVIDENCE_EXPIRED: k('Evidence expired'),
+  EVIDENCE_SIMULATED: k('Evidence is simulated'),
+  EVIDENCE_INCOMPLETE: k('Evidence is incomplete'),
+  SOURCE_NOT_ALLOWED: k('Source is not allowed for this control'),
+  SCOPE_MISMATCH: k('Evidence is for a different version'),
+  POLICY_VERSION_MISMATCH: k('Evidence is from another policy version'),
+  PRECHECK_MISSING: k('AI pre-check has not run'),
+  AI_UNCONFIRMED: k('AI finding is not confirmed by a person'),
+  AI_ESCALATED: k('AI finding was escalated by a person'),
+  EXCEPTION_APPLIED: k('Time-limited exception applied'),
+  EXCEPTION_EXPIRED: k('Exception expired'),
+  NOT_APPLICABLE: k('Does not apply here'),
+};
+
+export function securityReasonLabel(reason: string): string {
+  return labelOf(SECURITY_REASONS, reason);
 }
 
 /** 비교 표 판정 칸 */
