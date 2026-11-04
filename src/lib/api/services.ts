@@ -10,6 +10,7 @@ import { queryKeys } from './query-keys';
 import type {
   CreateDeploy,
   CreateService,
+  DeployRequestDetail,
   DeployRequestStatus,
   LogSource,
   ServiceDetail,
@@ -19,6 +20,9 @@ import type {
 const PAGE_SIZE = 100;
 /** 실시간(SSE)이 생기기 전까지 배포 진행 화면은 2초마다 다시 부른다 (계약 3장) */
 export const DEPLOY_POLL_MS = 2_000;
+// 서비스 하나의 따라가기가 이보다 많아지면 예전 요청 결과가 빠진다. 그때는 서버에 sourceRequestId 필터를 요청한다
+const STANDBY_SYNC_PAGE_SIZE = 100;
+const STANDBY_SYNC_START_MS = 30_000;
 
 const TERMINAL_STATUSES: readonly DeployRequestStatus[] = ['SUCCEEDED', 'FAILED', 'CANCELLED'];
 
@@ -160,6 +164,41 @@ export function useDeployRequests(orgId: string | undefined, serviceId: string |
       query.state.data?.items.some((item) => !isTerminalStatus(item.status))
         ? DEPLOY_POLL_MS
         : false,
+  });
+}
+
+/**
+ * 이 배포가 만든 예비 따라가기 요청들. 이력 첫 쪽에서는 예전 요청의 따라가기가 빠질 수 있어 따로 받는다.
+ * 서버가 원본 요청이 성공할 때 만들어서, 원본 상태가 바뀌면 다시 부른다
+ */
+export function useStandbySyncs(
+  orgId: string | undefined,
+  serviceId: string | undefined,
+  source: Pick<DeployRequestDetail, 'id' | 'status' | 'stageTimes'> | undefined,
+) {
+  return useQuery({
+    queryKey: queryKeys.standbySyncs(orgId ?? '', serviceId ?? '', source?.status ?? ''),
+    queryFn: () =>
+      unwrap(
+        api.GET('/api/v1/orgs/{org_id}/services/{service_id}/deploy-requests', {
+          params: {
+            path: { org_id: orgId ?? '', service_id: serviceId ?? '' },
+            query: { trigger: ['STANDBY_SYNC'], page: 0, size: STANDBY_SYNC_PAGE_SIZE },
+          },
+        }),
+      ),
+    enabled: Boolean(orgId && serviceId && source),
+    select: (page) => page.items.filter((item) => item.sourceRequestId === source?.id),
+    refetchInterval: (query) => {
+      const running = query.state.data?.items.some(
+        (item) => item.sourceRequestId === source?.id && !isTerminalStatus(item.status),
+      );
+      // 원본이 막 끝났으면 따라가기가 아직 안 보일 수 있다
+      const finishedAt = source?.stageTimes.finishedAt;
+      const justFinished =
+        finishedAt && Date.now() - new Date(finishedAt).getTime() < STANDBY_SYNC_START_MS;
+      return running || justFinished ? DEPLOY_POLL_MS : false;
+    },
   });
 }
 

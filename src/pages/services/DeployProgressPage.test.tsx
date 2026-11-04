@@ -2,7 +2,7 @@ import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HttpResponse, http } from 'msw';
 import { describe, expect, it } from 'vitest';
-import type { DeployRequestDetail, Me } from '@/lib/api/types';
+import type { DeployRequestDetail, DeployRequestSummary, Me } from '@/lib/api/types';
 import { server } from '@/test/msw-server';
 import { renderRoute } from '@/test/render';
 import DeployProgressPage, { stageDuration, stageStates, standbyStep } from './DeployProgressPage';
@@ -50,37 +50,68 @@ describe('stageStates', () => {
 });
 
 describe('standbyStep', () => {
-  const link = (id: string, sha: string | null, active: string | null = null) => ({
+  const link = (id: string, sha: string | null) => ({
     serviceEnvironmentId: id,
     environment: { id: `env-${id}`, name: `env-${id}`, kind: 'gcp' },
     currentDeployment: sha ? { id: 'd', commitSha: sha, imageDigest: 'x', finishedAt: null } : null,
-    activeRequestId: active,
-    queuedRequestId: null,
   });
-  const base = {
-    status: 'SUCCEEDED',
-    trigger: 'MANUAL',
-    commitSha: 'abc',
-    serviceEnvironmentId: 'serving',
-  } as const;
+  const sync = (id: string, status: DeployRequestSummary['status'], name = 'gcp-seoul') => ({
+    id,
+    status,
+    environment: { id: `env-${id}`, name, kind: 'gcp' },
+  });
+  const base = { status: 'SUCCEEDED', trigger: 'MANUAL', serviceEnvironmentId: 'serving' } as const;
+  // 예비가 지금 다른 커밋이어도 판정은 따라가기 요청으로 한다 (echo-frontend #59)
+  const service = { environments: [link('serving', 'new'), link('standby', 'old')] as never };
 
-  it('예비 환경이 없으면 건너뛴다', () => {
-    const result = standbyStep(base, { environments: [link('serving', 'abc')] as never });
-    expect(result).toEqual({ state: 'skipped', detail: 'no standby environments' });
+  it('따라가기가 모두 성공했으면 지금 예비 버전과 달라도 동기화됨이다', () => {
+    const result = standbyStep(base, service, [
+      sync('s1', 'SUCCEEDED'),
+      sync('s2', 'SUCCEEDED', 'onprem'),
+    ]);
+    expect(result).toEqual({ state: 'done', detail: '2 standby in sync' });
   });
 
-  it('예비가 따라가는 중이면 그 배포 요청을 가리킨다', () => {
-    const result = standbyStep(base, {
-      environments: [link('serving', 'abc'), link('standby', 'old', 'req-2')] as never,
+  it('따라가기가 없으면 건너뛴다', () => {
+    expect(standbyStep(base, service, [])).toEqual({
+      state: 'skipped',
+      detail: 'no standby followed',
     });
-    expect(result).toMatchObject({ state: 'current', syncingRequestId: 'req-2' });
   });
 
-  it('예비가 같은 커밋이면 끝났다', () => {
-    const result = standbyStep(base, {
-      environments: [link('serving', 'abc'), link('standby', 'abc')] as never,
+  it('따라가기가 진행 중이면 그 요청을 가리킨다', () => {
+    const result = standbyStep(base, service, [
+      sync('s1', 'SUCCEEDED'),
+      sync('s2', 'VERIFYING', 'onprem'),
+    ]);
+    expect(result).toEqual({
+      state: 'current',
+      detail: 'syncing onprem',
+      syncingRequestId: 's2',
     });
-    expect(result).toEqual({ state: 'done', detail: '1 standby in sync' });
+  });
+
+  it('따라가기가 실패하면 실패 표시와 그 요청 링크를 준다', () => {
+    const result = standbyStep(base, service, [sync('s1', 'SUCCEEDED'), sync('s2', 'FAILED')]);
+    expect(result).toEqual({
+      state: 'failed',
+      detail: '1 of 2 standby failed',
+      syncingRequestId: 's2',
+    });
+  });
+
+  it('아직 불러오지 못했으면 값을 지어내지 않는다', () => {
+    expect(standbyStep(base, service, undefined)).toEqual({ state: 'pending', detail: '—' });
+  });
+
+  it('진행 중인 배포는 따라갈 예비 수를 보여 준다', () => {
+    const result = standbyStep({ ...base, status: 'BUILDING' }, service, undefined);
+    expect(result).toEqual({ state: 'pending', detail: '1 standby will follow' });
+  });
+
+  it('따라가기 요청 자체는 지금처럼 표시한다', () => {
+    const result = standbyStep({ ...base, trigger: 'STANDBY_SYNC' }, service, undefined);
+    expect(result).toEqual({ state: 'done', detail: 'this deploy is the sync' });
   });
 });
 
@@ -174,11 +205,25 @@ describe('DeployProgressPage 화면', () => {
     ...extra,
   });
 
+  let trigger: string | null = null;
+
   function renderDeploy(detail: DeployRequestDetail) {
     server.use(
       http.get(`${API}/me`, () => ok(me)),
       http.get(`${API}/orgs/o1/services/s1`, () => ok({ name: 'demo', environments: [] })),
       http.get(`${API}/orgs/o1/deploy-requests/r3`, () => ok(detail)),
+      http.get(`${API}/orgs/o1/services/s1/deploy-requests`, ({ request: req }) => {
+        trigger = new URL(req.url).searchParams.get('trigger');
+        return ok({
+          items: [
+            request({ id: 'sync-1', trigger: 'STANDBY_SYNC', sourceRequestId: 'r3' }),
+            request({ id: 'other', trigger: 'STANDBY_SYNC', sourceRequestId: 'r9' }),
+          ],
+          total: 2,
+          page: 0,
+          size: 100,
+        });
+      }),
       http.get(`${API}/orgs/o1/deploy-requests/r3/logs`, () =>
         ok({
           items: [{ at: AT, level: 'INFO', message: 'build step' }],
@@ -208,6 +253,13 @@ describe('DeployProgressPage 화면', () => {
 
     expect(await screen.findByText('manual')).toBeInTheDocument();
     expect(screen.queryByRole('link', { name: /rollback of/ })).not.toBeInTheDocument();
+  });
+
+  it('예비 칸은 이 요청이 만든 따라가기만 센다', async () => {
+    renderDeploy(request({}));
+
+    expect(await screen.findByText('1 standby in sync')).toBeInTheDocument();
+    expect(trigger).toBe('STANDBY_SYNC');
   });
 
   const buildNotice = /This build was reused/;

@@ -1,0 +1,4 @@
+{
+  "no standby followed": "追従したスタンバイなし",
+  "{{failed}} of {{total}} standby failed": "スタンバイ {{total}} か所中 {{failed}} か所が失敗"
+}
