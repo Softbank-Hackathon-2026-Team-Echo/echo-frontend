@@ -47,13 +47,13 @@ src/
 │  ├─ disaster/          # 재난 시뮬레이션 다이얼로그(S01-D) · 지도(DisasterMap, d3-geo + world-atlas 50m 지연 로드)
 │  └─ *.tsx              # 두 화면 이상에서 쓰는 앱 컴포넌트 (Panel, RoleButton, StatusBadge, SimulatedBadge, ProviderLabel, FormField, ConfirmDeleteDialog, ExternalLink, EmptyState, ErrorState, ScreenErrorBoundary, Logo, OrthoGlobe, 등록·배포 다이얼로그(EnvironmentFormDialog · RegisterServiceDialog · DeployDialog) …)
 ├─ layouts/AppShell.tsx  # 사이드바(워드마크 · Operate/Resilience/Govern 묶음 · 사용자 메뉴=테마·로그아웃) + 상단 바(브레드크럼 · Org 선택 · Simulate disaster · 알림)
-├─ pages/                # 화면 단위 폴더 (login/, root/, landing/(L01 소개), onboarding/(O01~O03), dashboard/, services/, evacuation/, migrations/, settings/, dev/). 한 화면에서만 쓰는 컴포넌트는 그 폴더 안에
+├─ pages/                # 화면 단위 폴더 (login/, root/, landing/(L01 소개), onboarding/(O01~O03), dashboard/, services/, evacuation/, migrations/, security/, settings/, dev/). 한 화면에서만 쓰는 컴포넌트는 그 폴더 안에
 ├─ hooks/                # useTheme(테마 3개, localStorage), useRole(현재 조직 역할), useNow(경과 시간), usePrefersReducedMotion, useInViewOnce(처음 화면에 들어오면 true)
 ├─ lib/
 │  ├─ api/               # client(api = openapi-fetch + unwrap, 스키마 밖 경로는 apiFetch) · errors · notify · form-errors(422 → 칸 오류)
 │  │                     #   query-client · query-keys · schema.d.ts(gen:api 생성) · types(스키마 별칭)
 │  │                     #   me(useMe · 로그인 전에도 쓰는 조용한 useSession) · environments · services(서비스·배포 요청) · disasters(🆕 API 전까지 브라우저 시뮬레이션) · auth
-│  │                     #   events(실시간 채널 → 쿼리 무효화) · evacuation(🆕 대피 후보 규칙 점수, API 전까지 브라우저 계산)
+│  │                     #   events(실시간 채널 → 쿼리 무효화) · evacuation(🆕 대피 후보 규칙 점수, API 전까지 브라우저 계산) · security(🆕 보안 매트릭스, API 전까지 브라우저 시뮬레이션)
 │  ├─ roles.ts           # hasRole · 역할 표기
 │  ├─ status.ts          # 서버 상태 값 → 화면 문구·색 (StatusBadge 와 짝), 오류 코드 → 문구
 │  ├─ migration-*.ts     # 이전 단계 시간(stages) · 결과 숫자(metrics). 두 화면 이상에서 쓴다
@@ -169,7 +169,7 @@ docs/                    # api-contract.md, perf.md(성능 측정 방법 · 기�
 | 11/3 | 조직 설정 `allowSelfApproval` 을 멤버 탭에 둔다(어드민만 바꿈) | E01-3 계획 승인에서 만든 사람이 스스로 승인할 수 있는지가 이 값에 달렸다. 데모를 한 사람이 진행할 때 켠다 |
 | 11/3 | E01-3 단계는 Figma(Warm-up · DB writer cutover …)가 아니라 API 서버 8 의 고정 단계(사전 확인 → 90/10 → 50/50 → 데이터 동기화 확인 → 0/100)를 그린다. 승인 = 실행 시작 | Figma 메모 1: 단계·예상 시간·롤백 조건이 실행 로그와 같아야 한다. 쓰기 전환 단계는 데이터 파트 결정 후 서버 단계로 들어오면 그린다 |
 | 11/3 | 본인이 만든 계획은 조직 설정 `allowSelfApproval` 이 꺼져 있으면 승인·거절 버튼을 비활성 + 이유 툴팁으로 둔다(취소는 가능) | 서버가 403 `SELF_APPROVAL_FORBIDDEN` 으로 막는 규칙을 버튼에서 먼저 보여 준다 |
-| 11/3 | AI 사전 점검(4-5)·보안 비교(4-7)는 API 전까지 브라우저 시뮬레이션(`lib/api/prechecks.ts`, `SecurityComparison`). 보안 FAIL 이 있으면 승인을 잠그지만 지금 값에는 FAIL 이 없다 | AI 에이전트·보안 파트 API 가 아직 없다. 데모 증거(F14~F16: 샌드박스 id · 검증 실패 1건 차단 · 통과 1건 사람 승인 · 운영 변경 시도 거부)를 화면에 먼저 둔다 |
+| 11/3 | AI 사전 점검(4-5)·보안 비교(4-7)는 API 전까지 브라우저 시뮬레이션(`lib/api/prechecks.ts`, `lib/api/security.ts`). 보안 FAIL 이 있으면 승인을 잠그지만 지금 값에는 FAIL 이 없다 | AI 에이전트·보안 파트 API 가 아직 없다. 데모 증거(F14~F16: 샌드박스 id · 검증 실패 1건 차단 · 통과 1건 사람 승인 · 운영 변경 시도 거부)를 화면에 먼저 둔다 |
 | 11/3 | M02 A·B 그래프는 서버가 단계마다 적용한 트래픽 비율로 그린 계단선이다(SVG, recharts 없이). 오류율은 단계 판정 값 | 초 단위 요청·성공률 시계열 API 가 없다. 지어낸 곡선 대신 실제 비율로 두 선이 50% 에서 교차한다(F7). 건수 판정(echo-frontend #6)·`migration.metrics` 가 생기면 그 값으로 바꾼다 |
 | 11/3 | M02 "Abort"·"Roll back" 은 확인 다이얼로그가 붙은 Roll back 하나다(`POST …/abort`) | 서버 중단은 곧 출발 100% 로 되돌리기다. 버튼 둘이 같은 일을 하면 시연 중 헷갈린다 |
 | 11/3 | M02 Result 의 쓰기 정지 시간·누락/중복 행·RPO 는 `—` + 측정 출처로 둔다. 실패 요청·총 시간·최대 복제 지연은 단계 지표로 채운다 | 데이터 이전 엔진(인프라 #7)이 아직 서버에 값을 주지 않는다. PoC 숫자(로컬)를 운영 결과처럼 보이게 쓰지 않는다 |
@@ -205,3 +205,4 @@ docs/                    # api-contract.md, perf.md(성능 측정 방법 · 기�
 | 11/3 | 사이드바 메뉴에 마우스를 올리거나 포커스 · 터치하면 그 경로의 지연 로드 청크를 미리 받는다(`lib/route-prefetch`, 라우터 표를 router.tsx 가 넘김). 첫 화면에서 전부 미리 받지는 않는다 | 메뉴를 누른 뒤 청크를 받는 동안 기다리지 않게. 전부 미리 받으면 첫 화면이 무거워진다. React Router 의 Link prefetch 는 framework 모드 전용이라 직접 만든다 |
 | 11/3 | 지구본(canvas)은 IntersectionObserver 로 화면 밖이면 그리기를 멈추고(멈춘 시간은 빼서 멈춘 자리에서 이어 돎), 토폴로지는 화면에 처음 들어올 때 캔버스 · 배치를 만든다(`useInViewOnce`) | Grafana 의 '보이지 않는 패널은 그리지 않기'. 소개 화면을 내려도 지구본이 초당 120번 다시 그려졌다. 탭 숨김은 브라우저가 requestAnimationFrame 을 이미 멈춘다 |
 | 11/3 | 지구본 육지 데이터는 OrthoGlobe 모듈을 불러오는 즉시 받기 시작하고, 육지가 준비되면 지구본을 한 번에 페이드인한다(늦어도 1.5초 뒤 보임). 소개 화면 코드는 로그인 확인 뒤에 받는 지금 방식을 그대로 둔다 | 화면을 그린 뒤 effect 에서 받아 대륙이 약 0.4초 늦게 튀어나왔다. 소개 화면 코드까지 미리 받으면 로그인한 사람도 받게 돼 11/3 결정(로그인한 사람은 소개 화면 코드를 받지 않음)과 부딪친다 |
+| 11/4 | SEC 는 Matrix · Compare · Findings 탭 한 화면이고 비교 표는 E01-3 패널과 같은 컴포넌트다. 값은 API 전까지 환경 종류별 고정 시뮬레이션(`lib/api/security.ts`)이고 FAIL 은 없다. Re-scan 은 비활성, Figma 의 Export 와 칸 안 설명(KMS · CMEK)은 뺐다 | Figma 메모 '같은 표를 같이 사용'. 계약에 칸별 설명 필드가 없어 지어내지 않고, 스캔 · 내보내기 API 가 없어 눌러도 되는 척하지 않는다. 데모 이전이 시뮬레이션 값으로 막히지 않게 한다 |

@@ -109,6 +109,60 @@ export function deployErrorLabel(code: string): string {
   return DEPLOY_ERRORS[code] ?? code;
 }
 
+// 보안 결과 (계약 4-7). UNKNOWN 은 아직 수집하지 못한 칸이다
+const SECURITY_RESULTS: Record<string, StatusView> = {
+  PASS: { label: 'Pass', tone: 'success' },
+  WARN: { label: 'Warn', tone: 'warning' },
+  FAIL: { label: 'Fail', tone: 'danger' },
+  NA: { label: 'N/A', tone: 'neutral' },
+  UNKNOWN: { label: 'Unknown', tone: 'neutral' },
+};
+
+export function securityResultView(result: string): StatusView {
+  return SECURITY_RESULTS[result] ?? { label: result, tone: 'neutral' };
+}
+
+/** 칸 글자. 건수가 있으면 건수를 쓴다 */
+export function securityCellLabel(result: string, findingCount: number): string {
+  if ((result === 'WARN' || result === 'FAIL') && findingCount > 0) {
+    return `${findingCount} ${findingCount === 1 ? 'issue' : 'issues'}`;
+  }
+  return securityResultView(result).label;
+}
+
+const SECURITY_CONTROL_LABELS: Record<string, string> = {
+  iam: 'IAM',
+  encryption: 'Encryption',
+  auditLog: 'Audit log',
+  policy: 'Policy',
+};
+
+export function securityControlLabel(control: string): string {
+  return SECURITY_CONTROL_LABELS[control] ?? control;
+}
+
+const SECURITY_SEVERITIES: Record<string, string> = {
+  HIGH: 'High',
+  MEDIUM: 'Medium',
+  LOW: 'Low',
+};
+
+export function securitySeverityLabel(severity: string): string {
+  return SECURITY_SEVERITIES[severity] ?? severity;
+}
+
+/** 비교 표 판정 칸 */
+export function securityCompareNote(row: {
+  source: { result: string };
+  target: { result: string };
+  blocksMigration: boolean;
+}): string {
+  if (row.blocksMigration) return 'blocks migration';
+  if (row.source.result === 'UNKNOWN' || row.target.result === 'UNKNOWN') return 'not collected';
+  if (row.target.result === 'WARN') return 'warning only';
+  return row.source.result === row.target.result ? 'same' : 'differs';
+}
+
 // 이전 종류 (서버가 만들 때 판정한 mode)
 const MIGRATION_MODES: Record<string, string> = {
   PLANNED: 'Planned',

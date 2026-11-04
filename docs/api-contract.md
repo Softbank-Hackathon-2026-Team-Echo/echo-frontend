@@ -203,9 +203,11 @@ KPI 타일 5개(성공률·p95·복제 지연·트래픽 비율·에러 버짓)�
 
 | 동작 | 제안 |
 |---|---|
-| 매트릭스 | `GET /orgs/{orgId}/security/matrix` → `rows[{environmentId, cells{iam, encryption, auditLog, policy}: {result: PASS \| WARN \| FAIL \| NA, findingCount}}]` (빈칸 0, NFR-09) |
+| 매트릭스 | `GET /orgs/{orgId}/security/matrix` → `rows[{environmentId, cells{iam, encryption, auditLog, policy}: {result: PASS \| WARN \| FAIL \| NA \| UNKNOWN, findingCount}}]` (빈칸 0, NFR-09. 미수집은 `UNKNOWN`) |
 | finding 목록 | `GET /orgs/{orgId}/security/findings?environmentId&control` → `{id, environmentId, control, severity, title, source(SCC \| PROWLER \| KUBESCAPE …), evidence(원본 JSON), normalized, suggestedFix, checkedAt}` |
-| 이전 전후 비교 | `GET /orgs/{orgId}/security/compare?source=&target=` → 통제마다 양쪽 값과 `blocksMigration` |
+| 이전 전후 비교 | `GET /orgs/{orgId}/security/compare?source=&target=` → 통제마다 양쪽 값과 `blocksMigration`. 프론트는 `rows[{control, source: cell, target: cell, blocksMigration}]` (가칭)로 쓴다 |
+
+> 11/4: 김형래 제안(슬랙)대로 맞추고 `UNKNOWN` 을 더했다. 서버(echo-was #28)가 생기기 전까지 `lib/api/security.ts` 가 같은 모양으로 시뮬레이션하고 화면에 항상 `simulated` 배지를 단다. 이전 차단은 서버 판정이 기준이고 버튼 비활성은 안내일 뿐이다.
 
 ### 4-8. 감사 로그 (F5)
 
