@@ -71,7 +71,7 @@ scripts/                # gen-api.mjs(API 타입) · trim-atlas.mjs(지도 데�
 .github/workflows/ci.yml # PR · main 에서 lint · typecheck · test · build · 번들 예산
 public/_headers          # Cloudflare Pages 응답 헤더(클릭재킹 방지 · 권한 끔 · /assets 1년 캐시)
 specs/                   # 태스크 명세
-docs/                    # api-contract.md, perf.md(성능 측정 방법 · 기준선), i18n-glossary.md(번역 용어표), PR.md(커밋 안 함)
+docs/                    # api-contract.md, perf.md(성능 측정 방법 · 기준선), i18n-glossary.md(번역 용어표), demo-script.md(시연 대본), PR.md(커밋 안 함)
 .claude/launch.json      # 브라우저 미리보기용 개발 서버 설정
 ```
 

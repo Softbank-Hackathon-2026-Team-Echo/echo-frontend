@@ -45,6 +45,8 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
     css: false,
+    // 글자를 한 자씩 입력하는 테스트가 전체 실행 때 기본 5초를 넘길 수 있다
+    testTimeout: 15_000,
     env: { VITE_API_BASE_URL: 'http://api.test' },
   },
 });
