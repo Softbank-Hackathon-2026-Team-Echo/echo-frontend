@@ -7,7 +7,7 @@
   "Sign in": "ログイン",
   "Create account": "アカウント作成",
   "SoftBank Hackathon 2026 · Frictionless Cloud Management Across Platforms": "SoftBank Hackathon 2026 · プラットフォームを越えるシームレスなクラウド管理",
-  "Beyond Lock-In.": "脱ロックイン。",
+  "Beyond Lock-In.": "Beyond Lock-In.",
   "Frictionless across clouds.": "クラウド間を、なめらかに。",
   "Run, move and protect live services across AWS, GCP and on-prem from one console — zero downtime, the same security everywhere. And when a disaster is coming, EchoPort moves them for you.": "AWS、GCP、オンプレミスで動くサービスを、ひとつのコンソールから運用・移行・保護できます。ダウンタイムなしで、どこでも同じセキュリティを。災害が迫れば、EchoPort がサービスを移します。",
   "Get started": "はじめる",
@@ -111,7 +111,7 @@
   "Add an environment": "環境を追加",
   "Run your first<br>disaster drill in 5 minutes": "最初の災害訓練を<br>5分で実行しましょう",
   "Connect two environments, deploy a sample app, press the button. Nothing in production moves until you approve.": "環境を2つ接続し、サンプルアプリをデプロイして、ボタンを押してください。承認するまで、本番環境は何も動きません。",
-  "Beyond Lock-In — frictionless cloud management across platforms.": "脱ロックイン — プラットフォームを越えるシームレスなクラウド管理。",
+  "Beyond Lock-In — frictionless cloud management across platforms.": "Beyond Lock-In — プラットフォームを問わない、なめらかなクラウド管理。",
   "Footer": "フッター",
   "Resources": "リソース",
   "Company": "会社"
