@@ -6,12 +6,16 @@ import {
   useQuery,
   useQueryClient,
 } from '@tanstack/react-query';
+import { isAwaitingCutover } from '@/lib/migration-metrics';
 import { api, unwrap } from './client';
 import { queryKeys } from './query-keys';
 import type { CreateMigrationPlan, MigrationPlanStatus, MigrationPlanSummary } from './types';
 
 /** 실시간(SSE)이 생기기 전까지 실행 중인 계획은 1초마다 다시 부른다 (단계가 몇 초 단위로 바뀐다) */
 export const MIGRATION_POLL_MS = 1_000;
+
+/** 끝난 계획의 컷오버 결과를 기다릴 때 다시 부르는 간격. 서버 캐시가 5초다 */
+export const CUTOVER_POLL_MS = 5_000;
 
 const ACTIVE: readonly MigrationPlanStatus[] = ['APPROVED', 'RUNNING', 'ROLLING_BACK'];
 const OPEN: readonly MigrationPlanStatus[] = ['PENDING_APPROVAL', ...ACTIVE];
@@ -65,8 +69,11 @@ export function useMigrationPlan(orgId: string | undefined, planId: string | und
         }),
       ),
     enabled: Boolean(orgId && planId),
-    refetchInterval: (query) =>
-      isActivePlan(query.state.data?.status) ? MIGRATION_POLL_MS : false,
+    refetchInterval: (query) => {
+      const plan = query.state.data;
+      if (isActivePlan(plan?.status)) return MIGRATION_POLL_MS;
+      return plan && isAwaitingCutover(plan) ? CUTOVER_POLL_MS : false;
+    },
   });
 }
 

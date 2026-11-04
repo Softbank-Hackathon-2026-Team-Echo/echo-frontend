@@ -31,6 +31,7 @@ const environment = (id: string, name: string, kind: string): EnvironmentSummary
   name,
   kind,
   location: null,
+  coordinates: null,
   config: {},
   secretRef: null,
   connectionStatus: 'CONNECTED',

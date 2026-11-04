@@ -1,4 +1,49 @@
 import type { MigrationPlan, MigrationStep } from '@/lib/api/types';
+import { t } from '@/lib/i18n';
+
+/** 끝난 뒤 사람이 스크립트를 돌려야 결과가 생긴다. 이 시간까지만 기다린다(서버 요청 값) */
+export const CUTOVER_WAIT_MS = 10 * 60 * 1000;
+
+type CutoverPlan = Pick<MigrationPlan, 'status' | 'mode' | 'finishedAt'> &
+  Partial<Pick<MigrationPlan, 'result'>>;
+
+/** 인프라 스크립트가 잰 컷오버·롤백 결과. 아직 없으면 칸이 전부 null 이라 measuredBy 로 가른다 */
+export function cutoverResult(plan: CutoverPlan) {
+  return plan.result?.measuredBy ? plan.result : null;
+}
+
+/** 성공한 계획이 끝난 뒤 결과를 아직 기다리는 중인가. 롤링 배포 중에는 result 칸이 없을 수 있다 */
+export function isAwaitingCutover(plan: CutoverPlan, now = Date.now()): boolean {
+  if (plan.status !== 'SUCCEEDED' || !plan.finishedAt || cutoverResult(plan)) return false;
+  return now - Date.parse(plan.finishedAt) < CUTOVER_WAIT_MS;
+}
+
+export function writePauseText(plan: CutoverPlan): string | null {
+  const ms = cutoverResult(plan)?.writePauseMs;
+  return ms == null ? null : `${(ms / 1000).toFixed(3)} s`;
+}
+
+export function writePauseCaption(plan: CutoverPlan, now = Date.now()): string {
+  const result = cutoverResult(plan);
+  if (result?.kind === 'ROLLBACK') return t('DB rollback · measured by infra script');
+  if (result) return t('DB cutover · measured by infra script');
+  if (isAwaitingCutover(plan, now))
+    return plan.mode === 'FAILBACK'
+      ? t('Waiting for the DB rollback result')
+      : t('Waiting for the DB cutover result');
+  return t('No DB cutover recorded for this plan');
+}
+
+/** 누락·중복 행. 둘 다 있어야 보인다 */
+export function rowCheck(plan: CutoverPlan) {
+  const result = cutoverResult(plan);
+  if (result?.missingRows == null || result.duplicateRows == null) return null;
+  return {
+    text: `${result.missingRows} · ${result.duplicateRows}`,
+    clean: result.missingRows === 0 && result.duplicateRows === 0,
+    rowsTotal: result.rowsTotal,
+  };
+}
 
 const seconds = (from: string | null, to: string | null, now = Date.now()) =>
   from ? Math.max(0, Math.round(((to ? Date.parse(to) : now) - Date.parse(from)) / 1000)) : null;

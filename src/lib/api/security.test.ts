@@ -8,6 +8,7 @@ const environment = (kind: string): EnvironmentSummary => ({
   name: `${kind}-env`,
   kind,
   location: null,
+  coordinates: null,
   config: {},
   secretRef: null,
   connectionStatus: 'CONNECTED',

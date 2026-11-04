@@ -193,7 +193,7 @@ KPI 타일 5개(성공률·p95·복제 지연·트래픽 비율·에러 버짓)�
  "approvedBy": {"githubLogin": "echoport"}, "simulated": true}
 ```
 
-- `result` (끝나면): `{totalSeconds, failedRequests, totalRequests, writePauseMs, missingRows, duplicateRows, maxReplicationLagMs, rtoSeconds, rpoSeconds, stageTimes[]}` — 완료 카드와 결과 표가 같은 값을 쓴다.
+- `result`: DB 컷오버 결과(✅ API 서버 16, echo-was #63). `{writePauseMs, missingRows, duplicateRows, rowsTotal, kind, measuredBy, pausedAt, resumedAt, drainMs, catchupMs, switchMs}`. `kind` 는 이전이 `CUTOVER`, 복귀가 `ROLLBACK`이고 `measuredBy` 는 값이 있으면 `INFRA_SCRIPT`다. 끝나지 않은 계획은 `null`, 끝났지만 값이 없으면 칸이 전부 `null`(`measuredBy` 로 구분), 롤링 배포 중에는 칸 자체가 없을 수 있다. 결과는 사람이 스크립트를 돌린 뒤 생기고 서버 캐시가 5초라, 성공한 계획에 값이 없으면 끝난 뒤 10분 동안 5초마다 다시 부른다. 총 시간·실패 요청·복제 지연은 단계 지표로 계산하고 `rpoSeconds` 는 아직 없다.
 - `failback.allowed = false`이면 복귀 버튼 비활성 + 이유 표시(재난 미종료 지역 복귀 금지, 11/2 결정).
 - 실행 중 숫자는 3장 `migration.metrics`로 받는다.
 

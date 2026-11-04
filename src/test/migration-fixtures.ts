@@ -50,6 +50,7 @@ export function migrationPlan(extra: Partial<MigrationPlan> = {}): MigrationPlan
     targetServiceEnvironmentId: 'se2',
     status: 'RUNNING',
     mode: 'PLANNED',
+    result: null,
     currentStep: 2,
     expectedSeconds: 25,
     createdBy: { id: 'u2', login: 'dev-a' },
@@ -91,6 +92,26 @@ export function migrationPlan(extra: Partial<MigrationPlan> = {}): MigrationPlan
     abortedBy: null,
     abortRequestedAt: null,
     errorMessage: null,
+    ...extra,
+  };
+}
+
+/** 11/5 운영 리허설 값 (echo-was #63) */
+export function cutoverResult(
+  extra: Partial<NonNullable<MigrationPlan['result']>> = {},
+): NonNullable<MigrationPlan['result']> {
+  return {
+    writePauseMs: 5556,
+    missingRows: 0,
+    duplicateRows: 0,
+    rowsTotal: 169,
+    kind: 'CUTOVER',
+    measuredBy: 'INFRA_SCRIPT',
+    pausedAt: AT,
+    resumedAt: AT,
+    drainMs: 752,
+    catchupMs: 492,
+    switchMs: 4312,
     ...extra,
   };
 }

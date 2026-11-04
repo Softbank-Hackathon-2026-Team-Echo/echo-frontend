@@ -11,6 +11,7 @@ function environment(id: string, name: string, kind: string, location: string): 
     name,
     kind,
     location,
+    coordinates: null,
     config: {},
     secretRef: `env:ECHO_SECRET_TEST__${id.toUpperCase()}`,
     connectionStatus: 'CONNECTED',

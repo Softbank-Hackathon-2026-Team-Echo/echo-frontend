@@ -75,6 +75,7 @@ function environment(id: string, kind: string, location: string): EnvironmentSum
     name: id,
     kind,
     location,
+    coordinates: null,
     config: {},
     secretRef: null,
     connectionStatus: 'CONNECTED',
