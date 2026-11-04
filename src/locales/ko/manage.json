@@ -204,5 +204,7 @@
   "{{count}} standby in sync": "예비 {{count}}곳 동기화됨",
   "{{count}} standby will follow": "예비 {{count}}곳이 뒤따름",
   "{{days}} days": "{{days}}일",
-  "{{elapsed}} · cache reused": "{{elapsed}} · 캐시 재사용"
+  "{{elapsed}} · cache reused": "{{elapsed}} · 캐시 재사용",
+  "rollback of {{sha}}": "{{sha}}(으)로 롤백",
+  "This build was reused from an earlier deploy. The lines below are from that build.": "이 빌드는 이전 배포에서 재사용했습니다. 아래 로그는 그 빌드의 기록입니다."
 }

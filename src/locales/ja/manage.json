@@ -204,5 +204,7 @@
   "{{count}} standby in sync": "スタンバイ {{count}} 件が同期済み",
   "{{count}} standby will follow": "スタンバイ {{count}} 件が追従予定",
   "{{days}} days": "{{days}} 日",
-  "{{elapsed}} · cache reused": "{{elapsed}} · キャッシュ再利用"
+  "{{elapsed}} · cache reused": "{{elapsed}} · キャッシュ再利用",
+  "rollback of {{sha}}": "{{sha}} へのロールバック",
+  "This build was reused from an earlier deploy. The lines below are from that build.": "このビルドは以前のデプロイから再利用しました。以下のログはそのビルドの記録です。"
 }
