@@ -65,7 +65,7 @@
 | E01-2 AI 사전 점검 | 샌드박스 실행·단계·로그·패치·승인(4-5) | 🆕 |
 | E01-3 계획 승인 | 이전 계획·승인(4-6) · 보안 비교(4-7) | 🆕 |
 | M01 이전 목록 · M02 이전 실행 (계획·긴급·복귀, Live·Result) | 이전 실행·단계·트래픽·쓰기 전환·측정 결과(4-6) | 🆕 |
-| SEC 보안 (Matrix · Compare · 근거 드로어) | 매트릭스·finding·비교(4-7) | 🆕 |
+| SEC 보안 (Matrix · Compare · 근거 드로어) | 매트릭스·finding ✅ · 비교 🆕 (4-7) | 일부 🆕 |
 | AUD 감사 로그 | 감사 로그 조회(4-8) | 🆕 (지금은 거부 기록만 저장, 조회는 API 서버 7) |
 
 🔁 서비스 목록 요약: 목록 표에 "어디서 서비스 중인지 · 버전"을 보여 주므로, `ServiceSummary`에 `servingEnvironment {id, name, kind}`와 `currentCommitSha`가 있으면 상세를 서비스마다 부르지 않아도 된다. 없으면 프론트가 상세를 따로 부른다(서비스 수가 적어서 데모에는 문제없음).
@@ -203,11 +203,11 @@ KPI 타일 5개(성공률·p95·복제 지연·트래픽 비율·에러 버짓)�
 
 | 동작 | 제안 |
 |---|---|
-| 매트릭스 | `GET /orgs/{orgId}/security/matrix` → `{policyVersion, phase, checkedAt, rows[{environmentId, environmentName, environmentKind, services[], cells{iam, encryption, auditLog, policy}: {result: PASS \| WARN \| FAIL \| NA \| UNKNOWN, findingCount, hasException, mode, checkedAt, expiresAt, controls[{controlId, title, result, isMandatory, reasons[], findingIds[], mode, checkedAt, expiresAt, serviceId}]}}]}` (빈칸 0, NFR-09. 미수집은 `UNKNOWN`) |
-| finding 목록 | `GET /orgs/{orgId}/security/findings?environmentId&serviceId&controlId&findingId&includeExpired&page&size` → 페이지 `{id, controlId, result, reason, source(TRIVY_IMAGE \| GITLEAKS \| TLS_PROBE …), origin(RULE \| HUMAN \| AI), mode, environmentId, serviceId, collectedAt, expiresAt, evidenceRef, items[], totalItems}` |
+| 매트릭스 ✅ | `GET /orgs/{orgId}/security/matrix` → `{policyVersion, phase, checkedAt, rows[{environmentId, environmentName, environmentKind, services[], cells{iam, encryption, auditLog, policy}: {result: PASS \| WARN \| FAIL \| NA \| UNKNOWN, findingCount, hasException, mode, checkedAt, expiresAt, controls[{controlId, title, result, isMandatory, reasons[], findingIds[], mode, checkedAt, expiresAt, serviceId}]}}]}` (빈칸 0, NFR-09. 미수집은 `UNKNOWN`) |
+| finding 목록 ✅ | `GET /orgs/{orgId}/security/findings?environmentId&serviceId&controlId&findingId&includeExpired&page&size` → 페이지 `{id, controlId, result, reason, source(TRIVY_IMAGE \| GITLEAKS \| TLS_PROBE …), origin(RULE \| HUMAN \| AI), mode, environmentId, serviceId, collectedAt, expiresAt, evidenceRef, items[], totalItems}` |
 | 이전 전후 비교 | `GET /orgs/{orgId}/security/compare?source=&target=` → 통제마다 양쪽 값과 `blocksMigration`. 프론트는 `rows[{control, source: cell, target: cell, blocksMigration}]` (가칭)로 쓴다 |
 
-> 11/4: echo-was PR #59(머지 전)의 `docs/api/security.md` 에 맞췄다. `compare` 는 그 다음 PR 이다. 머지되면 타입을 다시 만들고 `lib/api/security.ts` 를 바꾼다. finding 은 `controlId`(`C-IMG-1`)로 오므로 칸과는 매트릭스의 `controls[].findingIds` 로 잇는다.
+> 11/5: 매트릭스 · finding 은 운영 API 를 부른다(echo-was #59). `compare` 는 다음 PR 이라 그전까지 비교만 `lib/api/security.ts` 가 시뮬레이션한다. finding 은 `controlId`(`C-IMG-1`)로 오므로 칸과는 매트릭스의 `controls[].findingIds` 로 잇고, 칸을 열 때 `findingId` 로 그 칸의 증거만 부른다. 서버 `findingCount` 는 판정에 쓴 증거 수라, 칸 글자의 건수는 WARN · FAIL 통제 수로 센다.
 >
 > 11/4: 김형래 제안(슬랙)대로 맞추고 `UNKNOWN` 을 더했다. 서버(echo-was #28)가 생기기 전까지 `lib/api/security.ts` 가 같은 모양으로 시뮬레이션하고 화면에 항상 `simulated` 배지를 단다. 이전 차단은 서버 판정이 기준이고 버튼 비활성은 안내일 뿐이다.
 

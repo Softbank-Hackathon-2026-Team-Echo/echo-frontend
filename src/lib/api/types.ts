@@ -41,6 +41,11 @@ export type IssuedAgentToken = Schemas['IssuedAgentTokenResponse'];
 export type CreateInvitation = Schemas['CreateInvitationRequest'];
 export type CreateAgentToken = Schemas['CreateAgentTokenRequest'];
 export type Me = Schemas['MeResponse'];
+export type SecurityMatrix = Schemas['SecurityMatrixResponse'];
+export type SecurityMatrixRow = Schemas['SecurityMatrixRowResponse'];
+export type SecurityMatrixCell = Schemas['SecurityCellResponse'];
+export type SecurityControlCheck = Schemas['SecurityControlResponse'];
+export type SecurityFinding = Schemas['SecurityFindingResponse'];
 
 export type ConnectionStatus = Schemas['EnvironmentSummaryResponse']['connectionStatus'];
 /** 목록 항목. 저장된 값만 담고 clusterInfo 는 없다 */

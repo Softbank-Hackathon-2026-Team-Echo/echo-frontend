@@ -53,7 +53,7 @@ src/
 │  ├─ api/               # client(api = openapi-fetch + unwrap, 스키마 밖 경로는 apiFetch) · errors · notify · form-errors(422 → 칸 오류)
 │  │                     #   query-client · query-keys · schema.d.ts(gen:api 생성) · types(스키마 별칭)
 │  │                     #   me(useMe · 로그인 전에도 쓰는 조용한 useSession) · environments · services(서비스·배포 요청) · disasters(🆕 API 전까지 브라우저 시뮬레이션) · auth
-│  │                     #   events(실시간 채널 → 쿼리 무효화) · evacuation(🆕 대피 후보 규칙 점수, API 전까지 브라우저 계산) · security(🆕 보안 매트릭스, API 전까지 브라우저 시뮬레이션)
+│  │                     #   events(실시간 채널 → 쿼리 무효화) · evacuation(🆕 대피 후보 규칙 점수, API 전까지 브라우저 계산) · security(보안 매트릭스 · 증거. 이전 전후 비교 🆕 만 API 전까지 브라우저 시뮬레이션)
 │  ├─ roles.ts           # hasRole · 역할 표기
 │  ├─ status.ts          # 서버 상태 값 → 화면 문구·색 (StatusBadge 와 짝), 오류 코드 → 문구
 │  ├─ migration-*.ts     # 이전 단계 시간(stages) · 결과 숫자(metrics). 두 화면 이상에서 쓴다
@@ -207,7 +207,8 @@ docs/                    # api-contract.md, perf.md(성능 측정 방법 · 기�
 | 11/3 | 사이드바 메뉴에 마우스를 올리거나 포커스 · 터치하면 그 경로의 지연 로드 청크를 미리 받는다(`lib/route-prefetch`, 라우터 표를 router.tsx 가 넘김). 첫 화면에서 전부 미리 받지는 않는다 | 메뉴를 누른 뒤 청크를 받는 동안 기다리지 않게. 전부 미리 받으면 첫 화면이 무거워진다. React Router 의 Link prefetch 는 framework 모드 전용이라 직접 만든다 |
 | 11/3 | 지구본(canvas)은 IntersectionObserver 로 화면 밖이면 그리기를 멈추고(멈춘 시간은 빼서 멈춘 자리에서 이어 돎), 토폴로지는 화면에 처음 들어올 때 캔버스 · 배치를 만든다(`useInViewOnce`) | Grafana 의 '보이지 않는 패널은 그리지 않기'. 소개 화면을 내려도 지구본이 초당 120번 다시 그려졌다. 탭 숨김은 브라우저가 requestAnimationFrame 을 이미 멈춘다 |
 | 11/3 | 지구본 육지 데이터는 OrthoGlobe 모듈을 불러오는 즉시 받기 시작하고, 육지가 준비되면 지구본을 한 번에 페이드인한다(늦어도 1.5초 뒤 보임). 소개 화면 코드는 로그인 확인 뒤에 받는 지금 방식을 그대로 둔다 | 화면을 그린 뒤 effect 에서 받아 대륙이 약 0.4초 늦게 튀어나왔다. 소개 화면 코드까지 미리 받으면 로그인한 사람도 받게 돼 11/3 결정(로그인한 사람은 소개 화면 코드를 받지 않음)과 부딪친다 |
-| 11/4 | SEC 는 Matrix · Compare · Findings 탭 한 화면이고 비교 표는 E01-3 패널과 같은 컴포넌트다. 값은 API 전까지 환경 종류별 고정 시뮬레이션(`lib/api/security.ts`)이고 FAIL 은 없다. Re-scan 은 비활성, Figma 의 Export 와 칸 안 설명(KMS · CMEK)은 뺐다 | Figma 메모 '같은 표를 같이 사용'. 계약에 칸별 설명 필드가 없어 지어내지 않고, 스캔 · 내보내기 API 가 없어 눌러도 되는 척하지 않는다. 데모 이전이 시뮬레이션 값으로 막히지 않게 한다 |
+| ~~11/4~~ | ~~SEC 는 Matrix · Compare · Findings 탭 한 화면이고 비교 표는 E01-3 패널과 같은 컴포넌트다. 값은 API 전까지 환경 종류별 고정 시뮬레이션(`lib/api/security.ts`)이고 FAIL 은 없다. Re-scan 은 비활성, Figma 의 Export 와 칸 안 설명(KMS · CMEK)은 뺐다~~ | Figma 메모 '같은 표를 같이 사용'. 계약에 칸별 설명 필드가 없어 지어내지 않고, 스캔 · 내보내기 API 가 없어 눌러도 되는 척하지 않는다. 데모 이전이 시뮬레이션 값으로 막히지 않게 한다 |
 | 11/4 | 언어는 en · ko · ja. 영어 문구 자체가 키이고 번역이 빠지면 영어로 나온다. `i18next` 만 쓰고 언어를 바꾸면 `RouterProvider` 를 다시 만든다(react-i18next 안 씀). 번역은 AI 초안을 파일로 넣고 실행 중 외부 번역을 부르지 않는다. `simulated` 배지는 영어 고정 | 11/3 허들 합의(한국어·일본어). lib 의 상태 문구까지 훅 없이 번역하고 기존 영어 테스트를 그대로 살린다. 시연 중 외부 호출 실패와 번역 흔들림을 없앤다 |
 | 11/4 | 토폴로지는 프록시 위 · 환경 한 줄 아래로 두고, 복제 선은 카드 아래로 돌린다. 배치에는 복제 선을 넣지 않는다 | 복제 선까지 배치에 넣으면 예비가 한 층 뒤로 밀려 트래픽 선이 카드를 지나고 고리처럼 꼬였다. 이전으로 서비스 중 환경이 바뀌어도 배치가 그대로다. 캔버스가 가로로 길어 세로 한 줄보다 글자가 크다 |
 | 11/5 | M02 Result · 완료 카드의 쓰기 정지 · 누락/중복 행은 서버 `result` 값을 쓴다(`measuredBy` 가 있을 때만). 성공한 계획에 값이 없으면 끝난 뒤 10분 동안 5초마다 다시 부른다. RPO 는 계속 `—` 다 | 컷오버는 이전이 끝난 뒤 사람이 스크립트로 돌려서 결과가 늦게 생긴다(echo-was #63). RPO 칸은 서버에 없어 누락 행으로 지어내지 않는다 |
+| 11/5 | SEC Matrix · Findings 는 운영 API 를 부르고, 칸을 열면 통제별 판정 사유와 그 칸의 증거를 보인다. 칸 글자의 건수는 WARN · FAIL 통제 수다. 표에는 통과한 증거도 있어 Severity 대신 Result 를 보인다. Compare · E01-3 비교는 compare API 전까지 시뮬레이션이고 매트릭스와 다를 수 있다고 적는다. Re-scan 은 그대로 비활성이다 | 서버 `findingCount` 는 판정에 쓴 증거 수라 통과도 센다. 차단 판단은 서버 게이트 몫이라 매트릭스 두 행을 화면에서 비교해 막지 않는다 |

@@ -66,6 +66,9 @@ export function CompareTab({ orgId, environments }: CompareTabProps) {
           environments={environments}
         />
       </div>
+      <p className="text-small text-fg-secondary">
+        {t('Simulated until the server comparison is ready, so it can differ from the matrix.')}
+      </p>
       <div className="overflow-x-auto rounded-2xl border border-line bg-surface p-4">
         <SecurityCompareTable
           rows={rows}

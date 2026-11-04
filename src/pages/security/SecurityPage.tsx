@@ -11,8 +11,15 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useEnvironments } from '@/lib/api/environments';
 import { useCurrentOrg } from '@/lib/api/me';
-import { useSecurityFindings, useSecurityMatrix } from '@/lib/api/security';
+import {
+  cellFindingIds,
+  useSecurityFindings,
+  useSecurityFindingsByIds,
+  useSecurityMatrix,
+} from '@/lib/api/security';
+import { dateTime } from '@/lib/format';
 import { k, t } from '@/lib/i18n';
+import { securityControlLabel } from '@/lib/status';
 import { CompareTab } from './CompareTab';
 import { type FindingSelection, FindingSheet } from './FindingSheet';
 import { FindingsTable } from './FindingsTable';
@@ -43,6 +50,12 @@ export default function SecurityPage() {
   const findings = useSecurityFindings(orgId);
   const [tab, setTab] = useState('matrix');
   const [selected, setSelected] = useState<FindingSelection | null>(null);
+  const selectedRow =
+    selected?.kind === 'cell'
+      ? matrix.data?.rows.find((row) => row.environmentId === selected.environmentId)
+      : undefined;
+  const selectedCell = selected?.kind === 'cell' ? selectedRow?.cells[selected.control] : undefined;
+  const cellFindings = useSecurityFindingsByIds(orgId, cellFindingIds(selectedCell));
 
   if (environments.isError) {
     return <ErrorState error={environments.error} onRetry={() => environments.refetch()} />;
@@ -60,11 +73,38 @@ export default function SecurityPage() {
 
   const items = environments.data.items;
   const names = new Map(items.map((item) => [item.id, item.name]));
-  const rows = matrix.data ?? [];
-  const allFindings = findings.data ?? [];
-  const select = (environmentId: string, control: FindingSelection['control']) =>
-    setSelected({ environmentId, control });
+  const rows = matrix.data?.rows ?? [];
+  const cells = rows.flatMap((row) => Object.values(row.cells));
+  const controlTitles = new Map(
+    cells.flatMap((cell) => cell.controls.map((item) => [item.controlId, item.title] as const)),
+  );
+  const serviceNames = new Map(
+    rows.flatMap((row) => row.services.map((item) => [item.serviceId, item.name] as const)),
+  );
   const header = HEADERS[tab] ?? HEADERS.matrix;
+  const sheetTitle = (() => {
+    if (selected?.kind === 'finding') {
+      const { controlId } = selected.finding;
+      return controlTitles.get(controlId) ?? controlId;
+    }
+    if (!selected) return '';
+    return `${selectedRow?.environmentName ?? ''} · ${securityControlLabel(selected.control)}`;
+  })();
+  const hasSimulated = tab === 'compare' || cells.some((cell) => cell.mode === 'SIMULATED');
+  const findingsTable = findings.isError ? (
+    <ErrorState error={findings.error} onRetry={() => findings.refetch()} />
+  ) : findings.isPending ? (
+    <Skeleton className="h-40" />
+  ) : (
+    <FindingsTable
+      findings={findings.data.items}
+      total={findings.data.total}
+      names={names}
+      controlTitles={controlTitles}
+      serviceNames={serviceNames}
+      onSelect={(finding) => setSelected({ kind: 'finding', finding })}
+    />
+  );
 
   return (
     <>
@@ -72,10 +112,7 @@ export default function SecurityPage() {
         title={t(header?.title ?? k('Security'))}
         description={header && t(header.description)}
         actions={
-          <RoleButton
-            requires="DEVELOPER"
-            disabledReason={t('Scans start once the security API is up')}
-          >
+          <RoleButton requires="DEVELOPER" disabledReason={t('Scans run with each deploy')}>
             {t('Re-scan all')}
           </RoleButton>
         }
@@ -101,34 +138,50 @@ export default function SecurityPage() {
               <TabsTrigger value="compare">{t('Compare')}</TabsTrigger>
               <TabsTrigger value="findings">{t('Findings')}</TabsTrigger>
             </TabsList>
-            <SimulatedBadge />
+            {hasSimulated && <SimulatedBadge />}
           </div>
           <TabsContent value="matrix" className="mt-3 flex flex-col gap-3">
-            <SecurityMatrixTable rows={rows} names={names} onSelect={select} />
-            <FindingsTable findings={allFindings} names={names} onSelect={select} />
+            {matrix.isError ? (
+              <ErrorState error={matrix.error} onRetry={() => matrix.refetch()} />
+            ) : matrix.isPending ? (
+              <Skeleton className="h-48" />
+            ) : (
+              <>
+                <SecurityMatrixTable
+                  rows={rows}
+                  onSelect={(environmentId, control) =>
+                    setSelected({ kind: 'cell', environmentId, control })
+                  }
+                />
+                <p className="text-caption text-fg-muted">
+                  {t('Policy {{version}} · checked {{time}}', {
+                    version: matrix.data.policyVersion,
+                    time: dateTime(matrix.data.checkedAt),
+                  })}
+                  {' · '}
+                  {t('Preparation checks only. The migration gate adds execution checks.')}
+                </p>
+              </>
+            )}
+            {findingsTable}
           </TabsContent>
           <TabsContent value="compare" className="mt-3">
             <CompareTab orgId={organization.id} environments={items} />
           </TabsContent>
           <TabsContent value="findings" className="mt-3">
-            <FindingsTable findings={allFindings} names={names} onSelect={select} />
+            {findingsTable}
           </TabsContent>
         </Tabs>
       )}
       <FindingSheet
-        environmentName={names.get(selected?.environmentId ?? '') ?? ''}
-        control={selected?.control}
-        cell={
-          selected
-            ? rows.find((row) => row.environmentId === selected.environmentId)?.cells[
-                selected.control
-              ]
-            : undefined
+        open={selected !== null}
+        title={sheetTitle}
+        cell={selectedCell}
+        findings={
+          selected?.kind === 'finding' ? [selected.finding] : (cellFindings.data?.items ?? [])
         }
-        findings={allFindings.filter(
-          (item) =>
-            item.environmentId === selected?.environmentId && item.control === selected.control,
-        )}
+        isLoading={cellFindings.isLoading}
+        serviceNames={serviceNames}
         onClose={() => setSelected(null)}
       />
     </>

@@ -204,11 +204,5 @@
   "blocked: agent tried to change production ({{source}})": "ブロック: エージェントが本番の変更を試行({{source}})",
   "patch #2 failed verification (9/12) · blocked": "パッチ #2 検証失敗(9/12) · ブロック",
   "patch #3 passed verification (12/12) · waiting for approval": "パッチ #3 検証合格(12/12) · 承認待ち",
-  "Bucket without retention policy": "保持ポリシーのないバケット",
-  "Set a retention policy on the bucket.": "バケットに保持ポリシーを設定してください。",
-  "Service account key older than 90 days": "90日を超えたサービスアカウントキー",
-  "Rotate the key, or move to workload identity.": "キーをローテーションするか、Workload Identityに移行してください。",
-  "K3s API reachable from LAN": "LANからK3s APIに到達可能",
-  "Limit the API server to the management network.": "APIサーバーを管理ネットワークに制限してください。",
   "Replication lag could not be read. A failback needs the DB cutover first": "レプリケーション遅延を読み取れませんでした。フェイルバックの前にDB書き込み切り替えが必要です"
 }
