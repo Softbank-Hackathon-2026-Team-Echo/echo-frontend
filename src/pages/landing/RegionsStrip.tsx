@@ -3,6 +3,7 @@ import { Link } from 'react-router';
 import { ProviderLabel } from '@/components/ProviderLabel';
 import { Button } from '@/components/ui/button';
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
+import { t } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
 type Tile = { kind: string; city: string; region: string };
@@ -50,15 +51,16 @@ export function RegionsStrip() {
       <div className="mx-auto grid max-w-content grid-cols-5 items-center gap-12 px-gutter py-20 max-compact:grid-cols-1 max-compact:px-gutter-compact">
         <div className="col-span-2 flex flex-col items-start gap-4 max-compact:col-span-1">
           <h2 id="regions" className="scroll-mt-20 text-h1 compact:text-headline">
-            Not locked to one cloud or one region
+            {t('Not locked to one cloud or one region')}
           </h2>
           <p className="text-lead-sm text-fg-secondary">
-            An environment is a cloud region or an on-prem city. Register as many as you like;
-            EchoPort only evacuates to the ones outside the impact radius.
+            {t(
+              'An environment is a cloud region or an on-prem city. Register as many as you like; EchoPort only evacuates to the ones outside the impact radius.',
+            )}
           </p>
           <Button asChild variant="secondary">
             <Link to="/login">
-              Add an environment
+              {t('Add an environment')}
               <ArrowRight aria-hidden />
             </Link>
           </Button>

@@ -2,6 +2,7 @@ import { Compass } from 'lucide-react';
 import { Link } from 'react-router';
 import { EmptyState } from '@/components/EmptyState';
 import { Button } from '@/components/ui/button';
+import { t } from '@/lib/i18n';
 
 export default function NotFoundPage() {
   return (
@@ -9,11 +10,11 @@ export default function NotFoundPage() {
       <EmptyState
         className="w-full"
         icon={Compass}
-        title="Page not found"
-        description="The address may be wrong, or the page has moved."
+        title={t('Page not found')}
+        description={t('The address may be wrong, or the page has moved.')}
         action={
           <Button asChild variant="outline" size="sm">
-            <Link to="/">Go home</Link>
+            <Link to="/">{t('Go home')}</Link>
           </Button>
         }
       />

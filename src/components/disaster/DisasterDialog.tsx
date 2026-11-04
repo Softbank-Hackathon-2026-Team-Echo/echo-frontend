@@ -31,6 +31,7 @@ import {
 } from '@/lib/api/disasters';
 import { useEnvironments } from '@/lib/api/environments';
 import { type LatLng, nearLabel } from '@/lib/geo';
+import { k, t } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { DisasterMap } from './DisasterMap';
 
@@ -38,8 +39,8 @@ import { DisasterMap } from './DisasterMap';
 const MAGNITUDES = Array.from({ length: 21 }, (_, index) => Number((5 + index * 0.2).toFixed(1)));
 
 const TYPES: { type: DisasterType; label: string; hint: string; icon: typeof Activity }[] = [
-  { type: 'EARTHQUAKE', label: 'Earthquake', hint: 'M5–M9', icon: Activity },
-  { type: 'TYPHOON', label: 'Typhoon', hint: 'Cat. 1–5', icon: Wind },
+  { type: 'EARTHQUAKE', label: k('Earthquake'), hint: 'M5–M9', icon: Activity },
+  { type: 'TYPHOON', label: k('Typhoon'), hint: k('Cat. 1–5'), icon: Wind },
 ];
 
 /** S01-D 재난 시뮬레이션: 지도를 눌러 진원지를 정하면 반경 안의 환경이 위험으로 바뀐다 */
@@ -93,16 +94,17 @@ export function DisasterDialog({
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              Simulate disaster <SimulatedBadge />
+              {t('Simulate disaster')} <SimulatedBadge />
             </DialogTitle>
             <DialogDescription>
-              Click the map to set the epicenter. Environments inside the radius turn “At risk”.
-              Nothing real goes down.
+              {t(
+                'Click the map to set the epicenter. Environments inside the radius turn “At risk”. Nothing real goes down.',
+              )}
             </DialogDescription>
           </DialogHeader>
 
           <fieldset className="grid grid-cols-2 gap-2">
-            <legend className="sr-only">Disaster type</legend>
+            <legend className="sr-only">{t('Disaster type')}</legend>
             {TYPES.map((item) => {
               const selected = item.type === type;
               const Icon = item.icon;
@@ -126,8 +128,8 @@ export function DisasterDialog({
                   />
                   <Icon aria-hidden className="size-5 text-brand" />
                   <span className="flex flex-col">
-                    <span className="text-body-medium">{item.label}</span>
-                    <span className="text-caption text-fg-muted">{item.hint}</span>
+                    <span className="text-body-medium">{t(item.label)}</span>
+                    <span className="text-caption text-fg-muted">{t(item.hint)}</span>
                   </span>
                 </label>
               );
@@ -144,7 +146,7 @@ export function DisasterDialog({
 
           <div className="flex flex-wrap items-center gap-3">
             <Label htmlFor="disaster-magnitude" className="text-label">
-              {type === 'EARTHQUAKE' ? 'Magnitude' : 'Strength'}
+              {type === 'EARTHQUAKE' ? t('Magnitude') : t('Strength')}
             </Label>
             <Select
               value={String(magnitude)}
@@ -158,35 +160,41 @@ export function DisasterDialog({
                   <SelectItem key={value} value={String(value)}>
                     M{value.toFixed(1)}
                     {/* 선택 칸에도 같은 글자가 들어가므로 짧게 쓴다 */}
-                    {type === 'EARTHQUAKE' && value === EVACUATION_MIN_MAGNITUDE && ' (rule)'}
+                    {type === 'EARTHQUAKE' &&
+                      value === EVACUATION_MIN_MAGNITUDE &&
+                      ` ${t('(rule)')}`}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
             <span className="font-mono text-mono text-fg-muted">
-              → radius {preview.radiusKm} km
+              {t('→ radius {{km}} km', { km: preview.radiusKm })}
             </span>
             <span className="ml-auto text-small text-fg-secondary">
-              Epicenter {nearLabel(epicenter)}
+              {t('Epicenter {{place}}', { place: nearLabel(epicenter) })}
             </span>
           </div>
 
           <dl className="flex flex-col gap-1 text-small">
             <div className="flex flex-wrap items-center gap-2">
-              <dt className="text-fg-secondary">Evacuation rule</dt>
+              <dt className="text-fg-secondary">{t('Evacuation rule')}</dt>
               <dd>
                 {type === 'EARTHQUAKE'
-                  ? `Magnitude ${EVACUATION_MIN_MAGNITUDE.toFixed(1)} or above`
-                  : 'No threshold yet. Every typhoon counts.'}
+                  ? t('Magnitude {{magnitude}} or above', {
+                      magnitude: EVACUATION_MIN_MAGNITUDE.toFixed(1),
+                    })
+                  : t('No threshold yet. Every typhoon counts.')}
               </dd>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <dt className="text-fg-secondary">Source</dt>
+              <dt className="text-fg-secondary">{t('Source')}</dt>
               <dd className="flex flex-wrap items-center gap-2">
-                <StatusBadge label="Manual (simulated)" tone="neutral" />
+                <StatusBadge label={t('Manual (simulated)')} tone="neutral" />
                 {/* 실제 지진 피드를 붙이면 이 자리에서 고른다 (11/2 2부: 시간이 되면 연동) */}
                 <span className="text-fg-muted">
-                  Live feed ({LIVE_FEED.name}) {LIVE_FEED.ready ? 'connected' : 'not connected yet'}
+                  {LIVE_FEED.ready
+                    ? t('Live feed ({{name}}) connected', { name: LIVE_FEED.name })
+                    : t('Live feed ({{name}}) not connected yet', { name: LIVE_FEED.name })}
                 </span>
               </dd>
             </div>
@@ -205,14 +213,24 @@ export function DisasterDialog({
               )}
             >
               <TriangleAlert aria-hidden className="size-4" />
-              {preview.affected.length} environment{preview.affected.length === 1 ? '' : 's'}{' '}
-              affected · {preview.safe.length} safe target{preview.safe.length === 1 ? '' : 's'}
+              {preview.affected.length === 1
+                ? t('{{total}} environment affected', { total: 1 })
+                : t('{{total}} environments affected', { total: preview.affected.length })}
+              {' · '}
+              {preview.safe.length === 1
+                ? t('{{total}} safe target', { total: 1 })
+                : t('{{total}} safe targets', { total: preview.safe.length })}
             </span>
             {preview.affected.length > 0 && (
               <span className="text-small text-fg-secondary">
                 {triggers
-                  ? 'Above the threshold. EchoPort proposes an evacuation for services on affected environments.'
-                  : `Below M${EVACUATION_MIN_MAGNITUDE.toFixed(1)}. Affected environments are flagged, but no evacuation is proposed.`}
+                  ? t(
+                      'Above the threshold. EchoPort proposes an evacuation for services on affected environments.',
+                    )
+                  : t(
+                      'Below M{{magnitude}}. Affected environments are flagged, but no evacuation is proposed.',
+                      { magnitude: EVACUATION_MIN_MAGNITUDE.toFixed(1) },
+                    )}
               </span>
             )}
             <ul className="flex flex-col gap-1.5">
@@ -223,11 +241,11 @@ export function DisasterDialog({
                     <span className="truncate font-mono text-mono">{environment.name}</span>
                   </span>
                   {affected.has(environment.id) ? (
-                    <StatusBadge label="At risk" tone="warning" />
+                    <StatusBadge label={t('At risk')} tone="warning" />
                   ) : preview.unknown.includes(environment.id) ? (
-                    <StatusBadge label="Unknown location" tone="neutral" />
+                    <StatusBadge label={t('Unknown location')} tone="neutral" />
                   ) : (
-                    <StatusBadge label="Safe" tone="success" />
+                    <StatusBadge label={t('Safe')} tone="success" />
                   )}
                 </li>
               ))}
@@ -236,14 +254,14 @@ export function DisasterDialog({
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
+              {t('Cancel')}
             </Button>
             <Button
               type="submit"
               variant="destructive"
               disabled={create.isPending || !items.length}
             >
-              Simulate
+              {t('Simulate')}
             </Button>
           </DialogFooter>
         </form>

@@ -164,7 +164,15 @@ Refs: docs/api-contract.md §4-x
 - TypeScript `strict`, `noUncheckedIndexedAccess`. `any`·`as unknown as`·`@ts-ignore`를 쓰지 않는다. 꼭 필요하면 `@ts-expect-error` + 이유.
 - `console.log`를 커밋하지 않는다(개발 중 디버그는 지우고 커밋).
 
-## 13. 새 코드 체크리스트
+## 13. 언어
+
+- 기준 언어는 영어이고 영어 문구 자체가 번역 키다. 화면에 나오는 문구는 `@/lib/i18n` 의 `t('…')` 로 감싼다. `simulated` 배지, 고유명사, 서버 값은 감싸지 않는다.
+- 모듈 맨 위 표의 문구는 `k('…')` 로 적고 그릴 때 `t(값)` 으로 바꾼다. 모듈을 불러올 때 `t` 를 부르면 언어가 바뀌어도 그대로라 쓰지 않는다.
+- 바뀌는 값은 `t('Migration {{id}} completed', { id })` 로 넘긴다. `t` 안에 `${}` 를 쓰지 않고, 문장을 조각내어 이어 붙이지 않는다. 단수·복수는 두 문구로 나눈다.
+- 번역은 `src/locales/{ko,ja}/*.json`(영어 문구 → 번역)에 둔다. 표기는 [docs/i18n-glossary.md](../../docs/i18n-glossary.md) 를 따른다. `node scripts/check-i18n.mjs` 가 빠진 번역을 잡는다.
+- 테스트는 영어로 돈다.
+
+## 14. 새 코드 체크리스트
 
 1. 이름이 [ui-terms.md](ui-terms.md)·API 필드와 같은가?
 2. 색·간격·글자가 토큰 클래스뿐인가? 임의 값·기본 팔레트가 없는가?
@@ -173,4 +181,5 @@ Refs: docs/api-contract.md §4-x
 5. 권한 버튼이 `RoleButton`인가? 상태를 바꾸는 버튼이 요청 중 비활성인가?
 6. 시뮬레이션에 `// 시뮬레이션:`이 있고, 가짜 값에 `simulated` 배지가 붙는가?
 7. 라이트·다크·projector에서 화면을 봤는가? 1024px 미만에서 사이드바가 접히는가?
-8. `pnpm lint && pnpm typecheck && pnpm test && pnpm build`가 통과하는가?
+8. 화면 문구가 `t` 로 감싸졌고 `node scripts/check-i18n.mjs` 가 통과하는가?
+9. `pnpm lint && pnpm typecheck && pnpm test && pnpm build`가 통과하는가?

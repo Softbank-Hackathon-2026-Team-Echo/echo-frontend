@@ -1,34 +1,44 @@
 import { useRef } from 'react';
+import { k, t } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { Illustration } from './Illustration';
 import { SectionIntro } from './SectionIntro';
 import { StepMini } from './StepMini';
+import { TitleLines } from './TitleLines';
 import { useInView } from './useInView';
 
 const STEPS = [
   {
     key: 'detect',
-    title: 'Detect',
-    body: 'A disaster alert becomes an epicenter and a radius. Environments inside it turn at risk.',
-    label: 'An M7.2 alert near Tokyo marks aws-tokyo-prod at risk',
+    title: k('Detect'),
+    body: k(
+      'A disaster alert becomes an epicenter and a radius. Environments inside it turn at risk.',
+    ),
+    label: k('An M7.2 alert near Tokyo marks aws-tokyo-prod at risk'),
   },
   {
     key: 'choose',
-    title: 'Choose',
-    body: 'Registered environments outside the radius are ranked by safety, capacity, cost and failback time.',
-    label: 'gcp-seoul-standby scores 82 and onprem-fukuoka 74',
+    title: k('Choose'),
+    body: k(
+      'Registered environments outside the radius are ranked by safety, capacity, cost and failback time.',
+    ),
+    label: k('gcp-seoul-standby scores 82 and onprem-fukuoka 74'),
   },
   {
     key: 'test',
-    title: 'Test',
-    body: 'An AI agent replays the app on the target in a sandbox and proposes patches for any gaps.',
-    label: 'A patch raises max_connections from 100 to 200 and the sandbox passes 12 of 12 checks',
+    title: k('Test'),
+    body: k(
+      'An AI agent replays the app on the target in a sandbox and proposes patches for any gaps.',
+    ),
+    label: k(
+      'A patch raises max_connections from 100 to 200 and the sandbox passes 12 of 12 checks',
+    ),
   },
   {
     key: 'move',
-    title: 'Move',
-    body: 'Traffic shifts 1 → 10 → 50 → 100%. The database writer switches with LSN checks.',
-    label: 'Traffic is 30% on Tokyo and 70% on Seoul and the writer cutover matched the LSN',
+    title: k('Move'),
+    body: k('Traffic shifts 1 → 10 → 50 → 100%. The database writer switches with LSN checks.'),
+    label: k('Traffic is 30% on Tokyo and 70% on Seoul and the writer cutover matched the LSN'),
   },
 ] as const;
 
@@ -43,15 +53,11 @@ export function HowItWorks() {
     <section className="mx-auto flex max-w-content flex-col gap-12 px-gutter py-20 max-compact:px-gutter-compact">
       <SectionIntro
         id="how-it-works"
-        title={
-          <>
-            From warning
-            <br />
-            to safe region in minutes
-          </>
-        }
-        description="Four steps run in order. You approve once; EchoPort does the rest and measures every second of it."
-        link={{ label: 'See the full flow', to: '#features' }}
+        title={<TitleLines text={t('From warning<br>to safe region in minutes')} />}
+        description={t(
+          'Four steps run in order. You approve once; EchoPort does the rest and measures every second of it.',
+        )}
+        link={{ label: t('See the full flow'), to: '#features' }}
       />
       <ol
         ref={listRef}
@@ -69,9 +75,9 @@ export function HowItWorks() {
             <span className="w-fit rounded-xs bg-brand px-1.5 text-label text-fg-on-brand">
               {index + 1}
             </span>
-            <h3 className="text-h2">{step.title}</h3>
-            <p className="text-body text-fg-secondary">{step.body}</p>
-            <Illustration label={step.label} className="mt-auto">
+            <h3 className="text-h2">{t(step.title)}</h3>
+            <p className="text-body text-fg-secondary">{t(step.body)}</p>
+            <Illustration label={t(step.label)} className="mt-auto">
               <StepMini step={step.key} />
             </Illustration>
           </li>

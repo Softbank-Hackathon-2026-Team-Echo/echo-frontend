@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { t } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
 type IllustrationProps = {
@@ -20,7 +21,8 @@ export function Illustration({ label, children, className, captionClassName }: I
         {children}
       </div>
       <figcaption className={cn('text-caption text-fg-muted', captionClassName)}>
-        Illustration<span className="sr-only">: {label}</span>
+        {t('Illustration')}
+        <span className="sr-only">: {label}</span>
       </figcaption>
     </figure>
   );

@@ -13,6 +13,7 @@ import { Input } from '@/components/ui/input';
 import { fieldErrors } from '@/lib/api/form-errors';
 import { useUpdateService } from '@/lib/api/services';
 import type { ServiceDetail, UpdateService } from '@/lib/api/types';
+import { t } from '@/lib/i18n';
 
 function initial(service: ServiceDetail) {
   return {
@@ -77,16 +78,17 @@ export function EditServiceDialog({
       <DialogContent className="sm:max-w-lg">
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <DialogHeader>
-            <DialogTitle>Edit {service.name}</DialogTitle>
+            <DialogTitle>{t('Edit {{name}}', { name: service.name })}</DialogTitle>
             <DialogDescription>
-              Changes apply from the next deploy. The name is part of the public URL and can't
-              change.
+              {t(
+                "Changes apply from the next deploy. The name is part of the public URL and can't change.",
+              )}
             </DialogDescription>
           </DialogHeader>
 
           <FormError message={errors._form} />
 
-          <FormField id="edit-repo" label="GitHub repository" error={errors.repoUrl}>
+          <FormField id="edit-repo" label={t('GitHub repository')} error={errors.repoUrl}>
             <Input
               id="edit-repo"
               value={form.repoUrl}
@@ -97,13 +99,17 @@ export function EditServiceDialog({
           </FormField>
           <FormField
             id="edit-description"
-            label="Description (optional)"
+            label={t('Description (optional)')}
             error={errors.description}
           >
             <Input id="edit-description" value={form.description} onChange={set('description')} />
           </FormField>
           <div className="grid grid-cols-3 gap-3">
-            <FormField id="edit-health" label="Health check path" error={errors.healthCheckPath}>
+            <FormField
+              id="edit-health"
+              label={t('Health check path')}
+              error={errors.healthCheckPath}
+            >
               <Input
                 id="edit-health"
                 className="font-mono text-mono"
@@ -111,7 +117,7 @@ export function EditServiceDialog({
                 onChange={set('healthCheckPath')}
               />
             </FormField>
-            <FormField id="edit-port" label="Container port" error={errors.containerPort}>
+            <FormField id="edit-port" label={t('Container port')} error={errors.containerPort}>
               <Input
                 id="edit-port"
                 type="number"
@@ -123,7 +129,7 @@ export function EditServiceDialog({
             </FormField>
             <FormField
               id="edit-timeout"
-              label="Health timeout (s)"
+              label={t('Health timeout (s)')}
               error={errors.healthCheckTimeoutSeconds}
             >
               <Input
@@ -139,10 +145,10 @@ export function EditServiceDialog({
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
+              {t('Cancel')}
             </Button>
             <Button type="submit" disabled={update.isPending}>
-              {update.isPending ? 'Saving…' : 'Save changes'}
+              {update.isPending ? t('Saving…') : t('Save changes')}
             </Button>
           </DialogFooter>
         </form>

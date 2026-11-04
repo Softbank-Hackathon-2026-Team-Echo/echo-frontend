@@ -7,6 +7,7 @@ import {
   meetsEvacuationThreshold,
   useEndDisaster,
 } from '@/lib/api/disasters';
+import { t } from '@/lib/i18n';
 
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
@@ -29,16 +30,16 @@ export function ActiveDisasterCard({
 }) {
   const end = useEndDisaster(orgId);
   const list = (ids: string[]) =>
-    ids.length ? ids.map((id) => names.get(id) ?? 'unknown').join(' · ') : 'None';
+    ids.length ? ids.map((id) => names.get(id) ?? t('unknown')).join(' · ') : t('None');
   return (
     <section className="flex flex-col gap-3 rounded-lg border border-danger-solid bg-surface p-4">
       <header className="flex items-center justify-between gap-2">
-        <h2 className="text-overline uppercase text-danger-fg">Active disaster</h2>
+        <h2 className="text-overline uppercase text-danger-fg">{t('Active disaster')}</h2>
         <SimulatedBadge />
       </header>
       <dl className="flex flex-col gap-1.5">
         <Row
-          label="Epicenter"
+          label={t('Epicenter')}
           value={
             <span className="tabular-nums">
               {disaster.epicenter.lat.toFixed(1)}°N {disaster.epicenter.lng.toFixed(1)}°E · M
@@ -47,24 +48,32 @@ export function ActiveDisasterCard({
           }
         />
         <Row
-          label="Impact radius"
+          label={t('Impact radius')}
           value={<span className="tabular-nums">{disaster.radiusKm} km</span>}
         />
         <Row
-          label="Evacuation rule"
+          label={t('Evacuation rule')}
           value={
             disaster.type === 'EARTHQUAKE' ? (
               <StatusBadge
-                label={`${meetsEvacuationThreshold(disaster) ? 'Met' : 'Not met'} · M${EVACUATION_MIN_MAGNITUDE.toFixed(1)}+`}
+                label={
+                  meetsEvacuationThreshold(disaster)
+                    ? t('Met · M{{magnitude}}+', {
+                        magnitude: EVACUATION_MIN_MAGNITUDE.toFixed(1),
+                      })
+                    : t('Not met · M{{magnitude}}+', {
+                        magnitude: EVACUATION_MIN_MAGNITUDE.toFixed(1),
+                      })
+                }
                 tone={meetsEvacuationThreshold(disaster) ? 'danger' : 'neutral'}
               />
             ) : (
-              'No threshold'
+              t('No threshold')
             )
           }
         />
-        <Row label="Affected" value={list(disaster.affectedEnvironmentIds)} />
-        <Row label="Safe targets" value={list(disaster.safeEnvironmentIds)} />
+        <Row label={t('Affected')} value={list(disaster.affectedEnvironmentIds)} />
+        <Row label={t('Safe targets')} value={list(disaster.safeEnvironmentIds)} />
       </dl>
       <RoleButton
         requires="DEVELOPER"
@@ -74,7 +83,7 @@ export function ActiveDisasterCard({
         disabled={end.isPending}
         onClick={() => end.mutate(disaster.id)}
       >
-        End simulation
+        {t('End simulation')}
       </RoleButton>
     </section>
   );

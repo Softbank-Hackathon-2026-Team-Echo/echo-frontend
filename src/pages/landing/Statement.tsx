@@ -1,23 +1,30 @@
 import { Globe, ShieldCheck, TriangleAlert } from 'lucide-react';
+import { k, t } from '@/lib/i18n';
 
 const PILLARS = [
   {
     fig: 'FIG 0.1',
     icon: TriangleAlert,
-    title: 'Disaster-aware',
-    body: 'Earthquake and typhoon alerts are turned into an impact radius. Environments inside it are marked at risk.',
+    title: k('Disaster-aware'),
+    body: k(
+      'Earthquake and typhoon alerts are turned into an impact radius. Environments inside it are marked at risk.',
+    ),
   },
   {
     fig: 'FIG 0.2',
     icon: Globe,
-    title: 'Any cloud, any region',
-    body: 'AWS, GCP and on-prem sites are all just environments. Evacuate to whichever one is safe, not a fixed backup.',
+    title: k('Any cloud, any region'),
+    body: k(
+      'AWS, GCP and on-prem sites are all just environments. Evacuate to whichever one is safe, not a fixed backup.',
+    ),
   },
   {
     fig: 'FIG 0.3',
     icon: ShieldCheck,
-    title: 'Human-approved AI',
-    body: 'An AI agent tests the move in a sandbox and proposes fixes. Nothing touches production until a person approves.',
+    title: k('Human-approved AI'),
+    body: k(
+      'An AI agent tests the move in a sandbox and proposes fixes. Nothing touches production until a person approves.',
+    ),
   },
 ];
 
@@ -29,9 +36,10 @@ export function Statement() {
       className="mx-auto flex max-w-content flex-col gap-20 px-gutter py-20 max-compact:gap-12 max-compact:px-gutter-compact"
     >
       <h2 id="statement" className="text-h1 text-fg-muted compact:text-headline">
-        <span className="text-fg">Disasters don’t wait for a maintenance window.</span> EchoPort
-        watches disaster alerts, picks a safe region, tests the move with an AI agent and shifts
-        live traffic and data before the outage reaches your users.
+        <span className="text-fg">{t('Disasters don’t wait for a maintenance window.')}</span>{' '}
+        {t(
+          'EchoPort watches disaster alerts, picks a safe region, tests the move with an AI agent and shifts live traffic and data before the outage reaches your users.',
+        )}
       </h2>
       <ul className="grid grid-cols-3 max-compact:grid-cols-1 max-compact:gap-10">
         {PILLARS.map(({ fig, icon: Icon, title, body }, index) => (
@@ -47,8 +55,8 @@ export function Statement() {
             <span className="flex w-30 justify-center">
               <Icon aria-hidden strokeWidth={0.75} className="size-22 text-line-strong" />
             </span>
-            <h3 className="text-h3">{title}</h3>
-            <p className="text-lead-sm text-fg-secondary">{body}</p>
+            <h3 className="text-h3">{t(title)}</h3>
+            <p className="text-lead-sm text-fg-secondary">{t(body)}</p>
           </li>
         ))}
       </ul>

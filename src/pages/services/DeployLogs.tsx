@@ -7,16 +7,21 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { isTerminalStatus, useDeployLogs } from '@/lib/api/services';
 import type { DeployRequestDetail, LogSource } from '@/lib/api/types';
+import { k, t } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
 const SOURCES: { value: LogSource; label: string; empty: string }[] = [
-  { value: 'DEPLOY_JOB', label: 'Deploy', empty: 'No deploy steps yet.' },
+  { value: 'DEPLOY_JOB', label: k('Deploy'), empty: k('No deploy steps yet.') },
   {
     value: 'BUILD',
-    label: 'Build',
-    empty: 'No build log. The build has not started or was reused.',
+    label: k('Build'),
+    empty: k('No build log. The build has not started or was reused.'),
   },
-  { value: 'RUNTIME', label: 'Runtime', empty: 'No runtime log. The app is not running yet.' },
+  {
+    value: 'RUNTIME',
+    label: k('Runtime'),
+    empty: k('No runtime log. The app is not running yet.'),
+  },
 ];
 
 const LEVEL_CLASS: Record<string, string> = {
@@ -49,7 +54,7 @@ function LogLines({
         </span>
       )}
       {lines.length === 0 ? (
-        <p className="text-small text-fg-muted">{source.empty}</p>
+        <p className="text-small text-fg-muted">{t(source.empty)}</p>
       ) : (
         <ol className="flex max-h-96 flex-col gap-1 overflow-y-auto font-mono text-mono">
           {lines.map((line, index) => (
@@ -74,7 +79,7 @@ function LogLines({
           disabled={logs.isFetchingNextPage}
           onClick={() => logs.fetchNextPage()}
         >
-          Load more
+          {t('Load more')}
         </Button>
       )}
     </div>
@@ -91,13 +96,13 @@ export function DeployLogs({ orgId, request }: { orgId: string; request: DeployR
       <header className="flex flex-wrap items-center justify-between gap-2 border-b border-line px-4 py-2">
         <span className="flex items-center gap-2 font-mono text-mono text-fg-secondary">
           <SquareTerminal aria-hidden className="size-4" />
-          deploy · {request.id.slice(0, 8)}
+          {t('deploy · {{id}}', { id: request.id.slice(0, 8) })}
         </span>
         <Tabs value={source} onValueChange={(value) => setSource(value as LogSource)}>
           <TabsList>
             {SOURCES.map((item) => (
               <TabsTrigger key={item.value} value={item.value}>
-                {item.label}
+                {t(item.label)}
               </TabsTrigger>
             ))}
           </TabsList>
@@ -105,7 +110,7 @@ export function DeployLogs({ orgId, request }: { orgId: string; request: DeployR
         {!isTerminalStatus(request.status) && (
           <span className="flex items-center gap-1.5 text-caption text-success-fg">
             <span aria-hidden className="size-1.5 rounded-full bg-success-solid" />
-            Live
+            {t('Live')}
           </span>
         )}
       </header>

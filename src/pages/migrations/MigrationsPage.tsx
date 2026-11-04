@@ -19,6 +19,7 @@ import { useEnvironments } from '@/lib/api/environments';
 import { useCurrentOrg } from '@/lib/api/me';
 import { useOrgMigrationPlans } from '@/lib/api/migrations';
 import { useServices } from '@/lib/api/services';
+import { t } from '@/lib/i18n';
 import { duration } from '@/lib/migration-stages';
 import { migrationErrorLabel, migrationModeLabel, migrationPlanStatusView } from '@/lib/status';
 
@@ -86,11 +87,11 @@ export default function MigrationsPage() {
   return (
     <>
       <PageHeader
-        title="Migrations"
-        description="Every evacuation and failback with its measured result."
+        title={t('Migrations')}
+        description={t('Every evacuation and failback with its measured result.')}
         actions={
           <Button asChild>
-            <Link to={`/o/${slug}/evacuation`}>Plan a migration</Link>
+            <Link to={`/o/${slug}/evacuation`}>{t('Plan a migration')}</Link>
           </Button>
         }
       />
@@ -99,26 +100,28 @@ export default function MigrationsPage() {
       ) : runs.length === 0 ? (
         <EmptyState
           icon={ArrowRightLeft}
-          title="No migrations yet"
-          description="Plan one from Evacuation. Approved plans and their results show up here."
+          title={t('No migrations yet')}
+          description={t(
+            'Plan one from Evacuation. Approved plans and their results show up here.',
+          )}
         />
       ) : (
         <>
           <div className="flex divide-x divide-line rounded-xl border border-line bg-surface max-compact:flex-col max-compact:divide-x-0 max-compact:divide-y">
-            <Summary icon={ArrowRightLeft} label="Plans" value={String(runs.length)} />
+            <Summary icon={ArrowRightLeft} label={t('Plans')} value={String(runs.length)} />
             <Summary
               icon={CircleCheck}
-              label="Succeeded"
+              label={t('Succeeded')}
               value={`${succeeded.length} / ${ran.length}`}
             />
             <Summary
               icon={Gauge}
-              label="Fastest run"
+              label={t('Fastest run')}
               value={fastest === undefined ? '—' : duration(fastest)}
             />
             <Summary
               icon={ShieldCheck}
-              label="Rolled back"
+              label={t('Rolled back')}
               value={String(runs.filter((plan) => plan.status === 'ROLLED_BACK').length)}
             />
           </div>
@@ -126,11 +129,11 @@ export default function MigrationsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Plan</TableHead>
-                  <TableHead>Service</TableHead>
-                  <TableHead>Route</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Result</TableHead>
+                  <TableHead>{t('Plan')}</TableHead>
+                  <TableHead>{t('Service')}</TableHead>
+                  <TableHead>{t('Route')}</TableHead>
+                  <TableHead>{t('Status')}</TableHead>
+                  <TableHead>{t('Result')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -180,7 +183,7 @@ export default function MigrationsPage() {
                           ? migrationErrorLabel(plan.errorCode)
                           : seconds === null
                             ? '—'
-                            : `took ${duration(seconds)}`}
+                            : t('took {{duration}}', { duration: duration(seconds) })}
                       </TableCell>
                     </TableRow>
                   );

@@ -20,6 +20,7 @@ import {
 import { fieldErrors } from '@/lib/api/form-errors';
 import { useCreateInvitation } from '@/lib/api/members';
 import { MEMBER_ROLES, type MemberRole } from '@/lib/api/types';
+import { t } from '@/lib/i18n';
 import { ROLE_LABELS } from '@/lib/roles';
 
 /** GitHub 아이디 + 역할로 초대한다. 그 사람이 로그인하면 바로 멤버가 된다 */
@@ -59,13 +60,14 @@ export function InviteDialog({
       <DialogContent>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <DialogHeader>
-            <DialogTitle>Invite by GitHub ID</DialogTitle>
+            <DialogTitle>{t('Invite by GitHub ID')}</DialogTitle>
             <DialogDescription>
-              They join with this role the next time they sign in. The invitation expires after 7
-              days.
+              {t(
+                'They join with this role the next time they sign in. The invitation expires after 7 days.',
+              )}
             </DialogDescription>
           </DialogHeader>
-          <FormField id="invite-login" label="GitHub username" error={errors.githubLogin}>
+          <FormField id="invite-login" label={t('GitHub username')} error={errors.githubLogin}>
             <Input
               id="invite-login"
               value={githubLogin}
@@ -78,8 +80,10 @@ export function InviteDialog({
           </FormField>
           <FormField
             id="invite-role"
-            label="Role"
-            hint="Developers can deploy, migrate and approve. Admins also invite, change roles and delete."
+            label={t('Role')}
+            hint={t(
+              'Developers can deploy, migrate and approve. Admins also invite, change roles and delete.',
+            )}
             error={errors.role}
           >
             <Select value={role} onValueChange={(value) => setRole(value as MemberRole)}>
@@ -98,10 +102,10 @@ export function InviteDialog({
           <FormError message={errors._form} />
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => close(false)}>
-              Cancel
+              {t('Cancel')}
             </Button>
             <Button type="submit" disabled={create.isPending || !githubLogin.trim()}>
-              Send invitation
+              {t('Send invitation')}
             </Button>
           </DialogFooter>
         </form>

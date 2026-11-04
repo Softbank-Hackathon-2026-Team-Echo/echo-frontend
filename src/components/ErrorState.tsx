@@ -1,6 +1,7 @@
 import { CircleAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { describeApiError, isApiError } from '@/lib/api/errors';
+import { t } from '@/lib/i18n';
 import { EmptyState } from './EmptyState';
 
 type ErrorStateProps = { error: unknown; onRetry?: () => void };
@@ -12,14 +13,14 @@ export function ErrorState({ error, onRetry }: ErrorStateProps) {
   return (
     <EmptyState
       icon={CircleAlert}
-      title="Couldn't load this"
-      description={[describeApiError(error), requestId && `Request ID ${requestId}`]
+      title={t("Couldn't load this")}
+      description={[describeApiError(error), requestId && t('Request ID {{id}}', { id: requestId })]
         .filter(Boolean)
         .join(' · ')}
       action={
         canRetry && onRetry ? (
           <Button variant="outline" size="sm" onClick={onRetry}>
-            Retry
+            {t('Retry')}
           </Button>
         ) : undefined
       }

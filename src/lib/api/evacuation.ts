@@ -1,22 +1,64 @@
 // 시뮬레이션: 대피 후보 API(계약 4-4 🆕)가 서버에 생기기 전까지 브라우저에서 규칙 점수를 매긴다.
 // 응답 모양은 계약 초안과 같다. 서버가 생기면 EVACUATION_API_READY 를 켜고 api + unwrap 으로 바꾼다
 import { distanceKm, environmentCoordinates, placeCountry } from '../geo';
+import { t } from '../i18n';
 import type { Disaster } from './disasters';
 import type { EnvironmentSummary, ServiceDetail } from './types';
 
 export const EVACUATION_API_READY = false;
 
+// 화면이 표를 바로 읽으므로 읽는 순간의 언어로 답하게 getter 로 둔다
 export const SCORE_RULES = [
-  { key: 'safety', label: 'Safety', rule: 'distance from epicenter, outside radius', weight: 0.35 },
+  {
+    key: 'safety',
+    get label() {
+      return t('Safety');
+    },
+    get rule() {
+      return t('distance from epicenter, outside radius');
+    },
+    weight: 0.35,
+  },
   {
     key: 'capacity',
-    label: 'Capacity',
-    rule: 'warm standby or room for current load',
+    get label() {
+      return t('Capacity');
+    },
+    get rule() {
+      return t('warm standby or room for current load');
+    },
     weight: 0.25,
   },
-  { key: 'cost', label: 'Cost', rule: 'hourly cost at full traffic', weight: 0.1 },
-  { key: 'failbackTime', label: 'Failback time', rule: 'reverse sync estimate', weight: 0.15 },
-  { key: 'dataResidency', label: 'Data residency', rule: 'policy allows KR / JP', weight: 0.15 },
+  {
+    key: 'cost',
+    get label() {
+      return t('Cost');
+    },
+    get rule() {
+      return t('hourly cost at full traffic');
+    },
+    weight: 0.1,
+  },
+  {
+    key: 'failbackTime',
+    get label() {
+      return t('Failback time');
+    },
+    get rule() {
+      return t('reverse sync estimate');
+    },
+    weight: 0.15,
+  },
+  {
+    key: 'dataResidency',
+    get label() {
+      return t('Data residency');
+    },
+    get rule() {
+      return t('policy allows KR / JP');
+    },
+    weight: 0.15,
+  },
 ] as const;
 
 export type ScoreKey = (typeof SCORE_RULES)[number]['key'];
@@ -111,18 +153,18 @@ export function rankEvacuationTargets(
       dataResidency: country === null ? 50 : ALLOWED_COUNTRIES.has(country) ? 86 : 30,
     };
     const reasons = [
-      `outside radius (${km(distance)})`,
+      t('outside radius ({{distance}})', { distance: km(distance) }),
       warm
-        ? 'warm standby, in sync'
+        ? t('warm standby, in sync')
         : deployed
-          ? 'deployed, needs sync'
-          : 'no deployment yet, cold start',
+          ? t('deployed, needs sync')
+          : t('no deployment yet, cold start'),
     ];
     if (country)
       reasons.push(
         ALLOWED_COUNTRIES.has(country)
-          ? `data stays in ${country}`
-          : `data leaves KR / JP (${country})`,
+          ? t('data stays in {{country}}', { country: t(country) })
+          : t('data leaves KR / JP ({{country}})', { country: t(country) }),
       );
 
     result.candidates.push({

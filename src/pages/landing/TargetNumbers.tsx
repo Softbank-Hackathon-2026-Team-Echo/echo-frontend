@@ -1,5 +1,6 @@
 import { useRef } from 'react';
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
+import { k, t } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { useCountUp } from './useCountUp';
 import { useInView } from './useInView';
@@ -8,14 +9,14 @@ type Target = { value: number; format: (value: number) => string; title: string;
 
 // 아직 잰 값이 아니라 리허설 목표다. 리허설에서 재면 이 값을 바꾸고 문구도 "Measured" 로 고친다
 const TARGETS: Target[] = [
-  { value: 0, format: String, title: 'failed requests', note: 'during a planned evacuation' },
-  { value: 0, format: String, title: 'rows lost', note: 'writer cutover with LSN checks' },
-  { value: 90, format: (v) => `≤ ${v} s`, title: 'traffic shift', note: '1 → 10 → 50 → 100%' },
+  { value: 0, format: String, title: k('failed requests'), note: k('during a planned evacuation') },
+  { value: 0, format: String, title: k('rows lost'), note: k('writer cutover with LSN checks') },
+  { value: 90, format: (v) => `≤ ${v} s`, title: k('traffic shift'), note: '1 → 10 → 50 → 100%' },
   {
     value: 197,
     format: (v) => `${Math.floor(v / 60)}m ${String(v % 60).padStart(2, '0')}s`,
-    title: 'full evacuation',
-    note: 'alert to 100% on the safe region',
+    title: k('full evacuation'),
+    note: k('alert to 100% on the safe region'),
   },
 ];
 
@@ -42,7 +43,7 @@ export function TargetNumbers() {
       className="mx-auto flex max-w-content flex-col gap-10 px-gutter py-20 max-compact:px-gutter-compact"
     >
       <h2 id="targets" className="font-mono text-mono text-fg-muted uppercase">
-        Demo targets · to be replaced with rehearsal measurements
+        {t('Demo targets · to be replaced with rehearsal measurements')}
       </h2>
       <ul
         ref={listRef}
@@ -59,8 +60,8 @@ export function TargetNumbers() {
             )}
           >
             <TargetValue target={target} isActive={isInView} />
-            <span className="text-h3">{target.title}</span>
-            <span className="text-small text-fg-muted">{target.note}</span>
+            <span className="text-h3">{t(target.title)}</span>
+            <span className="text-small text-fg-muted">{t(target.note)}</span>
           </li>
         ))}
       </ul>

@@ -9,6 +9,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import type { SecurityControl, SecurityFinding } from '@/lib/api/security';
+import { t } from '@/lib/i18n';
 import { securitySeverityLabel } from '@/lib/status';
 
 type FindingsTableProps = {
@@ -23,8 +24,8 @@ export function FindingsTable({ findings, names, onSelect }: FindingsTableProps)
     return (
       <EmptyState
         icon={ShieldCheck}
-        title="No findings"
-        description="Every collected control passed on every environment."
+        title={t('No findings')}
+        description={t('Every collected control passed on every environment.')}
       />
     );
   }
@@ -33,10 +34,10 @@ export function FindingsTable({ findings, names, onSelect }: FindingsTableProps)
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Finding</TableHead>
-            <TableHead>Environment</TableHead>
-            <TableHead>Source</TableHead>
-            <TableHead>Severity</TableHead>
+            <TableHead>{t('Finding')}</TableHead>
+            <TableHead>{t('Environment')}</TableHead>
+            <TableHead>{t('Source')}</TableHead>
+            <TableHead>{t('Severity')}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>

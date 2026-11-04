@@ -1,6 +1,7 @@
 import { CircleCheck } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { StatusBadge } from '@/components/StatusBadge';
+import { t } from '@/lib/i18n';
 
 function Box({ children }: { children: ReactNode }) {
   return <div className="flex flex-col gap-2 rounded-md bg-subtle p-2.5">{children}</div>;
@@ -9,12 +10,12 @@ function Box({ children }: { children: ReactNode }) {
 function Detect() {
   return (
     <Box>
-      <StatusBadge label="M7.2 near Tokyo" tone="danger" className="w-fit" />
+      <StatusBadge label={t('M7.2 near Tokyo')} tone="danger" className="w-fit" />
       {(
         [
-          ['aws-tokyo-prod', 'At risk', 'warning'],
-          ['gcp-seoul-standby', 'Healthy', 'success'],
-          ['onprem-fukuoka', 'Standby', 'neutral'],
+          ['aws-tokyo-prod', t('At risk'), 'warning'],
+          ['gcp-seoul-standby', t('Healthy'), 'success'],
+          ['onprem-fukuoka', t('Standby'), 'neutral'],
         ] as const
       ).map(([name, label, tone]) => (
         <span key={name} className="flex items-center justify-between gap-2">
@@ -60,7 +61,7 @@ function Test() {
       </span>
       <span className="flex items-center gap-1.5 text-small text-success-fg">
         <CircleCheck aria-hidden className="size-4" />
-        Sandbox passed 12/12
+        {t('Sandbox passed 12/12')}
       </span>
     </Box>
   );
@@ -79,7 +80,7 @@ function Move() {
       </span>
       <span className="flex items-center gap-1.5 text-small text-success-fg">
         <CircleCheck aria-hidden className="size-4" />
-        Writer cutover · LSN matched
+        {t('Writer cutover · LSN matched')}
       </span>
     </Box>
   );

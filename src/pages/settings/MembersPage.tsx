@@ -6,6 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useCurrentOrg } from '@/lib/api/me';
 import { useUpdateOrgSettings } from '@/lib/api/members';
 import type { Organization } from '@/lib/api/types';
+import { t } from '@/lib/i18n';
 import { hasRole } from '@/lib/roles';
 import { AgentTokensPanel } from './AgentTokensPanel';
 import { InvitationsPanel } from './InvitationsPanel';
@@ -19,7 +20,7 @@ function ApprovalSetting({ organization }: { organization: Organization }) {
   const isAdmin = hasRole(organization.role, 'ADMIN');
   return (
     <section className="flex flex-col gap-2 rounded-lg border border-line bg-surface p-4">
-      <h2 className="text-title">Migration approvals</h2>
+      <h2 className="text-title">{t('Migration approvals')}</h2>
       <label className="flex items-start gap-2 text-body has-[:disabled]:cursor-not-allowed">
         <input
           type="checkbox"
@@ -29,12 +30,12 @@ function ApprovalSetting({ organization }: { organization: Organization }) {
           onChange={(event) => update.mutate({ allowSelfApproval: event.target.checked })}
         />
         <span className="flex flex-col gap-0.5">
-          Let the person who planned a migration approve it
+          {t('Let the person who planned a migration approve it')}
           <span className="text-small text-fg-muted">
             {organization.allowSelfApproval
-              ? 'On. Useful when one developer runs the whole demo.'
-              : 'Off. Another developer or admin has to approve.'}
-            {!isAdmin && ' Only admins can change this.'}
+              ? t('On. Useful when one developer runs the whole demo.')
+              : t('Off. Another developer or admin has to approve.')}
+            {!isAdmin && ` ${t('Only admins can change this.')}`}
           </span>
         </span>
       </label>
@@ -52,11 +53,13 @@ export default function MembersPage() {
   return (
     <>
       <PageHeader
-        title="Members & roles"
-        description="Viewer < Developer < Admin. Approvals need Developer or above; delete, invite and role changes need Admin."
+        title={t('Members & roles')}
+        description={t(
+          'Viewer < Developer < Admin. Approvals need Developer or above; delete, invite and role changes need Admin.',
+        )}
         actions={
           <RoleButton requires="ADMIN" onClick={() => setInviteOpen(true)}>
-            Invite by GitHub ID
+            {t('Invite by GitHub ID')}
           </RoleButton>
         }
       />

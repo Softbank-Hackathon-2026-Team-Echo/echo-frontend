@@ -25,6 +25,7 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { useInViewOnce } from '@/hooks/useInViewOnce';
 import type { EnvironmentSummary } from '@/lib/api/types';
 import { regionGroupLabel } from '@/lib/geo';
+import { t } from '@/lib/i18n';
 import { connectionStatusView, envRoleView, shortSha } from '@/lib/status';
 import { cn } from '@/lib/utils';
 import type { ServiceOnEnvironment } from './types';
@@ -51,9 +52,11 @@ type TopologyNode =
 
 /** 예비 상태: 따라가기 실패 > 버전 일치(+ 마지막 따라가기에 걸린 초) > 뒤처짐 */
 function standbyText(link: ServiceOnEnvironment['link'] | undefined): string {
-  if (link?.lastSyncError) return 'Sync failed';
-  if (link?.versionStatus !== 'IN_SYNC') return 'Behind';
-  return link.lastSyncSeconds !== null ? `Warm · synced in ${link.lastSyncSeconds}s` : 'Warm';
+  if (link?.lastSyncError) return t('Sync failed');
+  if (link?.versionStatus !== 'IN_SYNC') return t('Behind');
+  return link.lastSyncSeconds !== null
+    ? t('Warm · synced in {{seconds}}s', { seconds: link.lastSyncSeconds })
+    : t('Warm');
 }
 
 /** 환경 노드: 역할 · 버전 · 트래픽 막대 · 위험 */
@@ -64,10 +67,10 @@ function EnvironmentNode({ data }: NodeProps<Node<EnvNodeData, 'environment'>>) 
   const role = primary?.link.role;
   const roleText =
     role === 'SERVING'
-      ? `Primary · ${shortSha(primary?.link.currentDeployment?.commitSha)}`
+      ? t('Primary · {{sha}}', { sha: shortSha(primary?.link.currentDeployment?.commitSha) })
       : role === 'STANDBY'
-        ? `Standby · ${standbyText(primary?.link)}`
-        : 'No services';
+        ? t('Standby · {{status}}', { status: standbyText(primary?.link) })
+        : t('No services');
   return (
     <div
       className={cn(
@@ -106,7 +109,7 @@ function EnvironmentNode({ data }: NodeProps<Node<EnvNodeData, 'environment'>>) 
         {atRisk ? (
           <span className="inline-flex items-center gap-1 rounded-sm bg-danger-bg px-1.5 text-label text-danger-fg">
             <TriangleAlert aria-hidden className="size-3" />
-            At risk
+            {t('At risk')}
           </span>
         ) : role ? (
           <StatusBadge {...envRoleView(role)} />
@@ -157,9 +160,9 @@ function ProxyNode({ data }: NodeProps<Node<ProxyNodeData, 'proxy'>>) {
         position={Position.Right}
         className="!size-1.5 !border-0 !bg-line-strong"
       />
-      <span className="text-body-medium">Edge proxy</span>
+      <span className="text-body-medium">{t('Edge proxy')}</span>
       <span className="truncate font-mono text-mono text-fg-muted">
-        {data.url?.replace(/^https:\/\//, '') ?? 'No public URL yet'}
+        {data.url?.replace(/^https:\/\//, '') ?? t('No public URL yet')}
       </span>
     </div>
   );
@@ -198,7 +201,7 @@ function TrafficEdge(props: EdgeProps<Edge<TrafficEdgeData>>) {
           className="nodrag nopan absolute rounded-sm bg-surface px-1 font-mono text-caption text-fg-muted shadow-xs"
           style={{ transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)` }}
         >
-          {replication ? 'repl.' : `traffic ${weight}%`}
+          {replication ? t('repl.') : t('traffic {{weight}}%', { weight })}
         </span>
       </EdgeLabelRenderer>
     </>
@@ -273,7 +276,8 @@ function TopologyCanvas({ environments, byEnvironment, atRisk, edgeUrl }: Topolo
   const groups = useMemo(() => {
     const map = new Map<string, EnvironmentSummary[]>();
     for (const environment of environments) {
-      const label = `${regionGroupLabel(environment)}${environment.kind === 'onprem' ? ' (on-prem)' : ''}`;
+      const region = regionGroupLabel(environment);
+      const label = environment.kind === 'onprem' ? t('{{region}} (on-prem)', { region }) : region;
       map.set(label, [...(map.get(label) ?? []), environment]);
     }
     return map;
@@ -392,8 +396,20 @@ function TopologyCanvas({ environments, byEnvironment, atRisk, edgeUrl }: Topolo
     return list;
   }, [positions, groups, byEnvironment, atRisk, edgeUrl]);
 
+  // 캔버스 왼쪽 아래 버튼의 툴팁. 기본값이 영어 문구라 그대로 번역한다
+  const ariaLabelConfig = useMemo(
+    () => ({
+      'controls.ariaLabel': t('Control Panel'),
+      'controls.zoomIn.ariaLabel': t('Zoom In'),
+      'controls.zoomOut.ariaLabel': t('Zoom Out'),
+      'controls.fitView.ariaLabel': t('Fit View'),
+    }),
+    [],
+  );
+
   return (
     <ReactFlow
+      ariaLabelConfig={ariaLabelConfig}
       nodes={nodes}
       edges={edges}
       nodeTypes={nodeTypes}

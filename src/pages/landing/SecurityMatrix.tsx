@@ -1,9 +1,10 @@
 import { CircleCheck, CircleX, TriangleAlert } from 'lucide-react';
+import { k, t } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
 type Cell = 'pass' | 'violation' | 'issues';
 
-const COLUMNS = ['IAM', 'Encryption', 'Audit log', 'Policy'];
+const COLUMNS = ['IAM', k('Encryption'), k('Audit log'), k('Policy')];
 const ROWS: { name: string; cells: Cell[] }[] = [
   { name: 'aws-tokyo-prod', cells: ['pass', 'pass', 'pass', 'pass'] },
   { name: 'gcp-seoul-standby', cells: ['pass', 'pass', 'violation', 'issues'] },
@@ -11,9 +12,9 @@ const ROWS: { name: string; cells: Cell[] }[] = [
 ];
 
 const CELL = {
-  pass: { label: 'Pass', icon: CircleCheck, className: 'bg-success-bg text-success-fg' },
-  violation: { label: 'Violation', icon: CircleX, className: 'bg-danger-bg text-danger-fg' },
-  issues: { label: '2 issues', icon: TriangleAlert, className: 'bg-warning-bg text-warning-fg' },
+  pass: { label: k('Pass'), icon: CircleCheck, className: 'bg-success-bg text-success-fg' },
+  violation: { label: k('Violation'), icon: CircleX, className: 'bg-danger-bg text-danger-fg' },
+  issues: { label: k('2 issues'), icon: TriangleAlert, className: 'bg-warning-bg text-warning-fg' },
 } as const;
 
 /** 보안 매트릭스 그림: 환경 × 항목. 대상이 출발지보다 약하면 이전이 막힌다 */
@@ -25,7 +26,7 @@ export function SecurityMatrix() {
           <th className="w-36 max-sm:w-auto" />
           {COLUMNS.map((column) => (
             <th key={column} className="text-caption font-normal text-fg-secondary">
-              {column}
+              {t(column)}
             </th>
           ))}
         </tr>
@@ -45,7 +46,7 @@ export function SecurityMatrix() {
                   <span className="inline-flex items-center gap-1">
                     <Icon aria-hidden className="size-3.5" />
                     {/* 좁은 화면에서는 아이콘만 남겨 표가 넘치지 않게 한다 */}
-                    <span className="max-sm:hidden">{view.label}</span>
+                    <span className="max-sm:hidden">{t(view.label)}</span>
                   </span>
                 </td>
               );

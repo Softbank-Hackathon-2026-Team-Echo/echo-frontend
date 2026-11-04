@@ -11,6 +11,7 @@ import { useCurrentOrg } from '@/lib/api/me';
 import { isTerminalStatus, useDeployRequest, useService } from '@/lib/api/services';
 import type { DeployRequestDetail, ServiceDetail } from '@/lib/api/types';
 import { dateTime, elapsed } from '@/lib/format';
+import { k, t } from '@/lib/i18n';
 import { deployErrorLabel, deployStatusView, deployTriggerLabel, shortSha } from '@/lib/status';
 import { cn } from '@/lib/utils';
 import { DeployLogs } from './DeployLogs';
@@ -18,10 +19,10 @@ import { DeployLogs } from './DeployLogs';
 type StageState = 'done' | 'current' | 'failed' | 'pending' | 'skipped';
 
 const STAGES = [
-  { status: 'QUEUED', label: 'Queued', at: 'queuedAt' },
-  { status: 'BUILDING', label: 'Building', at: 'buildingAt' },
-  { status: 'DEPLOYING', label: 'Deploying', at: 'deployingAt' },
-  { status: 'VERIFYING', label: 'Verifying', at: 'verifyingAt' },
+  { status: 'QUEUED', label: k('Queued'), at: 'queuedAt' },
+  { status: 'BUILDING', label: k('Building'), at: 'buildingAt' },
+  { status: 'DEPLOYING', label: k('Deploying'), at: 'deployingAt' },
+  { status: 'VERIFYING', label: k('Verifying'), at: 'verifyingAt' },
 ] as const;
 
 /** 단계별 상태. 실패하면 마지막으로 시작한 단계가 실패 단계다 */
@@ -80,31 +81,37 @@ export function standbyStep(
   if (request.trigger === 'STANDBY_SYNC') {
     const state: StageState =
       request.status === 'SUCCEEDED' ? 'done' : request.status === 'FAILED' ? 'failed' : 'current';
-    return { state, detail: 'this deploy is the sync' };
+    return { state, detail: t('this deploy is the sync') };
   }
   if (!service) return { state: 'pending', detail: '—' };
   const standbys = service.environments.filter(
     (link) => link.serviceEnvironmentId !== request.serviceEnvironmentId && link.currentDeployment,
   );
-  if (standbys.length === 0) return { state: 'skipped', detail: 'no standby environments' };
+  if (standbys.length === 0) return { state: 'skipped', detail: t('no standby environments') };
   if (request.status === 'FAILED' || request.status === 'CANCELLED') {
-    return { state: 'pending', detail: 'not triggered' };
+    return { state: 'pending', detail: t('not triggered') };
   }
   if (request.status !== 'SUCCEEDED') {
-    return { state: 'pending', detail: `${standbys.length} standby will follow` };
+    return {
+      state: 'pending',
+      detail: t('{{count}} standby will follow', { count: standbys.length }),
+    };
   }
   const syncing = standbys.find((link) => link.activeRequestId || link.queuedRequestId);
   if (syncing) {
     return {
       state: 'current',
-      detail: `syncing ${syncing.environment.name}`,
+      detail: t('syncing {{name}}', { name: syncing.environment.name }),
       syncingRequestId: syncing.activeRequestId ?? syncing.queuedRequestId ?? undefined,
     };
   }
   const synced = standbys.filter((link) => link.currentDeployment?.commitSha === request.commitSha);
   return synced.length === standbys.length
-    ? { state: 'done', detail: `${synced.length} standby in sync` }
-    : { state: 'pending', detail: `${standbys.length - synced.length} standby behind` };
+    ? { state: 'done', detail: t('{{count}} standby in sync', { count: synced.length }) }
+    : {
+        state: 'pending',
+        detail: t('{{count}} standby behind', { count: standbys.length - synced.length }),
+      };
 }
 
 function Stepper({
@@ -129,24 +136,25 @@ function Stepper({
     ...STAGES.map((stage, index) => {
       const state = states[index] ?? 'pending';
       const startedAt = times[stage.at];
-      let detail = startedAt ? elapsed(startedAt, ends[index] ?? null, now) : 'pending';
-      if (stage.status === 'BUILDING' && request.build?.reused) detail = `${detail} · cache reused`;
-      if (stage.status === 'VERIFYING' && state === 'current') detail = 'health check running';
-      return { label: stage.label, state, detail };
+      let detail = startedAt ? elapsed(startedAt, ends[index] ?? null, now) : t('pending');
+      if (stage.status === 'BUILDING' && request.build?.reused)
+        detail = t('{{elapsed}} · cache reused', { elapsed: detail });
+      if (stage.status === 'VERIFYING' && state === 'current') detail = t('health check running');
+      return { label: t(stage.label), state, detail };
     }),
     {
-      label: 'Live',
+      label: t('Live'),
       state: live,
       detail:
         request.status === 'SUCCEEDED'
-          ? 'serving'
+          ? t('serving')
           : request.status === 'FAILED'
-            ? 'not switched'
-            : 'pending',
+            ? t('not switched')
+            : t('pending'),
     },
     {
       // 예비 환경은 서비스 중 배포가 성공하면 서버가 자동으로 따라간다(STANDBY_SYNC)
-      label: 'Standby sync',
+      label: t('Standby sync'),
       state: standby.state,
       detail: standby.detail,
       href: standby.syncingRequestId,
@@ -191,9 +199,9 @@ function Stepper({
 
 // 취소 이유 (DeployRequestCancelReason)
 const CANCEL_REASONS: Record<string, string> = {
-  SUPERSEDED: 'Replaced by a newer deploy to the same environment.',
-  SERVICE_DELETED: 'Cancelled because the service was deleted.',
-  BASE_CHANGED: 'Cancelled because another version went live before this rollback started.',
+  SUPERSEDED: k('Replaced by a newer deploy to the same environment.'),
+  SERVICE_DELETED: k('Cancelled because the service was deleted.'),
+  BASE_CHANGED: k('Cancelled because another version went live before this rollback started.'),
 };
 
 function Outcome({
@@ -206,7 +214,7 @@ function Outcome({
   if (request.status === 'SUCCEEDED') {
     return (
       <div className="flex flex-col gap-2 rounded-lg border border-line bg-success-bg p-4">
-        <p className="text-title text-success-fg">Live — health check passed</p>
+        <p className="text-title text-success-fg">{t('Live — health check passed')}</p>
       </div>
     );
   }
@@ -215,14 +223,14 @@ function Outcome({
       <div role="alert" className="flex flex-col gap-1 rounded-lg bg-danger-bg p-4 text-danger-fg">
         <p className="flex items-center gap-2 text-title">
           <CircleAlert aria-hidden className="size-4" />
-          {request.errorCode ? deployErrorLabel(request.errorCode) : 'The deploy failed.'}
+          {request.errorCode ? deployErrorLabel(request.errorCode) : t('The deploy failed.')}
         </p>
         {request.errorMessage && <p className="text-body">{request.errorMessage}</p>}
         {request.revertStatus === 'SUCCEEDED' && (
-          <p className="text-body">The previous version was kept running.</p>
+          <p className="text-body">{t('The previous version was kept running.')}</p>
         )}
         {request.revertStatus === 'FAILED' && (
-          <p className="text-body">Reverting to the previous version also failed.</p>
+          <p className="text-body">{t('Reverting to the previous version also failed.')}</p>
         )}
       </div>
     );
@@ -230,12 +238,12 @@ function Outcome({
   if (request.status === 'CANCELLED') {
     return (
       <p className="rounded-lg bg-subtle p-4 text-body text-fg-secondary">
-        {CANCEL_REASONS[request.cancelReason ?? ''] ?? 'This deploy was cancelled.'}
+        {t(CANCEL_REASONS[request.cancelReason ?? ''] ?? k('This deploy was cancelled.'))}
         {request.supersededById && (
           <>
             {' '}
             <Link to={requestLink(request.supersededById)} className="text-brand hover:underline">
-              Open the newer deploy
+              {t('Open the newer deploy')}
             </Link>
           </>
         )}
@@ -248,7 +256,7 @@ function Outcome({
 function UrlCard({ request }: { request: DeployRequestDetail }) {
   return (
     <section className="flex flex-col gap-3 rounded-lg border border-line bg-surface p-4">
-      <h2 className="text-title">Public URL</h2>
+      <h2 className="text-title">{t('Public URL')}</h2>
       <ExternalLink href={request.urls.main} />
       <span className="text-caption text-fg-muted">{request.environment.name}</span>
       <ExternalLink href={request.urls.environment} />
@@ -281,25 +289,25 @@ export default function DeployProgressPage() {
   }
 
   const refText = request.ref.type === 'BRANCH' ? request.ref.value : shortSha(request.ref.value);
-  const verb = isTerminalStatus(request.status) ? 'Deploy' : 'Deploying';
+  const serviceName = service.data?.name ?? t('service');
+  const heading = isTerminalStatus(request.status)
+    ? t('Deploy {{service}}', { service: serviceName })
+    : t('Deploying {{service}}', { service: serviceName });
 
   return (
     <>
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex flex-col gap-1">
           <h1 className="flex flex-wrap items-center gap-2 text-h1">
-            {verb} {service.data?.name ?? 'service'}{' '}
-            <span className="font-mono">{shortSha(request.commitSha)}</span>
+            {heading} <span className="font-mono">{shortSha(request.commitSha)}</span>
             <StatusBadge {...deployStatusView(request.status)} />
             {request.simulated && <SimulatedBadge />}
           </h1>
           <p className="flex flex-wrap items-center gap-x-2 text-body text-fg-secondary">
             <ProviderLabel kind={request.environment.kind} showLocation={false} />
             <span>{request.environment.name}</span>·
-            <span>
-              from <span className="font-mono">{refText}</span>
-            </span>
-            ·<span>started {dateTime(request.stageTimes.queuedAt)}</span>·
+            <span>{t('from {{ref}}', { ref: refText })}</span>·
+            <span>{t('started {{time}}', { time: dateTime(request.stageTimes.queuedAt) })}</span>·
             <span>{deployTriggerLabel(request.trigger).toLowerCase()}</span>·
             <span className="font-mono tabular-nums">
               {elapsed(request.stageTimes.queuedAt, request.stageTimes.finishedAt, now)}
@@ -310,7 +318,7 @@ export default function DeployProgressPage() {
           to={`/o/${slug}/services?service=${serviceId}`}
           className="text-body text-brand hover:underline"
         >
-          Back to services
+          {t('Back to services')}
         </Link>
       </div>
 

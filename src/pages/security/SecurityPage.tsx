@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useEnvironments } from '@/lib/api/environments';
 import { useCurrentOrg } from '@/lib/api/me';
 import { useSecurityFindings, useSecurityMatrix } from '@/lib/api/security';
+import { k, t } from '@/lib/i18n';
 import { CompareTab } from './CompareTab';
 import { type FindingSelection, FindingSheet } from './FindingSheet';
 import { FindingsTable } from './FindingsTable';
@@ -19,16 +20,16 @@ import { SecurityMatrixTable } from './SecurityMatrixTable';
 
 const HEADERS: Record<string, { title: string; description: string }> = {
   matrix: {
-    title: 'Security matrix',
-    description: 'Same policy on every environment. Click a cell for evidence.',
+    title: k('Security matrix'),
+    description: k('Same policy on every environment. Click a cell for evidence.'),
   },
   compare: {
-    title: 'Compare environments',
-    description: 'Pick any two environments. The same table is shown inside the migration plan.',
+    title: k('Compare environments'),
+    description: k('Pick any two environments. The same table is shown inside the migration plan.'),
   },
   findings: {
-    title: 'Findings',
-    description: 'Results from every scanner in one shape.',
+    title: k('Findings'),
+    description: k('Results from every scanner in one shape.'),
   },
 };
 
@@ -68,22 +69,27 @@ export default function SecurityPage() {
   return (
     <>
       <PageHeader
-        title={header?.title ?? 'Security'}
-        description={header?.description}
+        title={t(header?.title ?? k('Security'))}
+        description={header && t(header.description)}
         actions={
-          <RoleButton requires="DEVELOPER" disabledReason="Scans start once the security API is up">
-            Re-scan all
+          <RoleButton
+            requires="DEVELOPER"
+            disabledReason={t('Scans start once the security API is up')}
+          >
+            {t('Re-scan all')}
           </RoleButton>
         }
       />
       {items.length === 0 ? (
         <EmptyState
           icon={Server}
-          title="No environments yet"
-          description="Register an environment to see its security checks."
+          title={t('No environments yet')}
+          description={t('Register an environment to see its security checks.')}
           action={
             <Button asChild variant="outline" size="sm">
-              <Link to={`/o/${organization.slug}/settings/environments`}>Add environment</Link>
+              <Link to={`/o/${organization.slug}/settings/environments`}>
+                {t('Add environment')}
+              </Link>
             </Button>
           }
         />
@@ -91,9 +97,9 @@ export default function SecurityPage() {
         <Tabs value={tab} onValueChange={setTab}>
           <div className="flex items-center justify-between gap-2">
             <TabsList>
-              <TabsTrigger value="matrix">Matrix</TabsTrigger>
-              <TabsTrigger value="compare">Compare</TabsTrigger>
-              <TabsTrigger value="findings">Findings</TabsTrigger>
+              <TabsTrigger value="matrix">{t('Matrix')}</TabsTrigger>
+              <TabsTrigger value="compare">{t('Compare')}</TabsTrigger>
+              <TabsTrigger value="findings">{t('Findings')}</TabsTrigger>
             </TabsList>
             <SimulatedBadge />
           </div>

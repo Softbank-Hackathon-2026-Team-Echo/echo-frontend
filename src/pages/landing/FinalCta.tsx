@@ -2,6 +2,8 @@ import { ArrowRight } from 'lucide-react';
 import markInverse from '@/assets/logo/mark-inverse.svg';
 import { Button } from '@/components/ui/button';
 import { githubLoginUrl } from '@/lib/api/auth';
+import { t } from '@/lib/i18n';
+import { TitleLines } from './TitleLines';
 
 /** L01 ⑧ 어두운 마지막 CTA 카드 */
 export function FinalCta() {
@@ -13,23 +15,22 @@ export function FinalCta() {
       <div className="flex items-center justify-between gap-10 rounded-2xl bg-inverse p-16 max-compact:p-8">
         <div className="flex flex-col items-start gap-5">
           <h2 id="final-cta" className="text-h1 text-fg-inverse compact:text-headline">
-            Run your first
-            <br />
-            disaster drill in 5 minutes
+            <TitleLines text={t('Run your first<br>disaster drill in 5 minutes')} />
           </h2>
           <p className="max-w-xl text-lead-sm text-fg-inverse/70">
-            Connect two environments, deploy a sample app, press the button. Nothing in production
-            moves until you approve.
+            {t(
+              'Connect two environments, deploy a sample app, press the button. Nothing in production moves until you approve.',
+            )}
           </p>
           <div className="flex flex-wrap gap-3">
             <Button asChild size="lg">
               <a href={githubLoginUrl('/')}>
-                Get started
+                {t('Get started')}
                 <ArrowRight aria-hidden />
               </a>
             </Button>
             <Button asChild size="lg" variant="secondary">
-              <a href="#how-it-works">See how it works</a>
+              <a href="#how-it-works">{t('See how it works')}</a>
             </Button>
           </div>
         </div>

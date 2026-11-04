@@ -36,6 +36,7 @@ import {
 } from '@/lib/api/environments';
 import { useCurrentOrg } from '@/lib/api/me';
 import type { EnvironmentSummary } from '@/lib/api/types';
+import { t } from '@/lib/i18n';
 import { hasRole } from '@/lib/roles';
 import { clusterInfoErrorLabel, connectionErrorLabel, connectionStatusView } from '@/lib/status';
 import { SettingsTabs } from './SettingsTabs';
@@ -58,8 +59,10 @@ function ClusterCell({ orgId, environment }: { orgId: string; environment: Envir
         <Skeleton className="h-4 w-28" />
       ) : data?.clusterInfo ? (
         <span className="flex items-center gap-1.5 text-caption text-fg-muted">
-          {data.clusterInfo.serverVersion} · {data.clusterInfo.nodeCount}{' '}
-          {data.clusterInfo.nodeCount === 1 ? 'node' : 'nodes'}
+          {data.clusterInfo.serverVersion} ·{' '}
+          {data.clusterInfo.nodeCount === 1
+            ? t('{{count}} node', { count: data.clusterInfo.nodeCount })
+            : t('{{count}} nodes', { count: data.clusterInfo.nodeCount })}
           {data.clusterInfo.simulated && <SimulatedBadge />}
         </span>
       ) : (
@@ -87,26 +90,30 @@ function RowActions({ environment, onEdit, onDelete, onCheck, checking }: RowAct
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon-sm" aria-label={`Actions for ${environment.name}`}>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          aria-label={t('Actions for {{name}}', { name: environment.name })}
+        >
           <MoreHorizontal aria-hidden />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-52">
         <DropdownMenuItem disabled={!canWrite || checking} onSelect={onCheck}>
           <RefreshCw aria-hidden />
-          <span className="flex-1">Check connection</span>
-          {!canWrite && <span className="text-caption text-fg-muted">Developer</span>}
+          <span className="flex-1">{t('Check connection')}</span>
+          {!canWrite && <span className="text-caption text-fg-muted">{t('Developer')}</span>}
         </DropdownMenuItem>
         <DropdownMenuItem disabled={!canWrite} onSelect={onEdit}>
           <Pencil aria-hidden />
-          <span className="flex-1">Edit</span>
-          {!canWrite && <span className="text-caption text-fg-muted">Developer</span>}
+          <span className="flex-1">{t('Edit')}</span>
+          {!canWrite && <span className="text-caption text-fg-muted">{t('Developer')}</span>}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem variant="destructive" disabled={!canDelete} onSelect={onDelete}>
           <Trash2 aria-hidden />
-          <span className="flex-1">Delete</span>
-          {!canDelete && <span className="text-caption text-fg-muted">Admin</span>}
+          <span className="flex-1">{t('Delete')}</span>
+          {!canDelete && <span className="text-caption text-fg-muted">{t('Admin')}</span>}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -190,15 +197,17 @@ export default function EnvironmentsPage() {
         setFormOpen(true);
       }}
     >
-      Add environment
+      {t('Add environment')}
     </RoleButton>
   );
 
   return (
     <>
       <PageHeader
-        title="Environments"
-        description="Each environment = one cloud region or one on-prem site. Whether it serves or stands by is decided per service."
+        title={t('Environments')}
+        description={t(
+          'Each environment = one cloud region or one on-prem site. Whether it serves or stands by is decided per service.',
+        )}
         actions={addButton}
       />
       <SettingsTabs />
@@ -207,8 +216,8 @@ export default function EnvironmentsPage() {
       ) : !isPending && data.items.length === 0 ? (
         <EmptyState
           icon={Server}
-          title="No environments yet"
-          description="Register an AWS, GCP or on-prem cluster to deploy services to it."
+          title={t('No environments yet')}
+          description={t('Register an AWS, GCP or on-prem cluster to deploy services to it.')}
           action={addButton}
         />
       ) : (
@@ -216,12 +225,12 @@ export default function EnvironmentsPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Environment</TableHead>
-                <TableHead>Provider · region</TableHead>
-                <TableHead>Cluster</TableHead>
-                <TableHead>Connection</TableHead>
+                <TableHead>{t('Environment')}</TableHead>
+                <TableHead>{t('Provider · region')}</TableHead>
+                <TableHead>{t('Cluster')}</TableHead>
+                <TableHead>{t('Connection')}</TableHead>
                 <TableHead className="w-10">
-                  <span className="sr-only">Actions</span>
+                  <span className="sr-only">{t('Actions')}</span>
                 </TableHead>
               </TableRow>
             </TableHeader>
@@ -270,8 +279,10 @@ export default function EnvironmentsPage() {
           open
           onOpenChange={(open) => !open && setDeleting(undefined)}
           name={deleting.name}
-          title={`Delete ${deleting.name}?`}
-          description="Environments with services on them cannot be deleted. Move or delete those services first."
+          title={t('Delete {{name}}?', { name: deleting.name })}
+          description={t(
+            'Environments with services on them cannot be deleted. Move or delete those services first.',
+          )}
           pending={deleteEnvironment.isPending}
           onConfirm={() =>
             deleteEnvironment.mutate(deleting.id, { onSuccess: () => setDeleting(undefined) })

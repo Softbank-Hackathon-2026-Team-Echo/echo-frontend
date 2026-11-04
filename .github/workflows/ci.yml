@@ -39,6 +39,9 @@ jobs:
       - name: Test
         run: pnpm test
 
+      - name: Translations
+        run: node scripts/check-i18n.mjs
+
       - name: Build
         run: pnpm build
         env:

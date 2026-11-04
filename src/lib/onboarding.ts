@@ -1,14 +1,56 @@
 // 온보딩 진행은 따로 저장하지 않고 서버 데이터로 판단한다. 중간에 나갔다 와도 같은 단계에서 이어진다
 import type { EnvironmentSummary, ServiceDetail } from '@/lib/api/types';
+import { t } from './i18n';
 
 export type OnboardingStep = 'signin' | 'primary' | 'standby' | 'deploy' | 'drill';
 
+// 화면이 표를 바로 읽으므로 읽는 순간의 언어로 답하게 getter 로 둔다
 export const ONBOARDING_STEPS: { key: OnboardingStep; title: string; meta: string }[] = [
-  { key: 'signin', title: 'Sign in with GitHub', meta: 'personal org created' },
-  { key: 'primary', title: 'Connect primary', meta: 'where the app runs today' },
-  { key: 'standby', title: 'Add standby', meta: 'where it can evacuate to' },
-  { key: 'deploy', title: 'Deploy your app', meta: 'one-touch deploy' },
-  { key: 'drill', title: 'Run a drill', meta: 'simulate a disaster safely' },
+  {
+    key: 'signin',
+    get title() {
+      return t('Sign in with GitHub');
+    },
+    get meta() {
+      return t('personal org created');
+    },
+  },
+  {
+    key: 'primary',
+    get title() {
+      return t('Connect primary');
+    },
+    get meta() {
+      return t('where the app runs today');
+    },
+  },
+  {
+    key: 'standby',
+    get title() {
+      return t('Add standby');
+    },
+    get meta() {
+      return t('where it can evacuate to');
+    },
+  },
+  {
+    key: 'deploy',
+    get title() {
+      return t('Deploy your app');
+    },
+    get meta() {
+      return t('one-touch deploy');
+    },
+  },
+  {
+    key: 'drill',
+    get title() {
+      return t('Run a drill');
+    },
+    get meta() {
+      return t('simulate a disaster safely');
+    },
+  },
 ];
 
 export type OnboardingProgress = {

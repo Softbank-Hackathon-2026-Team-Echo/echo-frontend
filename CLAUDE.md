@@ -59,17 +59,19 @@ src/
 │  ├─ migration-*.ts     # 이전 단계 시간(stages) · 결과 숫자(metrics). 두 화면 이상에서 쓴다
 │  ├─ route-prefetch.ts  # 메뉴 의도(마우스 올림 · 포커스) 때 화면 청크 미리 받기 · route-pattern.ts(Sentry 화면 이름)
 │  ├─ geo.ts             # 리전·도시 → 좌표(계약 4-1 🆕 전까지), 거리 계산
+│  ├─ i18n.ts            # 번역 t · k, 언어 감지 · 저장. 영어 문구가 키다
 │  ├─ onboarding.ts      # 온보딩 단계 판단(환경·서비스 데이터로, 저장 없음). 온보딩 화면과 대시보드 안내가 같이 쓴다
 │  ├─ format.ts          # 상대 시각·경과 시간
 │  ├─ monitoring.ts      # Sentry(DSN 있을 때만, 첫 화면 뒤 지연 로드) · reportError(5xx·네트워크만) · 사용자 태그. sentry-sdk · sentry-replay 는 지연 로드 묶음
 │  └─ utils.ts           # cn() (커스텀 글자 스타일을 아는 tailwind-merge)
+├─ locales/              # ko · ja 번역 파일(화면별 json, 영어 문구 → 번역)
 ├─ assets/               # 로고 SVG · geo/east-asia-50m.json(재난 지도 해안선, scripts/trim-atlas.mjs 로 만든다)
 └─ test/                 # setup(MSW 서버·ResizeObserver) · msw-server · render(renderRoute)
-scripts/                # gen-api.mjs(API 타입) · trim-atlas.mjs(지도 데이터) · check-bundle.mjs(번들 예산)
+scripts/                # gen-api.mjs(API 타입) · trim-atlas.mjs(지도 데이터) · check-bundle.mjs(번들 예산) · check-i18n.mjs(빠진 번역)
 .github/workflows/ci.yml # PR · main 에서 lint · typecheck · test · build · 번들 예산
 public/_headers          # Cloudflare Pages 응답 헤더(클릭재킹 방지 · 권한 끔 · /assets 1년 캐시)
 specs/                   # 태스크 명세
-docs/                    # api-contract.md, perf.md(성능 측정 방법 · 기준선), PR.md(커밋 안 함)
+docs/                    # api-contract.md, perf.md(성능 측정 방법 · 기준선), i18n-glossary.md(번역 용어표), PR.md(커밋 안 함)
 .claude/launch.json      # 브라우저 미리보기용 개발 서버 설정
 ```
 
@@ -108,7 +110,7 @@ docs/                    # api-contract.md, perf.md(성능 측정 방법 · 기�
 - 앱에는 목업 응답이 없다(11/3). 화면은 운영 API 만 부른다. API 가 아직 없는 기능(재난·대피 후보)만 `lib/api/` 안에서 브라우저 시뮬레이션으로 만들고, 응답 모양은 계약 문서 그대로, 화면에는 항상 `simulated` 배지를 단다.
 
 ### 언어
-- **UI 문구는 영어**, 코드 주석과 문서·커밋 설명·PR은 **한국어**(이 문서처럼 한다체). 식별자는 영어.
+- **UI 문구의 기준 언어는 영어**이고 `t('…')` 로 감싸 한국어·일본어 번역(`src/locales/`)을 함께 둔다. 코드 주석과 문서·커밋 설명·PR은 **한국어**(이 문서처럼 한다체). 식별자는 영어.
 
 ---
 
@@ -206,3 +208,4 @@ docs/                    # api-contract.md, perf.md(성능 측정 방법 · 기�
 | 11/3 | 지구본(canvas)은 IntersectionObserver 로 화면 밖이면 그리기를 멈추고(멈춘 시간은 빼서 멈춘 자리에서 이어 돎), 토폴로지는 화면에 처음 들어올 때 캔버스 · 배치를 만든다(`useInViewOnce`) | Grafana 의 '보이지 않는 패널은 그리지 않기'. 소개 화면을 내려도 지구본이 초당 120번 다시 그려졌다. 탭 숨김은 브라우저가 requestAnimationFrame 을 이미 멈춘다 |
 | 11/3 | 지구본 육지 데이터는 OrthoGlobe 모듈을 불러오는 즉시 받기 시작하고, 육지가 준비되면 지구본을 한 번에 페이드인한다(늦어도 1.5초 뒤 보임). 소개 화면 코드는 로그인 확인 뒤에 받는 지금 방식을 그대로 둔다 | 화면을 그린 뒤 effect 에서 받아 대륙이 약 0.4초 늦게 튀어나왔다. 소개 화면 코드까지 미리 받으면 로그인한 사람도 받게 돼 11/3 결정(로그인한 사람은 소개 화면 코드를 받지 않음)과 부딪친다 |
 | 11/4 | SEC 는 Matrix · Compare · Findings 탭 한 화면이고 비교 표는 E01-3 패널과 같은 컴포넌트다. 값은 API 전까지 환경 종류별 고정 시뮬레이션(`lib/api/security.ts`)이고 FAIL 은 없다. Re-scan 은 비활성, Figma 의 Export 와 칸 안 설명(KMS · CMEK)은 뺐다 | Figma 메모 '같은 표를 같이 사용'. 계약에 칸별 설명 필드가 없어 지어내지 않고, 스캔 · 내보내기 API 가 없어 눌러도 되는 척하지 않는다. 데모 이전이 시뮬레이션 값으로 막히지 않게 한다 |
+| 11/4 | 언어는 en · ko · ja. 영어 문구 자체가 키이고 번역이 빠지면 영어로 나온다. `i18next` 만 쓰고 언어를 바꾸면 `RouterProvider` 를 다시 만든다(react-i18next 안 씀). 번역은 AI 초안을 파일로 넣고 실행 중 외부 번역을 부르지 않는다. `simulated` 배지는 영어 고정 | 11/3 허들 합의(한국어·일본어). lib 의 상태 문구까지 훅 없이 번역하고 기존 영어 테스트를 그대로 살린다. 시연 중 외부 호출 실패와 번역 흔들림을 없앤다 |

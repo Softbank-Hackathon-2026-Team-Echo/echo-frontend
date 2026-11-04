@@ -2,7 +2,14 @@
 // 모양은 계약 초안과 같고, 모든 재난은 simulated: true 다. 서버가 생기면 DISASTER_API_READY 를 켜고
 // 아래 store 대신 api + unwrap 으로 바꾼다. 영향 판정(반경 안의 환경)은 서버가 할 일이라 그때 서버 값을 쓴다.
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { distanceKm, environmentCoordinates, type LatLng } from '../geo';
+import {
+  distanceKm,
+  environmentCoordinates,
+  epicenterKey,
+  epicenterText,
+  type LatLng,
+} from '../geo';
+import { k } from '../i18n';
 import { queryKeys } from './query-keys';
 import type { EnvironmentSummary } from './types';
 
@@ -20,7 +27,7 @@ export type Disaster = {
   source: DisasterSource;
   magnitude: number;
   epicenter: LatLng;
-  /** 화면 문구용 진원지 이름 (예: near Tokyo). 계약 초안에는 없는 프론트 칸이다 */
+  /** 화면 문구용 진원지 이름 (예: near Tokyo). 계약 초안에는 없는 프론트 칸이다. 영어로 저장하고 읽을 때 번역한다 */
   epicenterLabel: string;
   radiusKm: number;
   status: 'ACTIVE' | 'ENDED';
@@ -35,7 +42,8 @@ export type DisasterInput = {
   type: DisasterType;
   magnitude: number;
   epicenter: LatLng;
-  epicenterLabel: string;
+  /** 저장 값은 좌표로 다시 만든다(화면 언어로 저장하지 않게) */
+  epicenterLabel?: string;
 };
 
 export type DisasterPreview = {
@@ -48,10 +56,10 @@ export type DisasterPreview = {
 
 // 데모 진원지 (11/2 결정: 경보 문구는 "near Tokyo"). 지도에서 찍는 방식은 S01-D 화면 작업에서 한다
 export const EPICENTER_PRESETS: { label: string; epicenter: LatLng }[] = [
-  { label: 'near Tokyo', epicenter: { lat: 35.2, lng: 139.4 } },
-  { label: 'near Osaka', epicenter: { lat: 34.6, lng: 135.4 } },
-  { label: 'near Fukuoka', epicenter: { lat: 33.6, lng: 130.3 } },
-  { label: 'near Seoul', epicenter: { lat: 37.5, lng: 127.0 } },
+  { label: k('near Tokyo'), epicenter: { lat: 35.2, lng: 139.4 } },
+  { label: k('near Osaka'), epicenter: { lat: 34.6, lng: 135.4 } },
+  { label: k('near Fukuoka'), epicenter: { lat: 33.6, lng: 130.3 } },
+  { label: k('near Seoul'), epicenter: { lat: 37.5, lng: 127.0 } },
 ];
 
 /**
@@ -126,6 +134,11 @@ export function useActiveDisasters(orgId: string | undefined) {
   return useQuery({
     queryKey: queryKeys.disasters(orgId ?? ''),
     queryFn: async () => load(orgId ?? '').filter((disaster) => disaster.status === 'ACTIVE'),
+    select: (disasters) =>
+      disasters.map((disaster) => ({
+        ...disaster,
+        epicenterLabel: epicenterText(disaster.epicenterLabel),
+      })),
     enabled: Boolean(orgId),
     staleTime: Number.POSITIVE_INFINITY,
   });
@@ -140,6 +153,7 @@ export function useCreateDisaster(orgId: string, environments: EnvironmentSummar
         id: crypto.randomUUID(),
         source: 'SIMULATED',
         ...input,
+        epicenterLabel: epicenterKey(input.epicenter),
         radiusKm: preview.radiusKm,
         status: 'ACTIVE',
         affectedEnvironmentIds: preview.affected,

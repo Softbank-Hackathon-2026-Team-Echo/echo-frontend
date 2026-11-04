@@ -2,9 +2,24 @@ import { Panel } from '@/components/Panel';
 import type { Disaster } from '@/lib/api/disasters';
 import { useRecentOrgEvents } from '@/lib/api/events';
 import type { EnvironmentSummary } from '@/lib/api/types';
+import { k, t } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
 type LiveEvent = { at: string; text: string; tone: 'danger' | 'warning' | 'neutral' };
+
+// 접속 상태마다 문장이 달라 값을 끼우지 않고 문구를 따로 둔다. 모르는 값은 서버 값 그대로 보인다
+const CONNECTION_EVENTS: Record<string, string> = {
+  UNCHECKED: k('{{name}} connection unchecked'),
+  CONNECTED: k('{{name}} connection connected'),
+  FAILED: k('{{name}} connection failed'),
+};
+
+function connectionEvent(name: string, status: string) {
+  const message = CONNECTION_EVENTS[status];
+  return message
+    ? t(message, { name })
+    : t('{{name}} connection {{status}}', { name, status: status.toLowerCase() });
+}
 
 function clock(iso: string) {
   return new Date(iso).toLocaleTimeString('en-GB', { hour12: false });
@@ -37,13 +52,13 @@ export function LiveEvents({
     for (const id of disaster.affectedEnvironmentIds) {
       events.push({
         at: disaster.startedAt,
-        text: `${names.get(id) ?? id} → at risk`,
+        text: t('{{name}} → at risk', { name: names.get(id) ?? id }),
         tone: 'warning',
       });
     }
     events.push({
       at: disaster.startedAt,
-      text: `${disaster.safeEnvironmentIds.length} safe targets found`,
+      text: t('{{total}} safe targets found', { total: disaster.safeEnvironmentIds.length }),
       tone: 'neutral',
     });
   }
@@ -51,7 +66,7 @@ export function LiveEvents({
     if (environment.connectionCheckedAt) {
       events.push({
         at: environment.connectionCheckedAt,
-        text: `${environment.name} connection ${environment.connectionStatus.toLowerCase()}`,
+        text: connectionEvent(environment.name, environment.connectionStatus),
         tone: environment.connectionStatus === 'FAILED' ? 'danger' : 'neutral',
       });
     }
@@ -59,9 +74,9 @@ export function LiveEvents({
   events.sort((a, b) => b.at.localeCompare(a.at));
 
   return (
-    <Panel title="Live events">
+    <Panel title={t('Live events')}>
       {events.length === 0 ? (
-        <p className="text-small text-fg-muted">Nothing has happened yet.</p>
+        <p className="text-small text-fg-muted">{t('Nothing has happened yet.')}</p>
       ) : (
         <ol className="flex flex-col gap-1.5">
           {events.slice(0, 6).map((event, index) => (

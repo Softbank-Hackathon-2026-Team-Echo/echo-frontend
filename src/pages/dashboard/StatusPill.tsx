@@ -1,4 +1,5 @@
 import type { Disaster } from '@/lib/api/disasters';
+import { t } from '@/lib/i18n';
 
 function clock(iso: string) {
   return new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
@@ -18,24 +19,36 @@ export function StatusPill({
     return (
       <span className="inline-flex items-center gap-1.5 rounded-full bg-migrating-bg px-2.5 py-0.5 text-label text-migrating-fg">
         <span aria-hidden className="size-1.5 rounded-full bg-migrating-solid" />
-        Evacuating to {migrating.target} · {migrating.weight}%
+        {t('Evacuating to {{target}} · {{weight}}%', {
+          target: migrating.target,
+          weight: migrating.weight,
+        })}
       </span>
     );
   }
   if (disaster) {
+    const affected = disaster.affectedEnvironmentIds.map((id) => names.get(id)).join(', ');
+    const values = {
+      magnitude: disaster.magnitude.toFixed(1),
+      place: disaster.epicenterLabel,
+      time: clock(disaster.startedAt),
+    };
     return (
       <span className="inline-flex items-center gap-1.5 rounded-full bg-danger-bg px-2.5 py-0.5 text-label text-danger-fg">
-        <span aria-hidden className="size-1.5 rounded-full bg-danger-solid" />M
-        {disaster.magnitude.toFixed(1)} {disaster.epicenterLabel} ·{' '}
-        {disaster.affectedEnvironmentIds.map((id) => names.get(id)).join(', ') || 'nothing'} at risk
-        · {clock(disaster.startedAt)}
+        <span aria-hidden className="size-1.5 rounded-full bg-danger-solid" />
+        {affected
+          ? t('M{{magnitude}} {{place}} · {{environments}} at risk · {{time}}', {
+              ...values,
+              environments: affected,
+            })
+          : t('M{{magnitude}} {{place}} · nothing at risk · {{time}}', values)}
       </span>
     );
   }
   return (
     <span className="inline-flex items-center gap-1.5 rounded-full bg-success-bg px-2.5 py-0.5 text-label text-success-fg">
       <span aria-hidden className="size-1.5 rounded-full bg-success-solid" />
-      All systems normal
+      {t('All systems normal')}
     </span>
   );
 }

@@ -3,6 +3,7 @@ import type { Feature, FeatureCollection, MultiLineString } from 'geojson';
 import { type MouseEvent, useEffect, useMemo, useState } from 'react';
 import type { EnvironmentSummary } from '@/lib/api/types';
 import { environmentCoordinates, type LatLng, MAP_CITIES } from '@/lib/geo';
+import { t } from '@/lib/i18n';
 
 // 일본·한국을 덮는 지도(메르카토르). 해안선은 world-atlas 50m 에서 이 둘레만 잘라 둔 것이다
 const BOUNDS = { north: 42, south: 30, west: 124, east: 146 };
@@ -104,12 +105,12 @@ export function DisasterMap({
     // biome-ignore lint/a11y/useKeyWithClickEvents: 진원지는 지도 아래 선택 상자로도 고를 수 있다
     <svg
       role="img"
-      aria-label="Map. Click to set the epicenter."
+      aria-label={t('Map. Click to set the epicenter.')}
       viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
       className="w-full cursor-crosshair rounded-md bg-globe-sphere"
       onClick={handleClick}
     >
-      <title>Disaster map</title>
+      <title>{t('Disaster map')}</title>
       <path d={graticule} className="fill-none stroke-globe-grid" />
       {land && (
         <>

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { radiusForMagnitude } from '@/lib/api/disasters';
 import type { EnvironmentSummary } from '@/lib/api/types';
 import { distanceKm, environmentCoordinates, placeLabel } from '@/lib/geo';
+import { t } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import { SetupGlobe } from './SetupGlobe';
 import { StepShell } from './StepShell';
@@ -37,21 +38,23 @@ export function StandbyStep({
   const [open, setOpen] = useState(false);
   return (
     <StepShell
-      title="Where can it evacuate to?"
-      lead="Add at least one standby environment in a different region. The globe shows how far apart they are."
+      title={t('Where can it evacuate to?')}
+      lead={t(
+        'Add at least one standby environment in a different region. The globe shows how far apart they are.',
+      )}
     >
       <div className="flex items-start gap-3 max-wide:flex-col">
         <SetupGlobe primary={primary} standbys={standbys} />
         <div className="flex w-105 shrink-0 flex-col gap-3 max-wide:w-full">
           {primary && (
             <p className="text-small text-fg-secondary">
-              Primary <span className="text-body-medium text-fg">{primary.name}</span> ·{' '}
+              {t('Primary')} <span className="text-body-medium text-fg">{primary.name}</span> ·{' '}
               {placeLabel(primary) ?? '—'}
             </p>
           )}
           {standbys.length === 0 && (
             <p className="rounded-lg border border-dashed border-line-strong p-3 text-small text-fg-muted">
-              No standby yet. Add one in another region or on-prem site.
+              {t('No standby yet. Add one in another region or on-prem site.')}
             </p>
           )}
           <ul className="flex flex-col gap-3">
@@ -72,13 +75,16 @@ export function StandbyStep({
                     <span className="text-body-medium">{environment.name}</span>
                     <span className="text-caption text-fg-secondary">
                       {environment.location ?? '—'}
-                      {km !== null && ` · ${km.toLocaleString('en-US')} km away`}
+                      {km !== null &&
+                        ` · ${t('{{distance}} km away', { distance: km.toLocaleString('en-US') })}`}
                     </span>
                     {tooClose && (
                       <span className="flex items-center gap-1 text-caption text-warning-fg">
                         <TriangleAlert aria-hidden className="size-3" />
-                        Inside the same M{BIG_EARTHQUAKE} impact radius ({Math.round(TOO_CLOSE_KM)}{' '}
-                        km)
+                        {t('Inside the same M{{magnitude}} impact radius ({{radius}} km)', {
+                          magnitude: BIG_EARTHQUAKE,
+                          radius: Math.round(TOO_CLOSE_KM),
+                        })}
                       </span>
                     )}
                   </span>
@@ -89,16 +95,16 @@ export function StandbyStep({
           <div className="flex items-center gap-2">
             <RoleButton requires="DEVELOPER" variant="outline" onClick={() => setOpen(true)}>
               <Plus aria-hidden />
-              Add another environment
+              {t('Add another environment')}
             </RoleButton>
-            {standbys.length > 0 && <Button onClick={onContinue}>Continue</Button>}
+            {standbys.length > 0 && <Button onClick={onContinue}>{t('Continue')}</Button>}
           </div>
           <div className="flex items-start gap-3 rounded-lg bg-brand-subtle p-3 text-brand-on-subtle">
             <Info aria-hidden className="mt-0.5 size-4 shrink-0" />
             <div className="flex flex-col gap-0.5">
-              <p className="text-body-medium">Tip: keep standby far from primary</p>
+              <p className="text-body-medium">{t('Tip: keep standby far from primary')}</p>
               <p className="text-small">
-                A standby inside the same impact radius cannot help in a big earthquake.
+                {t('A standby inside the same impact radius cannot help in a big earthquake.')}
               </p>
             </div>
           </div>

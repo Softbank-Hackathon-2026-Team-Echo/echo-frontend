@@ -1,10 +1,12 @@
 import { CircleAlert } from 'lucide-react';
 import { useSearchParams } from 'react-router';
+import { LanguageMenu } from '@/components/LanguageMenu';
 import { Logo } from '@/components/Logo';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { githubLoginUrl, safeNextPath } from '@/lib/api/auth';
 import { describeLoginError } from '@/lib/api/errors';
+import { t } from '@/lib/i18n';
 
 function GitHubMark() {
   return (
@@ -21,13 +23,16 @@ export default function LoginPage() {
   const next = safeNextPath(searchParams.get('next'));
 
   return (
-    <main className="flex min-h-dvh items-center justify-center bg-canvas p-gutter">
+    <main className="relative flex min-h-dvh items-center justify-center bg-canvas p-gutter">
+      <div className="absolute top-4 right-4">
+        <LanguageMenu />
+      </div>
       <Card className="w-full max-w-sm">
         <CardHeader className="justify-items-center gap-3 text-center">
           <Logo variant="mark" className="size-14" />
-          <CardTitle className="text-h2">Sign in to EchoPort</CardTitle>
+          <CardTitle className="text-h2">{t('Sign in to EchoPort')}</CardTitle>
           <CardDescription>
-            Move services across AWS, GCP and on-prem without downtime.
+            {t('Move services across AWS, GCP and on-prem without downtime.')}
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
@@ -43,12 +48,13 @@ export default function LoginPage() {
           <Button asChild size="lg" className="w-full">
             <a href={githubLoginUrl(next)}>
               <GitHubMark />
-              Continue with GitHub
+              {t('Continue with GitHub')}
             </a>
           </Button>
           <p className="text-center text-small text-fg-muted">
-            New accounts start with a personal organization. To join a team, ask an admin to invite
-            your GitHub username.
+            {t(
+              'New accounts start with a personal organization. To join a team, ask an admin to invite your GitHub username.',
+            )}
           </p>
         </CardContent>
       </Card>

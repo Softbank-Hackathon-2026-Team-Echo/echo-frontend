@@ -7,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useEnvironments } from '@/lib/api/environments';
 import { useCurrentOrg } from '@/lib/api/me';
 import { useServiceDetails, useServices } from '@/lib/api/services';
+import { t } from '@/lib/i18n';
 import { ONBOARDING_STEPS, type OnboardingStep, onboardingProgress } from '@/lib/onboarding';
 import { DeployStep } from './DeployStep';
 import { DrillStep } from './DrillStep';
@@ -60,12 +61,12 @@ export default function OnboardingPage() {
             className="text-left hover:underline focus-visible:outline-2 focus-visible:outline-focus"
             onClick={() => setStep(item.key)}
           >
-            {item.title}
+            {t(item.title)}
           </button>
         ) : (
-          item.title
+          t(item.title)
         ),
-      meta: item.meta,
+      meta: t(item.meta),
       state: item.key === shown ? 'current' : progress.done[item.key] ? 'done' : 'pending',
     };
   });
@@ -79,14 +80,18 @@ export default function OnboardingPage() {
       <header className="flex items-center justify-between px-10 py-4 max-compact:px-gutter-compact">
         <Logo />
         <p className="text-small text-fg-secondary">
-          Step {index + 1} of {ONBOARDING_STEPS.length} ·{' '}
+          {t('Step {{current}} of {{total}}', {
+            current: index + 1,
+            total: ONBOARDING_STEPS.length,
+          })}{' '}
+          ·{' '}
           <Link to={`/o/${slug}`} className="hover:underline">
-            Skip setup
+            {t('Skip setup')}
           </Link>
         </p>
       </header>
       <main className="flex items-start gap-8 px-16 pt-4 pb-16 max-wide:px-10 max-compact:flex-col max-compact:px-gutter-compact">
-        <nav aria-label="Setup steps" className="w-75 shrink-0 max-compact:w-full">
+        <nav aria-label={t('Setup steps')} className="w-75 shrink-0 max-compact:w-full">
           <StageList stages={stages} />
         </nav>
         {loading || !organization ? (

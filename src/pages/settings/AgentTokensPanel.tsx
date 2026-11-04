@@ -26,15 +26,16 @@ import { fieldErrors } from '@/lib/api/form-errors';
 import { useAgentTokens, useIssueAgentToken, useRevokeAgentToken } from '@/lib/api/members';
 import type { AgentToken, IssuedAgentToken } from '@/lib/api/types';
 import { dateTime, timeAgo } from '@/lib/format';
+import { k, t } from '@/lib/i18n';
 import type { StatusView } from '@/lib/status';
 
 // 서버 기본 30일, 최대 90일
 const EXPIRY_DAYS = [7, 30, 90] as const;
 
 function tokenState(token: AgentToken, now = Date.now()): StatusView {
-  if (token.revokedAt) return { label: 'Revoked', tone: 'neutral' };
-  if (new Date(token.expiresAt).getTime() <= now) return { label: 'Expired', tone: 'neutral' };
-  return { label: 'Active', tone: 'success' };
+  if (token.revokedAt) return { label: k('Revoked'), tone: 'neutral' };
+  if (new Date(token.expiresAt).getTime() <= now) return { label: k('Expired'), tone: 'neutral' };
+  return { label: k('Active'), tone: 'success' };
 }
 
 function IssueTokenDialog({
@@ -85,40 +86,43 @@ function IssueTokenDialog({
         {issued ? (
           <div className="flex flex-col gap-4">
             <DialogHeader>
-              <DialogTitle>Copy the token now</DialogTitle>
+              <DialogTitle>{t('Copy the token now')}</DialogTitle>
               <DialogDescription>
-                This is the only time EchoPort shows it. Store it where the agent reads its secrets.
+                {t(
+                  'This is the only time EchoPort shows it. Store it where the agent reads its secrets.',
+                )}
               </DialogDescription>
             </DialogHeader>
             <div className="flex items-center gap-2">
               <Input
                 readOnly
                 value={issued.token}
-                aria-label="Agent token"
+                aria-label={t('Agent token')}
                 className="font-mono text-mono"
                 onFocus={(event) => event.currentTarget.select()}
               />
               <Button type="button" variant="outline" onClick={() => copy(issued.token)}>
                 <Copy aria-hidden />
-                {copied ? 'Copied' : 'Copy'}
+                {copied ? t('Copied') : t('Copy')}
               </Button>
             </div>
             <DialogFooter>
               <Button type="button" onClick={() => close(false)}>
-                Done
+                {t('Done')}
               </Button>
             </DialogFooter>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <DialogHeader>
-              <DialogTitle>Issue agent token</DialogTitle>
+              <DialogTitle>{t('Issue agent token')}</DialogTitle>
               <DialogDescription>
-                The AI agent can read this organization with it. Production changes are refused and
-                logged.
+                {t(
+                  'The AI agent can read this organization with it. Production changes are refused and logged.',
+                )}
               </DialogDescription>
             </DialogHeader>
-            <FormField id="token-name" label="Name" error={errors.name}>
+            <FormField id="token-name" label={t('Name')} error={errors.name}>
               <Input
                 id="token-name"
                 value={name}
@@ -128,7 +132,7 @@ function IssueTokenDialog({
                 required
               />
             </FormField>
-            <FormField id="token-expiry" label="Expires in" error={errors.expiresInDays}>
+            <FormField id="token-expiry" label={t('Expires in')} error={errors.expiresInDays}>
               <Select value={String(days)} onValueChange={(value) => setDays(Number(value))}>
                 <SelectTrigger id="token-expiry" className="w-full">
                   <SelectValue />
@@ -136,7 +140,7 @@ function IssueTokenDialog({
                 <SelectContent>
                   {EXPIRY_DAYS.map((value) => (
                     <SelectItem key={value} value={String(value)}>
-                      {value} days
+                      {t('{{days}} days', { days: value })}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -145,10 +149,10 @@ function IssueTokenDialog({
             <FormError message={errors._form} />
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => close(false)}>
-                Cancel
+                {t('Cancel')}
               </Button>
               <Button type="submit" disabled={issue.isPending || !name.trim()}>
-                Issue token
+                {t('Issue token')}
               </Button>
             </DialogFooter>
           </form>
@@ -168,10 +172,11 @@ export function AgentTokensPanel({ orgId, canManage }: { orgId: string; canManag
     <section className="flex flex-col gap-3 rounded-lg border border-line bg-surface p-4">
       <header className="flex items-start justify-between gap-3">
         <div className="flex flex-col gap-0.5">
-          <h2 className="text-title">Agent tokens</h2>
+          <h2 className="text-title">{t('Agent tokens')}</h2>
           <p className="text-small text-fg-secondary">
-            For the AI agent. Read-only on this org; production changes are refused and logged.
-            Shown once when issued.
+            {t(
+              'For the AI agent. Read-only on this org; production changes are refused and logged. Shown once when issued.',
+            )}
           </p>
         </div>
         <RoleButton
@@ -180,11 +185,13 @@ export function AgentTokensPanel({ orgId, canManage }: { orgId: string; canManag
           size="sm"
           onClick={() => setIssueOpen(true)}
         >
-          Issue token
+          {t('Issue token')}
         </RoleButton>
       </header>
       {!canManage ? (
-        <p className="text-small text-fg-muted">Developers and admins can see agent tokens.</p>
+        <p className="text-small text-fg-muted">
+          {t('Developers and admins can see agent tokens.')}
+        </p>
       ) : tokens.isError ? (
         <ErrorState error={tokens.error} onRetry={() => tokens.refetch()} />
       ) : tokens.isPending ? (
@@ -192,7 +199,7 @@ export function AgentTokensPanel({ orgId, canManage }: { orgId: string; canManag
       ) : tokens.data.items.length === 0 ? (
         <p className="flex items-center gap-2 text-small text-fg-muted">
           <Bot aria-hidden className="size-4" />
-          No agent tokens yet.
+          {t('No agent tokens yet.')}
         </p>
       ) : (
         <ul className="flex flex-col divide-y divide-line border-t border-line">
@@ -201,11 +208,13 @@ export function AgentTokensPanel({ orgId, canManage }: { orgId: string; canManag
             return (
               <li key={token.id} className="flex flex-wrap items-center gap-2 py-2">
                 <span className="font-mono text-mono">{token.name}</span>
-                <StatusBadge {...state} />
+                <StatusBadge {...state} label={t(state.label)} />
                 <span className="text-caption text-fg-muted">
-                  …{token.last4} · issued {dateTime(token.createdAt)} · expires{' '}
-                  {dateTime(token.expiresAt)} · last used{' '}
-                  {token.lastUsedAt ? timeAgo(token.lastUsedAt) : 'never'}
+                  …{token.last4} · {t('issued {{time}}', { time: dateTime(token.createdAt) })} ·{' '}
+                  {t('expires {{time}}', { time: dateTime(token.expiresAt) })} ·{' '}
+                  {token.lastUsedAt
+                    ? t('last used {{time}}', { time: timeAgo(token.lastUsedAt) })
+                    : t('last used never')}
                 </span>
                 {state.label === 'Active' && (
                   <RoleButton
@@ -216,7 +225,7 @@ export function AgentTokensPanel({ orgId, canManage }: { orgId: string; canManag
                     disabled={revoke.isPending}
                     onClick={() => revoke.mutate(token.id)}
                   >
-                    Revoke
+                    {t('Revoke')}
                   </RoleButton>
                 )}
               </li>

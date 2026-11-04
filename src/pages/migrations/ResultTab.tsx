@@ -8,6 +8,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import type { MigrationPlan, MigrationStep } from '@/lib/api/types';
+import { k, t } from '@/lib/i18n';
 import {
   failedRequests,
   maxReplicationLag,
@@ -22,29 +23,54 @@ import { Kpi } from './Kpi';
 const clock = (iso: string | null | undefined) =>
   iso ? new Date(iso).toLocaleTimeString('en-GB') : '—';
 
+// 단계·실행 상태 값 → 소문자 문구. 모르는 값은 서버 값을 소문자로 보인다
+const STATUS_WORDS: Record<string, string> = {
+  PENDING: k('pending'),
+  RUNNING: k('running'),
+  PASSED: k('passed'),
+  FAILED: k('failed'),
+  SKIPPED: k('skipped'),
+};
+
+function statusWord(status: string) {
+  const word = STATUS_WORDS[status];
+  return word ? t(word) : status.toLowerCase();
+}
+
 function stepName(step: MigrationStep) {
-  if (step.kind === 'PREFLIGHT') return 'Pre-check';
-  if (step.kind === 'DATA_SYNC_CHECK') return 'Data sync check';
-  return `Shift traffic → ${step.targetWeight}%`;
+  if (step.kind === 'PREFLIGHT') return t('Pre-check');
+  if (step.kind === 'DATA_SYNC_CHECK') return t('Data sync check');
+  return t('Shift traffic → {{weight}}%', { weight: step.targetWeight ?? '—' });
 }
 
 function stepResult(step: MigrationStep) {
   const result = step.result;
   if (!result) return '—';
-  const status = result.status.toLowerCase();
+  const status = statusWord(result.status);
   if (result.failureCode) return `${status} · ${migrationErrorLabel(result.failureCode)}`;
   const metrics = result.metrics;
   if (step.kind === 'DATA_SYNC_CHECK' && metrics?.replicationLagSeconds != null) {
-    return `${status} · lag ${metrics.replicationLagSeconds} s`;
+    return t('{{status}} · lag {{seconds}} s', {
+      status,
+      seconds: metrics.replicationLagSeconds,
+    });
   }
   if (metrics?.lowTraffic)
-    return `${status} · low traffic, health ${metrics.healthStatus ?? 'checked'}`;
+    return t('{{status}} · low traffic, health {{health}}', {
+      status,
+      health: metrics.healthStatus ?? t('checked'),
+    });
   if (metrics?.requestCount != null) {
     const errors =
       metrics.errors5xx != null
         ? `${metrics.errors5xx}/${metrics.allowedErrors5xx ?? '—'} 5xx`
-        : `${metrics.errorRatePercent ?? 0}% errors`;
-    return `${status} · ${metrics.requestCount} req · ${errors} · p95 ${metrics.p95Ms ?? '—'} ms`;
+        : t('{{percent}}% errors', { percent: metrics.errorRatePercent ?? 0 });
+    return t('{{status}} · {{requests}} req · {{errors}} · p95 {{ms}} ms', {
+      status,
+      requests: metrics.requestCount,
+      errors,
+      ms: metrics.p95Ms ?? '—',
+    });
   }
   return status;
 }
@@ -64,10 +90,10 @@ export function ResultTab({ plan }: { plan: MigrationPlan }) {
           <CircleCheck aria-hidden className="mt-0.5 size-4 shrink-0" />
           <div className="flex flex-col gap-0.5">
             <p className="text-body-medium">
-              {clean ? 'Zero failed requests while traffic moved' : 'Migration finished'}
+              {clean ? t('Zero failed requests while traffic moved') : t('Migration finished')}
             </p>
             <p className="text-small">
-              Numbers come from the step judgements EchoPort recorded during this run.
+              {t('Numbers come from the step judgements EchoPort recorded during this run.')}
             </p>
           </div>
         </div>
@@ -76,29 +102,36 @@ export function ResultTab({ plan }: { plan: MigrationPlan }) {
           <CircleAlert aria-hidden className="mt-0.5 size-4 shrink-0" />
           <p className="text-body-medium">
             {plan.status === 'ROLLED_BACK'
-              ? `Rolled back to the source (${plan.errorCode ? migrationErrorLabel(plan.errorCode) : 'stopped'}). ${plan.errorMessage ?? ''}`
-              : `This run ended as ${plan.status.toLowerCase()}. ${plan.errorMessage ?? ''}`}
+              ? t('Rolled back to the source ({{reason}}).', {
+                  reason: plan.errorCode ? migrationErrorLabel(plan.errorCode) : t('stopped'),
+                })
+              : t('This run ended as {{status}}.', { status: statusWord(plan.status) })}{' '}
+            {plan.errorMessage}
           </p>
         </div>
       )}
 
       <div className="flex gap-3 max-compact:flex-col">
         <Kpi
-          label="Failed requests"
+          label={t('Failed requests')}
           value={failed}
           tone={failed === 0 ? 'success' : failed ? 'danger' : undefined}
-          caption={`${requests} requests judged`}
+          caption={t('{{n}} requests judged', { n: requests })}
         />
         <Kpi
-          label="Missing · duplicate rows"
+          label={t('Missing · duplicate rows')}
           value={null}
-          caption="data check API pending (infra #7)"
+          caption={t('data check API pending (infra #7)')}
         />
-        <Kpi label="Write pause" value={null} caption="writer cutover not in this plan yet" />
         <Kpi
-          label="Total time"
+          label={t('Write pause')}
+          value={null}
+          caption={t('writer cutover not in this plan yet')}
+        />
+        <Kpi
+          label={t('Total time')}
           value={total === null ? null : duration(total)}
-          caption={`planned ${duration(plan.expectedSeconds)}`}
+          caption={t('planned {{duration}}', { duration: duration(plan.expectedSeconds) })}
         />
       </div>
 
@@ -106,10 +139,10 @@ export function ResultTab({ plan }: { plan: MigrationPlan }) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Stage</TableHead>
-              <TableHead>Started</TableHead>
-              <TableHead>Duration</TableHead>
-              <TableHead>Result</TableHead>
+              <TableHead>{t('Stage')}</TableHead>
+              <TableHead>{t('Started')}</TableHead>
+              <TableHead>{t('Duration')}</TableHead>
+              <TableHead>{t('Result')}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -136,13 +169,17 @@ export function ResultTab({ plan }: { plan: MigrationPlan }) {
         <Kpi
           label="RTO"
           value={total === null ? null : duration(total)}
-          caption="planned evacuation, start → 100%"
+          caption={t('planned evacuation, start → 100%')}
         />
-        <Kpi label="RPO" value={null} caption="measured by the replication engine (infra #7)" />
         <Kpi
-          label="Max replication lag"
+          label="RPO"
+          value={null}
+          caption={t('measured by the replication engine (infra #7)')}
+        />
+        <Kpi
+          label={t('Max replication lag')}
           value={lag === null ? null : `${lag} s`}
-          caption="data sync check"
+          caption={t('data sync check')}
         />
       </div>
     </div>

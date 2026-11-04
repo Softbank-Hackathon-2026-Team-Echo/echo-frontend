@@ -1,5 +1,6 @@
 import { createBrowserRouter, Navigate, type RouteObject } from 'react-router';
 import { AppShell, type RouteHandle } from '@/layouts/AppShell';
+import { k } from '@/lib/i18n';
 import { registerPrefetchRoutes } from '@/lib/route-prefetch';
 import NotFoundPage from '@/pages/NotFoundPage';
 import { PlaceholderPage } from '@/pages/PlaceholderPage';
@@ -32,13 +33,13 @@ const routes: RouteObject[] = [
     children: [
       {
         index: true,
-        handle: crumb('Dashboard'),
+        handle: crumb(k('Dashboard')),
         lazy: () =>
           import('@/pages/dashboard/DashboardPage').then((m) => ({ Component: m.default })),
       },
       {
         path: 'services',
-        handle: crumb('Services'),
+        handle: crumb(k('Services')),
         children: [
           {
             index: true,
@@ -47,7 +48,7 @@ const routes: RouteObject[] = [
           },
           {
             path: ':serviceId',
-            handle: crumb('Service'),
+            handle: crumb(k('Service')),
             children: [
               {
                 index: true,
@@ -58,7 +59,7 @@ const routes: RouteObject[] = [
               },
               {
                 path: 'deploys/:deployRequestId',
-                handle: crumb('Deploy'),
+                handle: crumb(k('Deploy')),
                 lazy: () =>
                   import('@/pages/services/DeployProgressPage').then((m) => ({
                     Component: m.default,
@@ -70,7 +71,7 @@ const routes: RouteObject[] = [
       },
       {
         path: 'evacuation',
-        handle: crumb('Evacuation'),
+        handle: crumb(k('Evacuation')),
         children: [
           {
             index: true,
@@ -79,13 +80,13 @@ const routes: RouteObject[] = [
           },
           {
             path: 'pre-check',
-            handle: crumb('AI pre-check'),
+            handle: crumb(k('AI pre-check')),
             lazy: () =>
               import('@/pages/evacuation/PrecheckPage').then((m) => ({ Component: m.default })),
           },
           {
             path: 'plan',
-            handle: crumb('Approve plan'),
+            handle: crumb(k('Approve plan')),
             lazy: () =>
               import('@/pages/evacuation/PlanPage').then((m) => ({ Component: m.default })),
           },
@@ -93,7 +94,7 @@ const routes: RouteObject[] = [
       },
       {
         path: 'migrations',
-        handle: crumb('Migrations'),
+        handle: crumb(k('Migrations')),
         children: [
           {
             index: true,
@@ -102,7 +103,7 @@ const routes: RouteObject[] = [
           },
           {
             path: ':planId',
-            handle: crumb('Migration'),
+            handle: crumb(k('Migration')),
             lazy: () =>
               import('@/pages/migrations/MigrationPage').then((m) => ({ Component: m.default })),
           },
@@ -110,30 +111,34 @@ const routes: RouteObject[] = [
       },
       {
         path: 'security',
-        handle: crumb('Security'),
+        handle: crumb(k('Security')),
         lazy: () => import('@/pages/security/SecurityPage').then((m) => ({ Component: m.default })),
       },
-      { path: 'audit', handle: crumb('Audit log'), element: <PlaceholderPage title="Audit log" /> },
+      {
+        path: 'audit',
+        handle: crumb(k('Audit log')),
+        element: <PlaceholderPage title={k('Audit log')} />,
+      },
       {
         path: 'settings',
-        handle: crumb('Settings'),
+        handle: crumb(k('Settings')),
         children: [
           { index: true, element: <Navigate to="environments" replace /> },
           {
             path: 'environments',
-            handle: crumb('Environments'),
+            handle: crumb(k('Environments')),
             lazy: () =>
               import('@/pages/settings/EnvironmentsPage').then((m) => ({ Component: m.default })),
           },
           {
             path: 'members',
-            handle: crumb('Members'),
+            handle: crumb(k('Members')),
             lazy: () =>
               import('@/pages/settings/MembersPage').then((m) => ({ Component: m.default })),
           },
         ],
       },
-      { path: '*', element: <PlaceholderPage title="Not found" /> },
+      { path: '*', element: <PlaceholderPage title={k('Not found')} /> },
     ],
   },
   ...(import.meta.env.DEV

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { useMigrationPlan } from '@/lib/api/migrations';
 import type { MigrationPlanSummary } from '@/lib/api/types';
+import { t } from '@/lib/i18n';
 import { failedRequests, requestCount, totalSeconds } from '@/lib/migration-metrics';
 import { duration } from '@/lib/migration-stages';
 
@@ -88,33 +89,45 @@ export function CompletionCard({
         <div className="flex items-start gap-3">
           <CircleCheck aria-hidden className="mt-1 size-6 shrink-0 text-success-solid" />
           <div className="flex flex-col gap-0.5">
-            <DialogTitle className="text-h2">Evacuation complete</DialogTitle>
+            <DialogTitle className="text-h2">{t('Evacuation complete')}</DialogTitle>
             <DialogDescription>
-              {sourceName} → {targetName} · migration {planId.slice(0, 8)}
+              {t('{{source}} → {{target}} · migration {{id}}', {
+                source: sourceName,
+                target: targetName,
+                id: planId.slice(0, 8),
+              })}
             </DialogDescription>
           </div>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <Stat
-            label="Total time"
+            label={t('Total time')}
             value={total === null ? '—' : duration(total)}
-            caption={`planned ${duration(plan.data.expectedSeconds)}`}
+            caption={t('planned {{duration}}', { duration: duration(plan.data.expectedSeconds) })}
           />
           <Stat
-            label="Failed requests"
+            label={t('Failed requests')}
             value={failed === null ? '—' : String(failed)}
-            caption={`of ${requestCount(plan.data)} judged requests`}
+            caption={t('of {{total}} judged requests', { total: requestCount(plan.data) })}
           />
-          <Stat label="Write pause" value="—" caption="writer cutover not in this plan yet" />
-          <Stat label="Data loss (RPO)" value="—" caption="measured by the replication engine" />
+          <Stat
+            label={t('Write pause')}
+            value="—"
+            caption={t('writer cutover not in this plan yet')}
+          />
+          <Stat
+            label={t('Data loss (RPO)')}
+            value="—"
+            caption={t('measured by the replication engine')}
+          />
         </div>
         <div className="flex justify-end gap-2">
           <Button variant="secondary" onClick={dismiss}>
-            Stay on dashboard
+            {t('Stay on dashboard')}
           </Button>
           <Button asChild>
             <Link to={`/o/${orgSlug}/migrations/${planId}`} onClick={dismiss}>
-              View full result <ArrowRight aria-hidden />
+              {t('View full result')} <ArrowRight aria-hidden />
             </Link>
           </Button>
         </div>

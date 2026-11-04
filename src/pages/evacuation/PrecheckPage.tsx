@@ -32,6 +32,7 @@ import {
   viewPrecheck,
 } from '@/lib/api/prechecks';
 import { useService } from '@/lib/api/services';
+import { k, t } from '@/lib/i18n';
 import { hasRole } from '@/lib/roles';
 import { cn } from '@/lib/utils';
 import { PatchReview } from './PatchReview';
@@ -40,27 +41,27 @@ import { WizardSteps } from './WizardSteps';
 const clock = (iso: string | null) => (iso ? new Date(iso).toLocaleTimeString('en-GB') : '');
 
 const STEP_TITLES: Record<PrecheckStepName, string> = {
-  SANDBOX: 'Sandbox created',
-  CONFIG_DIFF: 'Config diff',
-  FEATURE_GAPS: 'Feature gap mapping',
-  PATCH_VERIFY: 'Patch & verify',
-  APPROVAL: 'Human approval',
+  SANDBOX: k('Sandbox created'),
+  CONFIG_DIFF: k('Config diff'),
+  FEATURE_GAPS: k('Feature gap mapping'),
+  PATCH_VERIFY: k('Patch & verify'),
+  APPROVAL: k('Human approval'),
 };
 
 function progress(view: PrecheckView): Stage[] {
   const verifying = view.patches.find((patch) => patch.status === 'VERIFYING');
   const meta: Record<PrecheckStepName, string> = {
     SANDBOX: `${view.sandboxId} · ${clock(view.startedAt)}`,
-    CONFIG_DIFF: `${view.configDiff.length} keys differ`,
-    FEATURE_GAPS: `${view.featureGaps.length} gaps found`,
+    CONFIG_DIFF: t('{{n}} keys differ', { n: view.configDiff.length }),
+    FEATURE_GAPS: t('{{n}} gaps found', { n: view.featureGaps.length }),
     PATCH_VERIFY: verifying
-      ? `patch #${verifying.number} · testing`
-      : `${view.patches.length} patches tested`,
-    APPROVAL: 'Developer or above',
+      ? t('patch #{{n}} · testing', { n: verifying.number })
+      : t('{{n}} patches tested', { n: view.patches.length }),
+    APPROVAL: t('Developer or above'),
   };
   return view.steps.map((step) => ({
     key: step.name,
-    title: STEP_TITLES[step.name],
+    title: t(STEP_TITLES[step.name]),
     meta: step.state === 'PENDING' && step.name !== 'APPROVAL' ? undefined : meta[step.name],
     state: step.state === 'DONE' ? 'done' : step.state === 'RUNNING' ? 'current' : 'pending',
   }));
@@ -99,11 +100,11 @@ export default function PrecheckPage() {
     return (
       <EmptyState
         icon={FlaskConical}
-        title="Choose a target first"
-        description="Pick an evacuation target, then run the AI pre-check on it."
+        title={t('Choose a target first')}
+        description={t('Pick an evacuation target, then run the AI pre-check on it.')}
         action={
           <Button asChild variant="outline" size="sm">
-            <Link to={`/o/${slug}/evacuation`}>Choose target</Link>
+            <Link to={`/o/${slug}/evacuation`}>{t('Choose target')}</Link>
           </Button>
         }
       />
@@ -132,29 +133,32 @@ export default function PrecheckPage() {
   if (!precheck.data) {
     return (
       <>
-        <PageHeader title={`AI pre-check · ${target?.name ?? 'target'}`} />
+        <PageHeader title={t('AI pre-check · {{name}}', { name: target?.name ?? t('target') })} />
         <WizardSteps current={1} />
         <EmptyState
           icon={FlaskConical}
-          title={canStart ? 'Starting the sandbox…' : 'Pre-check has not started'}
+          title={canStart ? t('Starting the sandbox…') : t('Pre-check has not started')}
           description={
             canStart
-              ? 'EchoPort Agent is creating a sandbox on the target.'
-              : 'A developer or admin has to start the AI pre-check.'
+              ? t('EchoPort Agent is creating a sandbox on the target.')
+              : t('A developer or admin has to start the AI pre-check.')
           }
         />
       </>
     );
   }
 
-  const view = viewPrecheck(precheck.data, source?.name ?? 'source', now);
+  const view = viewPrecheck(precheck.data, source?.name ?? t('source'), now);
   const running = !view.ready && !view.stoppedAt;
 
   return (
     <>
       <PageHeader
-        title={`AI pre-check · ${target?.name ?? 'target'}`}
-        description={`Sandbox ${view.sandboxId} · started ${clock(view.startedAt)} · EchoPort Agent tests the app on the target before any production change.`}
+        title={t('AI pre-check · {{name}}', { name: target?.name ?? t('target') })}
+        description={t(
+          'Sandbox {{id}} · started {{time}} · EchoPort Agent tests the app on the target before any production change.',
+          { id: view.sandboxId, time: clock(view.startedAt) },
+        )}
         actions={
           <>
             {running && (
@@ -164,15 +168,15 @@ export default function PrecheckPage() {
                 disabled={stop.isPending}
                 onClick={() => stop.mutate(view.id)}
               >
-                Stop
+                {t('Stop')}
               </RoleButton>
             )}
             <RoleButton
               requires="DEVELOPER"
-              disabledReason={view.ready ? undefined : 'Decide every verified patch first'}
+              disabledReason={view.ready ? undefined : t('Decide every verified patch first')}
               onClick={() => navigate(planUrl)}
             >
-              Continue to plan
+              {t('Continue to plan')}
             </RoleButton>
           </>
         }
@@ -182,41 +186,45 @@ export default function PrecheckPage() {
       <div className="flex items-center gap-2">
         <SimulatedBadge />
         <span className="text-small text-fg-muted">
-          AI pre-check API is not ready yet. This run is simulated in the browser.
+          {t('AI pre-check API is not ready yet. This run is simulated in the browser.')}
         </span>
       </div>
 
       {view.stoppedAt && (
         <p role="status" className="rounded-lg bg-subtle px-3 py-2 text-body text-fg-secondary">
-          Stopped at {clock(view.stoppedAt)}. Nothing was applied.{' '}
+          {t('Stopped at {{time}}. Nothing was applied.', { time: clock(view.stoppedAt) })}{' '}
           <button
             type="button"
             className="text-brand hover:underline"
             onClick={() => start.mutate({ serviceId, targetEnvironmentId: targetId })}
           >
-            Run again
+            {t('Run again')}
           </button>
         </p>
       )}
 
       <div className="flex items-start gap-3 max-wide:flex-col">
         <section className="flex w-72 shrink-0 flex-col gap-3 rounded-xl border border-line bg-surface p-4 max-wide:w-full">
-          <h2 className="text-title">Progress</h2>
+          <h2 className="text-title">{t('Progress')}</h2>
           <StageList stages={progress(view)} />
         </section>
 
         <div className="flex min-w-0 flex-1 flex-col gap-3 max-wide:w-full">
           <Tabs value={tab} onValueChange={setTab}>
             <TabsList>
-              <TabsTrigger value="patches">Patches ({view.patches.length})</TabsTrigger>
-              <TabsTrigger value="gaps">Feature gaps ({view.featureGaps.length})</TabsTrigger>
-              <TabsTrigger value="config">Config diff</TabsTrigger>
-              <TabsTrigger value="logs">Logs</TabsTrigger>
+              <TabsTrigger value="patches">
+                {t('Patches ({{n}})', { n: view.patches.length })}
+              </TabsTrigger>
+              <TabsTrigger value="gaps">
+                {t('Feature gaps ({{n}})', { n: view.featureGaps.length })}
+              </TabsTrigger>
+              <TabsTrigger value="config">{t('Config diff')}</TabsTrigger>
+              <TabsTrigger value="logs">{t('Logs')}</TabsTrigger>
             </TabsList>
             <TabsContent value="patches" className="flex flex-col gap-3">
               {view.patches.length === 0 ? (
                 <p className="text-small text-fg-muted">
-                  Patches appear after feature gaps are mapped.
+                  {t('Patches appear after feature gaps are mapped.')}
                 </p>
               ) : (
                 view.patches.map((patch) => (
@@ -236,10 +244,18 @@ export default function PrecheckPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>{source?.kind.toUpperCase() ?? 'Source'} (source)</TableHead>
-                      <TableHead>{target?.kind.toUpperCase() ?? 'Target'} (target)</TableHead>
-                      <TableHead>Gap</TableHead>
-                      <TableHead>Action</TableHead>
+                      <TableHead>
+                        {t('{{name}} (source)', {
+                          name: source?.kind.toUpperCase() ?? t('Source environment'),
+                        })}
+                      </TableHead>
+                      <TableHead>
+                        {t('{{name}} (target)', {
+                          name: target?.kind.toUpperCase() ?? t('Target'),
+                        })}
+                      </TableHead>
+                      <TableHead>{t('Gap')}</TableHead>
+                      <TableHead>{t('Action')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -253,7 +269,7 @@ export default function PrecheckPage() {
                             gap.action === 'manual' ? 'text-warning-fg' : 'text-fg-secondary',
                           )}
                         >
-                          {gap.action}
+                          {t(gap.action)}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -266,9 +282,9 @@ export default function PrecheckPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Key</TableHead>
-                      <TableHead>{source?.name ?? 'Source'}</TableHead>
-                      <TableHead>{target?.name ?? 'Target'}</TableHead>
+                      <TableHead>{t('Key')}</TableHead>
+                      <TableHead>{source?.name ?? t('Source environment')}</TableHead>
+                      <TableHead>{target?.name ?? t('Target')}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -316,11 +332,15 @@ export default function PrecheckPage() {
               <CircleAlert aria-hidden className="mt-0.5 size-4 shrink-0" />
               <div className="flex flex-col gap-0.5">
                 <p className="text-body-medium">
-                  Blocked: agent tried to change production ({attempt.target})
+                  {t('Blocked: agent tried to change production ({{target}})', {
+                    target: attempt.target,
+                  })}
                 </p>
                 <p className="text-small">
-                  <span className="font-mono">{attempt.action}</span> · {attempt.reason} The real
-                  check records this in the audit log as actor AI Agent; this one is simulated.
+                  <span className="font-mono">{attempt.action}</span> · {attempt.reason}{' '}
+                  {t(
+                    'The real check records this in the audit log as actor AI Agent; this one is simulated.',
+                  )}
                 </p>
               </div>
             </div>

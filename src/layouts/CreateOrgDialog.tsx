@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { describeApiError, isApiError } from '@/lib/api/errors';
 import { fieldErrors } from '@/lib/api/form-errors';
 import { useCreateOrganization } from '@/lib/api/me';
+import { t } from '@/lib/i18n';
 
 // 서버 규칙과 같다: 소문자·숫자·하이픈, 하이픈은 처음·끝·연속 금지, 39자까지
 const SLUG_PATTERN = '[a-z0-9](-?[a-z0-9]){0,38}';
@@ -76,15 +77,15 @@ export function CreateOrgDialog({
       <DialogContent className="sm:max-w-md">
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <DialogHeader>
-            <DialogTitle>Create organization</DialogTitle>
+            <DialogTitle>{t('Create organization')}</DialogTitle>
             <DialogDescription>
-              You become its admin. Invite teammates from Settings › Members.
+              {t('You become its admin. Invite teammates from Settings › Members.')}
             </DialogDescription>
           </DialogHeader>
 
           {!slugConflict && <FormError message={errors._form} />}
 
-          <FormField id="org-name" label="Name" error={errors.name}>
+          <FormField id="org-name" label={t('Name')} error={errors.name}>
             <Input
               id="org-name"
               value={name}
@@ -100,8 +101,8 @@ export function CreateOrgDialog({
           </FormField>
           <FormField
             id="org-slug"
-            label="URL name"
-            hint={`app.echoport.uk/o/${slug || 'acme'} · can't change later`}
+            label={t('URL name')}
+            hint={t("app.echoport.uk/o/{{slug}} · can't change later", { slug: slug || 'acme' })}
             error={slugConflict ?? errors.slug}
           >
             <Input
@@ -122,10 +123,10 @@ export function CreateOrgDialog({
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
+              {t('Cancel')}
             </Button>
             <Button type="submit" disabled={create.isPending}>
-              {create.isPending ? 'Creating…' : 'Create organization'}
+              {create.isPending ? t('Creating…') : t('Create organization')}
             </Button>
           </DialogFooter>
         </form>

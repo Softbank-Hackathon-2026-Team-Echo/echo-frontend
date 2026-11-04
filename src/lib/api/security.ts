@@ -1,6 +1,7 @@
 // 시뮬레이션: 보안 API(계약 4-7 🆕, echo-was #28)가 생기기 전까지 환경 종류별 고정 값을 보여 준다.
 // 모양은 계약과 같고 항상 simulated 다. 서버가 생기면 SECURITY_API_READY 를 켜고 api + unwrap 으로 바꾼다.
 // 데모가 막히지 않게 지금 값에는 FAIL 이 없다. 이전을 막을지는 서버의 blocksMigration 이 정한다
+import { k, t } from '../i18n';
 import { useEnvironments } from './environments';
 import type { EnvironmentSummary } from './types';
 
@@ -46,28 +47,28 @@ const FINDINGS: Record<string, Seed[]> = {
     {
       control: 'policy',
       severity: 'MEDIUM',
-      title: 'Bucket without retention policy',
+      title: k('Bucket without retention policy'),
       source: 'PROWLER',
       rule: 'storage-retention',
-      suggestedFix: 'Set a retention policy on the bucket.',
+      suggestedFix: k('Set a retention policy on the bucket.'),
     },
     {
       control: 'policy',
       severity: 'MEDIUM',
-      title: 'Service account key older than 90 days',
+      title: k('Service account key older than 90 days'),
       source: 'SCC',
       rule: 'iam-key-rotation',
-      suggestedFix: 'Rotate the key, or move to workload identity.',
+      suggestedFix: k('Rotate the key, or move to workload identity.'),
     },
   ],
   onprem: [
     {
       control: 'iam',
       severity: 'MEDIUM',
-      title: 'K3s API reachable from LAN',
+      title: k('K3s API reachable from LAN'),
       source: 'KUBESCAPE',
       rule: 'api-server-exposure',
-      suggestedFix: 'Limit the API server to the management network.',
+      suggestedFix: k('Limit the API server to the management network.'),
     },
   ],
 };
@@ -84,6 +85,8 @@ function findingsOf(environment: EnvironmentSummary): SecurityFinding[] {
   if (!isScannable(environment)) return [];
   return (FINDINGS[environment.kind] ?? []).map(({ rule, ...seed }, index) => ({
     ...seed,
+    title: t(seed.title),
+    suggestedFix: t(seed.suggestedFix),
     id: `${environment.id}-${index}`,
     environmentId: environment.id,
     evidence: { rule, resource: environment.name, status: 'OPEN' },

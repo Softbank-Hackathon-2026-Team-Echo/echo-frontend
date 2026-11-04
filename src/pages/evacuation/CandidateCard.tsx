@@ -2,6 +2,7 @@ import { ProviderLabel } from '@/components/ProviderLabel';
 import type { EvacuationCandidate } from '@/lib/api/evacuation';
 import { SCORE_RULES } from '@/lib/api/evacuation';
 import type { EnvironmentSummary } from '@/lib/api/types';
+import { t } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
 function ScoreBar({ label, value }: { label: string; value: number }) {
@@ -58,13 +59,13 @@ export function CandidateCard({
         </span>
         {candidate.recommended && (
           <span className="rounded-sm bg-brand-subtle px-2 py-0.5 text-label text-brand-on-subtle">
-            Recommended
+            {t('Recommended')}
           </span>
         )}
       </span>
       <span className="flex items-end gap-1.5">
         <span className="text-metric tabular-nums">{candidate.score}</span>
-        <span className="text-small text-fg-secondary">/ 100 overall</span>
+        <span className="text-small text-fg-secondary">{t('/ 100 overall')}</span>
       </span>
       <span className="flex flex-col gap-2">
         {SCORE_RULES.map((rule) => (
