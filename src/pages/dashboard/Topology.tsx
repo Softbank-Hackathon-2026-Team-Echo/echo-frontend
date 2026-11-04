@@ -28,6 +28,7 @@ import { regionGroupLabel } from '@/lib/geo';
 import { t } from '@/lib/i18n';
 import { connectionStatusView, envRoleView, shortSha } from '@/lib/status';
 import { cn } from '@/lib/utils';
+import { replicationPath } from './topology-path';
 import type { ServiceOnEnvironment } from './types';
 
 const ENV_WIDTH = 232;
@@ -35,6 +36,8 @@ const ENV_HEIGHT = 112;
 const PROXY_WIDTH = 200;
 const PROXY_HEIGHT = 64;
 const GROUP_PADDING = '[top=36,left=14,bottom=14,right=14]';
+// 복제 곡선이 노드 아래로 나가므로 아래 여백을 넉넉히 둔다
+const FIT_PADDING = { top: '12px', left: '12px', right: '12px', bottom: '72px' } as const;
 
 type EnvNodeData = {
   environment: EnvironmentSummary;
@@ -81,25 +84,21 @@ function EnvironmentNode({ data }: NodeProps<Node<EnvNodeData, 'environment'>>) 
     >
       <Handle
         type="target"
-        position={Position.Left}
+        position={Position.Top}
         className="!size-1.5 !border-0 !bg-line-strong"
       />
-      <Handle
-        type="source"
-        position={Position.Right}
-        className="!size-1.5 !border-0 !bg-line-strong"
-      />
+      {/* 복제 선은 환경 아래쪽끼리 잇는다. 트래픽 선과 겹치지 않고 카드를 지나지 않는다 */}
       <Handle
         id="repl-out"
         type="source"
         position={Position.Bottom}
-        className="!size-1.5 !border-0 !bg-transparent"
+        className="!size-1.5 !border-0 !bg-line-strong"
       />
       <Handle
         id="repl-in"
         type="target"
-        position={Position.Top}
-        className="!size-1.5 !border-0 !bg-transparent"
+        position={Position.Bottom}
+        className="!size-1.5 !border-0 !bg-line-strong"
       />
       <span className="flex items-center justify-between gap-2">
         <span className="truncate text-body-medium">{environment.name}</span>
@@ -157,7 +156,7 @@ function ProxyNode({ data }: NodeProps<Node<ProxyNodeData, 'proxy'>>) {
     >
       <Handle
         type="source"
-        position={Position.Right}
+        position={Position.Bottom}
         className="!size-1.5 !border-0 !bg-line-strong"
       />
       <span className="text-body-medium">{t('Edge proxy')}</span>
@@ -171,7 +170,8 @@ function ProxyNode({ data }: NodeProps<Node<ProxyNodeData, 'proxy'>>) {
 /** 트래픽 선은 굵기 = 비율, 복제 선은 점선 */
 function TrafficEdge(props: EdgeProps<Edge<TrafficEdgeData>>) {
   const { sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, data } = props;
-  const [path, labelX, labelY] = getBezierPath({
+  const replication = data?.kind === 'replication';
+  const [trafficPath, trafficLabelX, trafficLabelY] = getBezierPath({
     sourceX,
     sourceY,
     targetX,
@@ -179,7 +179,10 @@ function TrafficEdge(props: EdgeProps<Edge<TrafficEdgeData>>) {
     sourcePosition,
     targetPosition,
   });
-  const replication = data?.kind === 'replication';
+  const curve = replication ? replicationPath(sourceX, sourceY, targetX, targetY) : null;
+  const path = curve?.path ?? trafficPath;
+  const labelX = curve?.labelX ?? trafficLabelX;
+  const labelY = curve?.labelY ?? trafficLabelY;
   const weight = data?.weight ?? 0;
   return (
     <>
@@ -219,7 +222,7 @@ const elk = new ELK({
 
 type Positions = Map<string, { x: number; y: number; width?: number; height?: number }>;
 
-/** 지역 묶음을 하위 그래프로 두고 elkjs 로 왼쪽 → 오른쪽 자동 배치 (환경이 N개로 늘어도) */
+/** 지역 묶음을 하위 그래프로 두고 elkjs 로 위 → 아래 자동 배치 (환경이 N개로 늘어도) */
 async function layout(
   groups: Map<string, EnvironmentSummary[]>,
   edges: { id: string; source: string; target: string }[],
@@ -228,16 +231,16 @@ async function layout(
     id: 'root',
     layoutOptions: {
       'elk.algorithm': 'layered',
-      'elk.direction': 'RIGHT',
+      'elk.direction': 'DOWN',
       'elk.hierarchyHandling': 'INCLUDE_CHILDREN',
-      'elk.spacing.nodeNode': '28',
-      'elk.layered.spacing.nodeNodeBetweenLayers': '64',
+      'elk.spacing.nodeNode': '24',
+      'elk.layered.spacing.nodeNodeBetweenLayers': '48',
     },
     children: [
       { id: 'proxy', width: PROXY_WIDTH, height: PROXY_HEIGHT },
       ...[...groups.entries()].map(([label, members]) => ({
         id: `group:${label}`,
-        layoutOptions: { 'elk.padding': GROUP_PADDING, 'elk.direction': 'DOWN' },
+        layoutOptions: { 'elk.padding': GROUP_PADDING },
         children: members.map((environment) => ({
           id: environment.id,
           width: ENV_WIDTH,
@@ -259,6 +262,12 @@ async function layout(
       positions.set(inner.id, { x: inner.x ?? 0, y: inner.y ?? 0 });
     }
   }
+  // 프록시는 환경 줄의 가운데에 둔다. 트래픽 선이 양쪽으로 고르게 펴진다
+  const boxes = (graph.children ?? []).filter((child) => child.id !== 'proxy');
+  const left = Math.min(...boxes.map((box) => box.x ?? 0));
+  const right = Math.max(...boxes.map((box) => (box.x ?? 0) + (box.width ?? 0)));
+  const proxy = positions.get('proxy');
+  if (proxy && boxes.length > 0) proxy.x = (left + right - PROXY_WIDTH) / 2;
   return positions;
 }
 
@@ -314,31 +323,28 @@ function TopologyCanvas({ environments, byEnvironment, atRisk, edgeUrl }: Topolo
     return list;
   }, [environments, byEnvironment]);
 
-  // 배치는 구조(환경·묶음·선)가 바뀔 때만 다시 계산한다. 트래픽 숫자만 바뀌면 그대로 둔다
+  // 배치는 구조(환경·묶음)가 바뀔 때만 다시 계산한다. 이전으로 트래픽이 옮겨 가도 그대로 둔다
   const structureKey = useMemo(
     () =>
       JSON.stringify([
         [...groups.entries()].map(([label, members]) => [label, members.map((item) => item.id)]),
-        edges.map((edge) => edge.id),
       ]),
-    [groups, edges],
+    [groups],
   );
-  // biome-ignore lint/correctness/useExhaustiveDependencies: structureKey 가 groups·edges 의 구조를 대표한다
+  // biome-ignore lint/correctness/useExhaustiveDependencies: structureKey 가 groups 의 구조를 대표한다
   useEffect(() => {
     let cancelled = false;
-    // 배치용 선: 서비스가 없는 환경도 프록시 오른쪽에 오도록 프록시 → 모든 환경을 잇는다(화면에는 그리지 않는다)
-    const layoutEdges = [
-      ...environments.map((environment) => ({
-        id: `layout:${environment.id}`,
-        source: 'proxy',
-        target: environment.id,
-      })),
-      ...edges.filter((edge) => edge.data?.kind === 'replication'),
-    ];
+    // 배치용 선: 프록시 → 모든 환경만 쓴다. 복제 선까지 넣으면 예비가 한 층 뒤로 밀려 트래픽 선이 카드를 지나고,
+    // 이전으로 서비스 중 환경이 바뀔 때 배치가 뒤집힌다
+    const layoutEdges = environments.map((environment) => ({
+      id: `layout:${environment.id}`,
+      source: 'proxy',
+      target: environment.id,
+    }));
     layout(groups, layoutEdges).then((next) => {
       if (cancelled) return;
       setPositions(next);
-      requestAnimationFrame(() => fitView({ padding: 0.12, duration: 300 }));
+      requestAnimationFrame(() => fitView({ padding: FIT_PADDING, duration: 300 }));
     });
     return () => {
       cancelled = true;
@@ -349,7 +355,7 @@ function TopologyCanvas({ environments, byEnvironment, atRisk, edgeUrl }: Topolo
   const paneWidth = useStore((state) => state.width);
   useEffect(() => {
     if (paneWidth === 0) return;
-    const frame = requestAnimationFrame(() => fitView({ padding: 0.12 }));
+    const frame = requestAnimationFrame(() => fitView({ padding: FIT_PADDING }));
     return () => cancelAnimationFrame(frame);
   }, [paneWidth, fitView]);
 
@@ -415,16 +421,18 @@ function TopologyCanvas({ environments, byEnvironment, atRisk, edgeUrl }: Topolo
       nodeTypes={nodeTypes}
       edgeTypes={edgeTypes}
       fitView
+      fitViewOptions={{ padding: FIT_PADDING }}
       minZoom={0.4}
       maxZoom={1.5}
       nodesConnectable={false}
       elementsSelectable={false}
       panOnScroll
       zoomOnScroll={false}
-      className="echo-flow"
+      // 배치가 끝나기 전에는 모든 노드가 한 점에 겹쳐 있어 보이지 않게 둔다
+      className={cn('echo-flow', positions.size === 0 && 'invisible')}
     >
       <Background gap={20} size={1} color="var(--ep-color-border-default)" />
-      <Controls showInteractive={false} position="bottom-left" />
+      <Controls showInteractive={false} position="top-left" />
     </ReactFlow>
   );
 }

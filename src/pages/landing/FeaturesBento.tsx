@@ -93,9 +93,9 @@ export function FeaturesBento() {
       <div className="grid grid-cols-2 divide-line overflow-hidden rounded-xl border border-line bg-surface max-compact:grid-cols-1">
         <Cell
           overline={t('Data')}
-          title={t('Zero-downtime cutover')}
+          title={t('Verified database cutover')}
           body={t(
-            'Writes pause for under two seconds while the database writer moves. LSN checks prove nothing was lost.',
+            'Writes paused for 8 seconds in our cross-cloud rehearsal, with 0 rows missing and 0 duplicated.',
           )}
           label={t('Database writer cutover steps with LSN confirmation')}
           className="border-r border-b border-line max-compact:border-r-0"
