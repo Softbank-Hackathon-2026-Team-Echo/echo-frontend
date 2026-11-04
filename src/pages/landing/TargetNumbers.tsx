@@ -11,7 +11,7 @@ type Target = { value: number; format: (value: number) => string; title: string;
 const TARGETS: Target[] = [
   { value: 0, format: String, title: k('failed requests'), note: k('during a planned evacuation') },
   { value: 0, format: String, title: k('rows lost'), note: k('writer cutover with LSN checks') },
-  { value: 90, format: (v) => `≤ ${v} s`, title: k('traffic shift'), note: '1 → 10 → 50 → 100%' },
+  { value: 90, format: (v) => `≤ ${v} s`, title: k('traffic shift'), note: '10 → 50 → 100%' },
   {
     value: 197,
     format: (v) => `${Math.floor(v / 60)}m ${String(v % 60).padStart(2, '0')}s`,

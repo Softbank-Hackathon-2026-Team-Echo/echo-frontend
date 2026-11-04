@@ -37,7 +37,7 @@ const STEPS = [
   {
     key: 'move',
     title: k('Move'),
-    body: k('Traffic shifts 1 → 10 → 50 → 100%. The database writer switches with LSN checks.'),
+    body: k('Traffic shifts 10 → 50 → 100%. The database writer switches with LSN checks.'),
     label: k('Traffic is 30% on Tokyo and 70% on Seoul and the writer cutover matched the LSN'),
   },
 ] as const;

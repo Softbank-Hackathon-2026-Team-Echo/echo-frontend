@@ -38,7 +38,6 @@
   "gcp-seoul-standby scores 82 and onprem-fukuoka 74": "gcp-seoul-standby는 82점, onprem-fukuoka는 74점입니다",
   "An AI agent replays the app on the target in a sandbox and proposes patches for any gaps.": "AI 에이전트가 샌드박스에서 도착 환경과 같은 조건으로 앱을 돌려 보고, 부족한 부분은 패치를 제안합니다.",
   "A patch raises max_connections from 100 to 200 and the sandbox passes 12 of 12 checks": "패치로 max_connections를 100에서 200으로 올리고 샌드박스 점검 12개를 모두 통과합니다",
-  "Traffic shifts 1 → 10 → 50 → 100%. The database writer switches with LSN checks.": "트래픽을 1 → 10 → 50 → 100%로 옮깁니다. DB 쓰기는 LSN을 확인한 뒤 전환합니다.",
   "Traffic is 30% on Tokyo and 70% on Seoul and the writer cutover matched the LSN": "트래픽은 도쿄 30%, 서울 70%이고 쓰기 전환의 LSN이 일치했습니다",
   "M7.2 near Tokyo": "도쿄 인근 M7.2",
   "Healthy": "정상",
@@ -63,8 +62,6 @@
   "Everything you need<br>to evacuate safely": "안전한 대피에 필요한<br>모든 것",
   "Built for the moment it matters: no lost writes, no surprise config gaps, no silent security drift.": "가장 중요한 순간을 위해 만들었습니다. 쓰기 유실도, 예상 못 한 설정 차이도, 소리 없이 벌어지는 보안 격차도 막습니다.",
   "Data": "데이터",
-  "Zero-downtime cutover": "무중단 전환",
-  "Writes pause for under two seconds while the database writer moves. LSN checks prove nothing was lost.": "DB 쓰기를 옮기는 동안 쓰기가 멈추는 시간은 2초 미만입니다. 유실이 없다는 것은 LSN으로 확인합니다.",
   "Database writer cutover steps with LSN confirmation": "LSN 확인을 포함한 데이터베이스 쓰기 전환 단계",
   "DB writer cutover": "DB 쓰기 전환",
   "Pause writes": "쓰기 일시 중지",
@@ -114,5 +111,8 @@
   "Beyond Lock-In — frictionless cloud management across platforms.": "Beyond Lock-In — 플랫폼을 가리지 않는 매끄러운 클라우드 관리.",
   "Footer": "바닥글",
   "Resources": "자료",
-  "Company": "회사"
+  "Company": "회사",
+  "Writes paused for 8 seconds in our cross-cloud rehearsal, with 0 rows missing and 0 duplicated.": "도쿄 ↔ 서울 리허설에서 쓰기가 멈춘 시간은 8초였고, 누락과 중복은 0건이었습니다.",
+  "Traffic shifts 10 → 50 → 100%. The database writer switches with LSN checks.": "트래픽을 10 → 50 → 100%로 옮깁니다. DB 쓰기는 LSN을 확인한 뒤 전환합니다.",
+  "Verified database cutover": "검증된 DB 전환"
 }
