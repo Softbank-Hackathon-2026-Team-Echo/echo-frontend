@@ -53,6 +53,12 @@ function LogLines({
           <SimulatedBadge />
         </span>
       )}
+      {/* 되돌리기·예비 따라가기는 예전 빌드를 다시 쓴다. 시각이 이번 배포보다 이른 이유를 알린다 */}
+      {source.value === 'BUILD' && request.build?.reused && lines.length > 0 && (
+        <p className="text-small text-fg-secondary">
+          {t('This build was reused from an earlier deploy. The lines below are from that build.')}
+        </p>
+      )}
       {lines.length === 0 ? (
         <p className="text-small text-fg-muted">{t(source.empty)}</p>
       ) : (

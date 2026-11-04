@@ -40,6 +40,22 @@ export function stageStates(
   });
 }
 
+/**
+ * 단계에 걸린 시간. 단계의 끝은 그 뒤로 처음 찍힌 시각이다. 취소·실패로 다음 단계가 없으면 finishedAt 이고,
+ * 진행 중이면 찍힌 시각이 없어 지금까지 센다
+ */
+export function stageDuration(
+  times: DeployRequestDetail['stageTimes'],
+  index: number,
+  now: number,
+): string | null {
+  const stage = STAGES[index];
+  const startedAt = stage && times[stage.at];
+  if (!startedAt) return null;
+  const later = [...STAGES.slice(index + 1).map((next) => times[next.at]), times.finishedAt];
+  return elapsed(startedAt, later.find(Boolean) ?? null, now);
+}
+
 const STAGE_ICON: Record<StageState, React.ReactNode> = {
   done: <Check aria-hidden className="size-4" />,
   current: <Loader2 aria-hidden className="size-4 animate-spin" />,
@@ -128,15 +144,12 @@ function Stepper({
 }) {
   const standby = standbyStep(request, service);
   const states = stageStates(request);
-  const times = request.stageTimes;
-  const ends = [times.buildingAt, times.deployingAt, times.verifyingAt, times.finishedAt];
   const live: StageState =
     request.status === 'SUCCEEDED' ? 'done' : request.status === 'FAILED' ? 'failed' : 'pending';
   const steps = [
     ...STAGES.map((stage, index) => {
       const state = states[index] ?? 'pending';
-      const startedAt = times[stage.at];
-      let detail = startedAt ? elapsed(startedAt, ends[index] ?? null, now) : t('pending');
+      let detail = stageDuration(request.stageTimes, index, now) ?? t('pending');
       if (stage.status === 'BUILDING' && request.build?.reused)
         detail = t('{{elapsed}} · cache reused', { elapsed: detail });
       if (stage.status === 'VERIFYING' && state === 'current') detail = t('health check running');
@@ -308,7 +321,17 @@ export default function DeployProgressPage() {
             <span>{request.environment.name}</span>·
             <span>{t('from {{ref}}', { ref: refText })}</span>·
             <span>{t('started {{time}}', { time: dateTime(request.stageTimes.queuedAt) })}</span>·
-            <span>{deployTriggerLabel(request.trigger).toLowerCase()}</span>·
+            {request.trigger === 'ROLLBACK' && request.rollbackOfRequestId ? (
+              <Link
+                to={`/o/${slug}/services/${serviceId}/deploys/${request.rollbackOfRequestId}`}
+                className="text-brand hover:underline"
+              >
+                {t('rollback of {{sha}}', { sha: shortSha(request.commitSha) })}
+              </Link>
+            ) : (
+              <span>{deployTriggerLabel(request.trigger).toLowerCase()}</span>
+            )}
+            ·
             <span className="font-mono tabular-nums">
               {elapsed(request.stageTimes.queuedAt, request.stageTimes.finishedAt, now)}
             </span>
