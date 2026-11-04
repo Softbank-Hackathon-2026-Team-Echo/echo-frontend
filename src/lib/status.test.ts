@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { hasRole } from './roles';
-import { clusterInfoErrorLabel, connectionStatusView, migrationModeLabel } from './status';
+import {
+  clusterInfoErrorLabel,
+  connectionStatusView,
+  migrationModeLabel,
+  securityCellLabel,
+  securityCompareNote,
+  securityResultView,
+} from './status';
 
 describe('connectionStatusView', () => {
   it('아는 값은 정해진 문구와 색으로 바꾼다', () => {
@@ -34,6 +41,30 @@ describe('migrationModeLabel', () => {
   it('모르는 종류는 원래 값을 보여 준다', () => {
     expect(migrationModeLabel('FAILBACK')).toBe('Failback');
     expect(migrationModeLabel('DRILL')).toBe('DRILL');
+  });
+});
+
+describe('보안 표시', () => {
+  it('모르는 결과는 원래 값을 중립 색으로 보여 준다', () => {
+    expect(securityResultView('PARTIAL')).toEqual({ label: 'PARTIAL', tone: 'neutral' });
+  });
+
+  it('문제가 있는 칸은 건수를 쓴다', () => {
+    expect(securityCellLabel('WARN', 1)).toBe('1 issue');
+    expect(securityCellLabel('FAIL', 2)).toBe('2 issues');
+    expect(securityCellLabel('PASS', 0)).toBe('Pass');
+  });
+
+  it('비교 판정은 막힘을 가장 먼저 말한다', () => {
+    const row = (source: string, target: string, blocksMigration = false) => ({
+      source: { result: source },
+      target: { result: target },
+      blocksMigration,
+    });
+    expect(securityCompareNote(row('PASS', 'FAIL', true))).toBe('blocks migration');
+    expect(securityCompareNote(row('PASS', 'UNKNOWN'))).toBe('not collected');
+    expect(securityCompareNote(row('PASS', 'WARN'))).toBe('warning only');
+    expect(securityCompareNote(row('PASS', 'PASS'))).toBe('same');
   });
 });
 

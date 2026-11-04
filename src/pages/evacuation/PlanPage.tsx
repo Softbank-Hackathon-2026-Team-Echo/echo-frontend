@@ -20,14 +20,15 @@ import {
   usePlanAction,
 } from '@/lib/api/migrations';
 import { usePrecheck } from '@/lib/api/prechecks';
+import { useSecurityCompare } from '@/lib/api/security';
 import { useService } from '@/lib/api/services';
 import type { MigrationPlan } from '@/lib/api/types';
 import { dateTime } from '@/lib/format';
 import { duration, planStages } from '@/lib/migration-stages';
 import { hasRole, roleLabel } from '@/lib/roles';
-import { migrationPlanStatusView } from '@/lib/status';
+import { migrationPlanStatusView, securityControlLabel } from '@/lib/status';
 import { PlanDraft } from './PlanDraft';
-import { SecurityComparison, securityMismatches } from './SecurityComparison';
+import { SecurityComparison } from './SecurityComparison';
 import { WizardSteps } from './WizardSteps';
 
 const clock = (iso: string | null) => (iso ? new Date(iso).toLocaleTimeString('en-GB') : '—');
@@ -88,6 +89,11 @@ export default function PlanPage() {
   const disasters = useActiveDisasters(orgId);
   const precheck = usePrecheck(orgId, serviceId, targetId);
   const precheckSkipped = precheck.data === null;
+  const security = useSecurityCompare(
+    orgId,
+    plan.data?.sourceEnvironmentId,
+    plan.data?.targetEnvironmentId,
+  );
   const logs = useMigrationLogs(orgId, plan.data?.status === 'STALE' ? planId : undefined, false);
 
   if (!serviceId || !targetId) {
@@ -160,7 +166,8 @@ export default function PlanPage() {
   const pending = current.status === 'PENDING_APPROVAL';
   const mine = current.createdBy.id === me.user.id;
   const selfBlocked = mine && !organization.allowSelfApproval;
-  const mismatches = securityMismatches();
+  const securityRows = security.data ?? [];
+  const mismatches = securityRows.filter((row) => row.blocksMigration);
   const approveReason = riskReason
     ? riskReason
     : selfBlocked
@@ -230,8 +237,8 @@ export default function PlanPage() {
           <CircleAlert aria-hidden className="mt-0.5 size-4 shrink-0" />
           <p className="text-body-medium">
             Approval locked: {mismatches.length} security mismatch
-            {mismatches.length === 1 ? '' : 'es'} ({mismatches.map((row) => row.control).join(', ')}
-            ).
+            {mismatches.length === 1 ? '' : 'es'} (
+            {mismatches.map((row) => securityControlLabel(row.control)).join(', ')}).
           </p>
         </div>
       )}
@@ -294,7 +301,7 @@ export default function PlanPage() {
         </div>
 
         <div className="flex w-110 shrink-0 flex-col gap-3 max-wide:w-full">
-          <SecurityComparison sourceName={sourceName} targetName={targetName} />
+          <SecurityComparison rows={securityRows} sourceName={sourceName} targetName={targetName} />
           <section className="flex flex-col gap-2 rounded-xl border border-line bg-surface p-4">
             <h2 className="text-title">Approval</h2>
             <dl className="flex flex-col gap-1.5">
