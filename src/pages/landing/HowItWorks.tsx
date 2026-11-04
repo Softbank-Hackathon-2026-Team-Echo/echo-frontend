@@ -55,7 +55,7 @@ export function HowItWorks() {
         id="how-it-works"
         title={<TitleLines text={t('From warning<br>to safe region in minutes')} />}
         description={t(
-          'Four steps run in order. You approve once; EchoPort does the rest and measures every second of it.',
+          'Four steps run in order. You approve the plan; EchoPort shifts the traffic and records every step.',
         )}
         link={{ label: t('See the full flow'), to: '#features' }}
       />

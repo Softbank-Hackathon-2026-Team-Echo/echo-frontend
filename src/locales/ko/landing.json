@@ -26,7 +26,6 @@
   "Human-approved AI": "사람이 승인하는 AI",
   "An AI agent tests the move in a sandbox and proposes fixes. Nothing touches production until a person approves.": "AI 에이전트가 샌드박스에서 이전을 시험하고 수정안을 제안합니다. 사람이 승인하기 전에는 운영 환경을 건드리지 않습니다.",
   "From warning<br>to safe region in minutes": "경보부터 안전한 리전까지<br>몇 분이면 충분합니다",
-  "Four steps run in order. You approve once; EchoPort does the rest and measures every second of it.": "네 단계가 순서대로 진행됩니다. 한 번만 승인하면 나머지는 EchoPort가 처리하고, 걸린 시간도 모두 기록합니다.",
   "See the full flow": "전체 흐름 보기",
   "Detect": "감지",
   "Choose": "선택",
@@ -114,5 +113,6 @@
   "Company": "회사",
   "Writes paused for 8 seconds in our cross-cloud rehearsal, with 0 rows missing and 0 duplicated.": "도쿄 ↔ 서울 리허설에서 쓰기가 멈춘 시간은 8초였고, 누락과 중복은 0건이었습니다.",
   "Traffic shifts 10 → 50 → 100%. The database writer switches with LSN checks.": "트래픽을 10 → 50 → 100%로 옮깁니다. DB 쓰기는 LSN을 확인한 뒤 전환합니다.",
-  "Verified database cutover": "검증된 DB 전환"
+  "Verified database cutover": "검증된 DB 전환",
+  "Four steps run in order. You approve the plan; EchoPort shifts the traffic and records every step.": "네 단계가 순서대로 진행됩니다. 계획을 승인하면 EchoPort가 트래픽을 옮기고 단계마다 기록을 남깁니다."
 }
