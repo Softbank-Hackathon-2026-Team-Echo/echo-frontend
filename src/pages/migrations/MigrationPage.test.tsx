@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { HttpResponse, http } from 'msw';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { Me, MigrationPlan } from '@/lib/api/types';
-import { AT, migrationPlan } from '@/test/migration-fixtures';
+import { AT, migrationPlan, step } from '@/test/migration-fixtures';
 import { server } from '@/test/msw-server';
 import { renderRoute } from '@/test/render';
 import MigrationPage from './MigrationPage';
@@ -121,5 +121,24 @@ describe('MigrationPage', () => {
     expect(
       await screen.findByRole('heading', { name: 'Failback plan-123 rolled back' }),
     ).toBeInTheDocument();
+  });
+
+  it('복귀가 데이터 확인에서 지표를 못 받으면 DB 쓰기 전환을 안내한다', async () => {
+    const failed = step(3, 'DATA_SYNC_CHECK', null, 'FAILED');
+    serve(
+      migrationPlan({
+        status: 'ROLLED_BACK',
+        mode: 'FAILBACK',
+        errorCode: 'METRICS_UNAVAILABLE',
+        steps: [
+          { ...failed, result: { ...failed.result, failureCode: 'METRICS_UNAVAILABLE' } },
+        ] as MigrationPlan['steps'],
+      }),
+    );
+    renderPage();
+
+    expect(
+      (await screen.findAllByText(/A failback needs the DB cutover first/)).length,
+    ).toBeGreaterThan(0);
   });
 });
