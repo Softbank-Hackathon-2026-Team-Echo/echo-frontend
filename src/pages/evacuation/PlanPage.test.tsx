@@ -93,6 +93,7 @@ const plan: MigrationPlan = {
   sourceServiceEnvironmentId: 'se1',
   targetServiceEnvironmentId: 'se2',
   status: 'PENDING_APPROVAL',
+  result: null,
   mode: 'PLANNED',
   currentStep: 0,
   expectedSeconds: 25,

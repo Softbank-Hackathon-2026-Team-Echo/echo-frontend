@@ -7,14 +7,19 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { useNow } from '@/hooks/useNow';
 import type { MigrationPlan, MigrationStep } from '@/lib/api/types';
 import { k, t } from '@/lib/i18n';
 import {
   failedRequests,
+  isAwaitingCutover,
   maxReplicationLag,
   requestCount,
+  rowCheck,
   stepSeconds,
   totalSeconds,
+  writePauseCaption,
+  writePauseText,
 } from '@/lib/migration-metrics';
 import { duration } from '@/lib/migration-stages';
 import { migrationFailureLabel, planFailureLabel } from '@/lib/status';
@@ -83,6 +88,9 @@ export function ResultTab({ plan }: { plan: MigrationPlan }) {
   const lag = maxReplicationLag(plan);
   const requests = requestCount(plan);
   const clean = plan.status === 'SUCCEEDED' && (failed ?? 0) === 0;
+  const rows = rowCheck(plan);
+  // 기다리는 시간이 지나면 다시 부르기가 멈춰도 문구가 바뀌도록 시계를 돌린다
+  const now = useNow(isAwaitingCutover(plan));
 
   return (
     <div className="flex flex-col gap-3">
@@ -121,13 +129,18 @@ export function ResultTab({ plan }: { plan: MigrationPlan }) {
         />
         <Kpi
           label={t('Missing · duplicate rows')}
-          value={null}
-          caption={t('data check API pending (infra #7)')}
+          value={rows?.text ?? null}
+          tone={rows ? (rows.clean ? 'success' : 'danger') : undefined}
+          caption={
+            rows
+              ? t('{{n}} rows compared', { n: rows.rowsTotal ?? '—' })
+              : writePauseCaption(plan, now)
+          }
         />
         <Kpi
           label={t('Write pause')}
-          value={null}
-          caption={t('writer cutover not in this plan yet')}
+          value={writePauseText(plan)}
+          caption={writePauseCaption(plan, now)}
         />
         <Kpi
           label={t('Total time')}

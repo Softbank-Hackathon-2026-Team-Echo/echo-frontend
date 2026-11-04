@@ -376,6 +376,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/orgs/{org_id}/services/{service_id}/environments/{environment_id}/variables": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search Service Variables */
+        get: operations["search_service_variables_api_v1_orgs__org_id__services__service_id__environments__environment_id__variables_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/orgs/{org_id}/services/{service_id}/environments/{environment_id}/variables/{key}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Put Service Variable */
+        put: operations["put_service_variable_api_v1_orgs__org_id__services__service_id__environments__environment_id__variables__key__put"];
+        post?: never;
+        /** Delete Service Variable */
+        delete: operations["delete_service_variable_api_v1_orgs__org_id__services__service_id__environments__environment_id__variables__key__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/orgs/{org_id}/deploy-requests/{deploy_request_id}": {
         parameters: {
             query?: never;
@@ -553,6 +588,265 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/orgs/{org_id}/audit-logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Search Audit Logs
+         * @description 최신순. `from` 이상 `to` 미만. `includeReads=false` 면 에이전트 읽기 줄을 뺀다.
+         */
+        get: operations["search_audit_logs_api_v1_orgs__org_id__audit_logs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/orgs/{org_id}/security/matrix": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Security Matrix */
+        get: operations["get_security_matrix_api_v1_orgs__org_id__security_matrix_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/orgs/{org_id}/security/findings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search Security Findings */
+        get: operations["search_security_findings_api_v1_orgs__org_id__security_findings_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/orgs/{org_id}/security/exceptions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search Security Exceptions */
+        get: operations["search_security_exceptions_api_v1_orgs__org_id__security_exceptions_get"];
+        put?: never;
+        /** Create Security Exception */
+        post: operations["create_security_exception_api_v1_orgs__org_id__security_exceptions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/orgs/{org_id}/security/exceptions/{exception_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Security Exception */
+        get: operations["get_security_exception_api_v1_orgs__org_id__security_exceptions__exception_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/orgs/{org_id}/security/exceptions/{exception_id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approve Security Exception */
+        post: operations["approve_security_exception_api_v1_orgs__org_id__security_exceptions__exception_id__approve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/orgs/{org_id}/security/exceptions/{exception_id}/revoke": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Revoke Security Exception */
+        post: operations["revoke_security_exception_api_v1_orgs__org_id__security_exceptions__exception_id__revoke_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/orgs/{org_id}/prechecks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Precheck */
+        post: operations["create_precheck_api_v1_orgs__org_id__prechecks_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/orgs/{org_id}/prechecks/{precheck_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Precheck */
+        get: operations["get_precheck_api_v1_orgs__org_id__prechecks__precheck_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/orgs/{org_id}/prechecks/{precheck_id}/logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search Precheck Logs */
+        get: operations["search_precheck_logs_api_v1_orgs__org_id__prechecks__precheck_id__logs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/orgs/{org_id}/prechecks/{precheck_id}/cancel": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Cancel Precheck */
+        post: operations["cancel_precheck_api_v1_orgs__org_id__prechecks__precheck_id__cancel_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/runner/runs:claim": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Claim Run */
+        post: operations["claim_run_api_v1_runner_runs_claim_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/runner/runs/{run_id}/heartbeat": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send Run Heartbeat */
+        post: operations["send_run_heartbeat_api_v1_runner_runs__run_id__heartbeat_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/runner/runs/{run_id}/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Submit Run Events */
+        post: operations["submit_run_events_api_v1_runner_runs__run_id__events_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/runner/runs/{run_id}/result": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Submit Run Result */
+        post: operations["submit_run_result_api_v1_runner_runs__run_id__result_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/healthz": {
         parameters: {
             query?: never;
@@ -609,6 +903,48 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         /**
+         * ActorType
+         * @description 누가 했나. USER 는 세션 쿠키로 들어온 사람, AGENT 는 에이전트 토큰, SYSTEM 은 서버 자신.
+         * @enum {string}
+         */
+        ActorType: "USER" | "AGENT" | "SYSTEM";
+        /**
+         * AgentPatchStatus
+         * @description AI 수정안 상태. 러너 값을 믿지 않고 WAS 가 검사 결과로 다시 계산한다.
+         * @enum {string}
+         */
+        AgentPatchStatus: "PROPOSED" | "BLOCKED";
+        /**
+         * AgentRunKind
+         * @description AI 실행 종류. CHANGE_PROPOSAL 은 P1.
+         * @enum {string}
+         */
+        AgentRunKind: "PRECHECK" | "APPLY_PATCH" | "CHANGE_PROPOSAL";
+        /**
+         * AgentRunOrigin
+         * @description 러너 결과 한 줄의 출처. RULE 은 고정 규칙 비교, AI 는 모델 판단이다.
+         * @enum {string}
+         */
+        AgentRunOrigin: "RULE" | "AI";
+        /**
+         * AgentRunSeverity
+         * @description 설정 차이·기능 차이의 심각도.
+         * @enum {string}
+         */
+        AgentRunSeverity: "INFO" | "WARN" | "FAIL";
+        /**
+         * AgentRunStatus
+         * @description QUEUED → CLAIMED → RUNNING → SUCCEEDED·FAILED·TIMED_OUT·CANCELLED. 자동 재시도 없음.
+         * @enum {string}
+         */
+        AgentRunStatus: "QUEUED" | "CLAIMED" | "RUNNING" | "SUCCEEDED" | "FAILED" | "TIMED_OUT" | "CANCELLED";
+        /**
+         * AgentRunStep
+         * @description 러너 진행 이벤트의 단계(러너 `RunStep` 과 같은 값).
+         * @enum {string}
+         */
+        AgentRunStep: "SANDBOX_CREATE" | "INPUT_LOAD" | "CONFIG_DIFF" | "ANALYZE" | "PATCH_PROPOSE" | "PATCH_VERIFY" | "SANDBOX_DELETE";
+        /**
          * AgentTokenResponse
          * @description 원문은 싣지 않는다(last4 만).
          */
@@ -642,6 +978,27 @@ export interface components {
             /** Lastusedat */
             lastUsedAt: string | null;
         };
+        /**
+         * AiFindingConfirmation
+         * @description AI 결과를 사람이 확인한 상태. ESCALATED 여야 차단 사유가 된다.
+         * @enum {string}
+         */
+        AiFindingConfirmation: "UNCONFIRMED" | "ESCALATED" | "DISMISSED";
+        /** ApiResponse[ClaimRunResponse] */
+        ApiResponse_ClaimRunResponse_: {
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Code */
+            code?: string | null;
+            /** Message */
+            message?: string | null;
+            data?: components["schemas"]["ClaimRunResponse"] | null;
+            /** Details */
+            details?: components["schemas"]["ErrorDetail"][] | null;
+        };
         /** ApiResponse[DeployRequestDetailResponse] */
         ApiResponse_DeployRequestDetailResponse_: {
             /**
@@ -669,6 +1026,21 @@ export interface components {
             /** Message */
             message?: string | null;
             data?: components["schemas"]["EnvironmentDetailResponse"] | null;
+            /** Details */
+            details?: components["schemas"]["ErrorDetail"][] | null;
+        };
+        /** ApiResponse[HeartbeatResponse] */
+        ApiResponse_HeartbeatResponse_: {
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Code */
+            code?: string | null;
+            /** Message */
+            message?: string | null;
+            data?: components["schemas"]["HeartbeatResponse"] | null;
             /** Details */
             details?: components["schemas"]["ErrorDetail"][] | null;
         };
@@ -807,6 +1179,21 @@ export interface components {
             /** Details */
             details?: components["schemas"]["ErrorDetail"][] | null;
         };
+        /** ApiResponse[Page[AuditLogResponse]] */
+        ApiResponse_Page_AuditLogResponse__: {
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Code */
+            code?: string | null;
+            /** Message */
+            message?: string | null;
+            data?: components["schemas"]["Page_AuditLogResponse_"] | null;
+            /** Details */
+            details?: components["schemas"]["ErrorDetail"][] | null;
+        };
         /** ApiResponse[Page[DeployRequestSummaryResponse]] */
         ApiResponse_Page_DeployRequestSummaryResponse__: {
             /**
@@ -897,6 +1284,36 @@ export interface components {
             /** Details */
             details?: components["schemas"]["ErrorDetail"][] | null;
         };
+        /** ApiResponse[Page[SecurityExceptionResponse]] */
+        ApiResponse_Page_SecurityExceptionResponse__: {
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Code */
+            code?: string | null;
+            /** Message */
+            message?: string | null;
+            data?: components["schemas"]["Page_SecurityExceptionResponse_"] | null;
+            /** Details */
+            details?: components["schemas"]["ErrorDetail"][] | null;
+        };
+        /** ApiResponse[Page[SecurityFindingResponse]] */
+        ApiResponse_Page_SecurityFindingResponse__: {
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Code */
+            code?: string | null;
+            /** Message */
+            message?: string | null;
+            data?: components["schemas"]["Page_SecurityFindingResponse_"] | null;
+            /** Details */
+            details?: components["schemas"]["ErrorDetail"][] | null;
+        };
         /** ApiResponse[Page[ServiceSummaryResponse]] */
         ApiResponse_Page_ServiceSummaryResponse__: {
             /**
@@ -909,6 +1326,81 @@ export interface components {
             /** Message */
             message?: string | null;
             data?: components["schemas"]["Page_ServiceSummaryResponse_"] | null;
+            /** Details */
+            details?: components["schemas"]["ErrorDetail"][] | null;
+        };
+        /** ApiResponse[PrecheckDetailResponse] */
+        ApiResponse_PrecheckDetailResponse_: {
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Code */
+            code?: string | null;
+            /** Message */
+            message?: string | null;
+            data?: components["schemas"]["PrecheckDetailResponse"] | null;
+            /** Details */
+            details?: components["schemas"]["ErrorDetail"][] | null;
+        };
+        /** ApiResponse[PrecheckLogPageResponse] */
+        ApiResponse_PrecheckLogPageResponse_: {
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Code */
+            code?: string | null;
+            /** Message */
+            message?: string | null;
+            data?: components["schemas"]["PrecheckLogPageResponse"] | null;
+            /** Details */
+            details?: components["schemas"]["ErrorDetail"][] | null;
+        };
+        /** ApiResponse[SavedServiceVariableResponse] */
+        ApiResponse_SavedServiceVariableResponse_: {
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Code */
+            code?: string | null;
+            /** Message */
+            message?: string | null;
+            data?: components["schemas"]["SavedServiceVariableResponse"] | null;
+            /** Details */
+            details?: components["schemas"]["ErrorDetail"][] | null;
+        };
+        /** ApiResponse[SecurityExceptionResponse] */
+        ApiResponse_SecurityExceptionResponse_: {
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Code */
+            code?: string | null;
+            /** Message */
+            message?: string | null;
+            data?: components["schemas"]["SecurityExceptionResponse"] | null;
+            /** Details */
+            details?: components["schemas"]["ErrorDetail"][] | null;
+        };
+        /** ApiResponse[SecurityMatrixResponse] */
+        ApiResponse_SecurityMatrixResponse_: {
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Code */
+            code?: string | null;
+            /** Message */
+            message?: string | null;
+            data?: components["schemas"]["SecurityMatrixResponse"] | null;
             /** Details */
             details?: components["schemas"]["ErrorDetail"][] | null;
         };
@@ -927,6 +1419,51 @@ export interface components {
             /** Details */
             details?: components["schemas"]["ErrorDetail"][] | null;
         };
+        /** ApiResponse[ServiceVariableListResponse] */
+        ApiResponse_ServiceVariableListResponse_: {
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Code */
+            code?: string | null;
+            /** Message */
+            message?: string | null;
+            data?: components["schemas"]["ServiceVariableListResponse"] | null;
+            /** Details */
+            details?: components["schemas"]["ErrorDetail"][] | null;
+        };
+        /** ApiResponse[SubmitRunEventsResponse] */
+        ApiResponse_SubmitRunEventsResponse_: {
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Code */
+            code?: string | null;
+            /** Message */
+            message?: string | null;
+            data?: components["schemas"]["SubmitRunEventsResponse"] | null;
+            /** Details */
+            details?: components["schemas"]["ErrorDetail"][] | null;
+        };
+        /** ApiResponse[SubmitRunResultResponse] */
+        ApiResponse_SubmitRunResultResponse_: {
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Code */
+            code?: string | null;
+            /** Message */
+            message?: string | null;
+            data?: components["schemas"]["SubmitRunResultResponse"] | null;
+            /** Details */
+            details?: components["schemas"]["ErrorDetail"][] | null;
+        };
         /** ApiResponse[list[EnvironmentKindResponse]] */
         ApiResponse_list_EnvironmentKindResponse__: {
             /**
@@ -942,6 +1479,68 @@ export interface components {
             data?: components["schemas"]["EnvironmentKindResponse"][] | null;
             /** Details */
             details?: components["schemas"]["ErrorDetail"][] | null;
+        };
+        /** AuditActorResponse */
+        AuditActorResponse: {
+            type: components["schemas"]["ActorType"];
+            /** Userid */
+            userId: string | null;
+            /** Githublogin */
+            githubLogin: string | null;
+            /** Agenttokenid */
+            agentTokenId: string | null;
+            /** Agenttokenname */
+            agentTokenName: string | null;
+            /** Component */
+            component: string | null;
+        };
+        /** AuditLogResponse */
+        AuditLogResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            actor: components["schemas"]["AuditActorResponse"];
+            /** Action */
+            action: string;
+            /** Route */
+            route: string | null;
+            /** Path */
+            path: string | null;
+            target: components["schemas"]["AuditTargetResponse"] | null;
+            result: components["schemas"]["AuditResult"];
+            /** Reason */
+            reason: string | null;
+            /** Details */
+            details: {
+                [key: string]: unknown;
+            };
+            /** Requestid */
+            requestId: string | null;
+        };
+        /**
+         * AuditResult
+         * @description 감사 줄의 결과. DENIED 는 권한이 없어 막힌 요청(403)이다.
+         * @enum {string}
+         */
+        AuditResult: "SUCCEEDED" | "FAILED" | "DENIED";
+        /** AuditTargetResponse */
+        AuditTargetResponse: {
+            /** Type */
+            type: string;
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Label */
+            label: string | null;
         };
         /**
          * BuildRefResponse
@@ -966,6 +1565,60 @@ export interface components {
          * @enum {string}
          */
         BuildStatus: "QUEUED" | "RUNNING" | "SUCCEEDED" | "FAILED";
+        /** ClaimRunRequest */
+        ClaimRunRequest: {
+            /** Runnerid */
+            runnerId: string;
+            /** Capabilities */
+            capabilities: string[];
+        };
+        /**
+         * ClaimRunResponse
+         * @description 가져갈 실행이 없으면 run·runToken 이 null 이다. runToken 은 여기서 한 번만 준다.
+         */
+        ClaimRunResponse: {
+            run?: components["schemas"]["ClaimedRunResponse"] | null;
+            /** Runtoken */
+            runToken?: string | null;
+        };
+        /** ClaimedRunResponse */
+        ClaimedRunResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            kind: components["schemas"]["AgentRunKind"];
+            /**
+             * Orgid
+             * Format: uuid
+             */
+            orgId: string;
+            /**
+             * Serviceid
+             * Format: uuid
+             */
+            serviceId: string;
+            /** Sourceenvironmentid */
+            sourceEnvironmentId: string | null;
+            /** Targetenvironmentid */
+            targetEnvironmentId: string | null;
+            /** Inputsnapshot */
+            inputSnapshot: {
+                [key: string]: unknown;
+            };
+            /** Inputhash */
+            inputHash: string;
+            /** Scenarioref */
+            scenarioRef: string | null;
+            /**
+             * Deadlineat
+             * Format: date-time
+             */
+            deadlineAt: string;
+            /** Leaseuntil */
+            leaseUntil: string | null;
+        };
         /**
          * ClusterInfoResponse
          * @description 클러스터 정보. simulated=true 면 가짜 어댑터가 만든 값이다(실제 클러스터에 붙지 않음).
@@ -984,6 +1637,16 @@ export interface components {
          * @enum {string}
          */
         ConnectionErrorCode: "TIMEOUT" | "SECRET_REF_MISSING" | "SECRET_REF_INVALID" | "SECRET_NOT_FOUND" | "SECRET_STORE_UNSUPPORTED" | "CONFIG_INVALID" | "AUTH_FAILED" | "UNREACHABLE" | "UNKNOWN";
+        /**
+         * CoordinatesResponse
+         * @description 지도·재난 판정용 좌표. 저장하지 않고 config 의 위치 글자로 서버 표에서 찾은 값이다.
+         */
+        CoordinatesResponse: {
+            /** Lat */
+            lat: number;
+            /** Lng */
+            lng: number;
+        };
         /**
          * CreateAgentTokenRequest
          * @description expiresInDays 를 빼면 설정 기본값(30일)이다.
@@ -1062,6 +1725,43 @@ export interface components {
             /** Name */
             name: string;
         };
+        /** CreatePrecheckRequest */
+        CreatePrecheckRequest: {
+            /**
+             * Serviceid
+             * Format: uuid
+             */
+            serviceId: string;
+            /**
+             * Targetenvironmentid
+             * Format: uuid
+             */
+            targetEnvironmentId: string;
+        };
+        /**
+         * CreateSecurityExceptionRequest
+         * @description 범위 칸은 그 통제가 정한 것만 채운다(나머지는 null 또는 생략). 만료는 지금부터 7일 이하.
+         */
+        CreateSecurityExceptionRequest: {
+            controlId: components["schemas"]["SecurityControlId"];
+            /** Serviceid */
+            serviceId?: string | null;
+            /** Environmentid */
+            environmentId?: string | null;
+            /** Imagedigest */
+            imageDigest?: string | null;
+            /** Configcommit */
+            configCommit?: string | null;
+            /** Wasversion */
+            wasVersion?: string | null;
+            /** Reason */
+            reason: string;
+            /**
+             * Expiresat
+             * Format: date-time
+             */
+            expiresAt: string;
+        };
         /**
          * CreateServiceRequest
          * @description 서비스 등록. repoUrl 은 https://github.com/<owner>/<repo> 만 받는다.
@@ -1103,6 +1803,15 @@ export interface components {
             /** Finishedat */
             finishedAt: string | null;
         };
+        /**
+         * CutoverKind
+         * @description 인프라 스크립트가 고객 DB 의 `echo_ops.cutover_runs` 에 남긴 결과의 종류(원본 표기 그대로).
+         *
+         *     `cutover.sh` 는 CUTOVER, `rollback.sh` 는 ROLLBACK 을 쓴다. 복귀(FAILBACK) 계획은 ROLLBACK,
+         *     그 밖의 계획은 CUTOVER 를 찾는다.
+         * @enum {string}
+         */
+        CutoverKind: "CUTOVER" | "ROLLBACK";
         /**
          * DeployRequestCancelReason
          * @enum {string}
@@ -1161,7 +1870,7 @@ export interface components {
          * @description 배포 요청 실패 이유. DB CHECK 를 걸지 않고 앱이 이 값만 쓴다.
          * @enum {string}
          */
-        DeployRequestErrorCode: "REPO_NOT_ACCESSIBLE" | "REF_NOT_FOUND" | "SOURCE_PROVIDER_UNAVAILABLE" | "BUILD_FAILED" | "BUILD_TIMEOUT" | "DEPLOY_FAILED" | "DEPLOY_TIMEOUT" | "HEALTH_CHECK_FAILED" | "HEALTH_CHECK_TIMEOUT" | "PUBLIC_URL_UNREACHABLE" | "WORKER_LOST" | "INTERNAL_ERROR" | "BUILD_DISPATCH_FAILED" | "CLUSTER_UNAUTHORIZED" | "IMAGE_PULL_FAILED" | "CONTAINER_START_FAILED";
+        DeployRequestErrorCode: "REPO_NOT_ACCESSIBLE" | "REF_NOT_FOUND" | "SOURCE_PROVIDER_UNAVAILABLE" | "BUILD_FAILED" | "BUILD_TIMEOUT" | "DEPLOY_FAILED" | "DEPLOY_TIMEOUT" | "HEALTH_CHECK_FAILED" | "HEALTH_CHECK_TIMEOUT" | "PUBLIC_URL_UNREACHABLE" | "WORKER_LOST" | "INTERNAL_ERROR" | "BUILD_DISPATCH_FAILED" | "CLUSTER_UNAUTHORIZED" | "IMAGE_PULL_FAILED" | "CONTAINER_START_FAILED" | "ENV_SECRET_UNAVAILABLE";
         /**
          * DeployRequestStatus
          * @description 배포 요청 상태. 취소는 QUEUED 에서만 한다. 끝 상태는 되감지 않는다.
@@ -1238,6 +1947,7 @@ export interface components {
             kind: string;
             /** Location */
             location: string | null;
+            coordinates: components["schemas"]["CoordinatesResponse"] | null;
             /** Config */
             config: {
                 [key: string]: unknown;
@@ -1292,7 +2002,8 @@ export interface components {
          * EnvironmentSummaryResponse
          * @description 환경 목록 한 항목. 저장된 값만 담는다.
          *
-         *     location·config 는 저장된 config 를 지금 양식으로 읽지 못하면 null 이다.
+         *     location·coordinates·config 는 저장된 config 를 지금 양식으로 읽지 못하면 null 이다.
+         *     coordinates 는 위치가 서버 표에 없어도 null 이다.
          *     다른 파트는 환경을 id 로만 가리킨다. name 은 표시용이며 바뀔 수 있다.
          */
         EnvironmentSummaryResponse: {
@@ -1307,6 +2018,7 @@ export interface components {
             kind: string;
             /** Location */
             location: string | null;
+            coordinates: components["schemas"]["CoordinatesResponse"] | null;
             /** Config */
             config: {
                 [key: string]: unknown;
@@ -1342,10 +2054,40 @@ export interface components {
             /** Value */
             value?: string | null;
         };
+        /**
+         * FindingItemResponse
+         * @description 근거 줄(취약점·비밀 위치 등). 비밀값 원문·매치 문자열은 없다.
+         */
+        FindingItemResponse: {
+            /** Itemid */
+            itemId: string;
+            /** Severity */
+            severity?: string | null;
+            /** Target */
+            target?: string | null;
+            /** Installedversion */
+            installedVersion?: string | null;
+            /** Fixedversion */
+            fixedVersion?: string | null;
+            /** Line */
+            line?: number | null;
+            /** Commit */
+            commit?: string | null;
+            /** Reason */
+            reason?: string | null;
+        };
+        /** @enum {string} */
+        FindingOrigin: "RULE" | "HUMAN" | "AI";
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** HeartbeatResponse */
+        HeartbeatResponse: {
+            status: components["schemas"]["AgentRunStatus"];
+            /** Leaseuntil */
+            leaseUntil: string | null;
         };
         /** InvitationResponse */
         InvitationResponse: {
@@ -1420,6 +2162,7 @@ export interface components {
             /** Token */
             token: string;
         };
+        JsonValue: unknown;
         /**
          * LogLevel
          * @description 로그 한 줄의 수준(배포 작업 로그·빌드·실행 로그 공통).
@@ -1492,7 +2235,7 @@ export interface components {
          * @description 이전 계획 실패·롤백 원인. 롤백 결과는 MigrationRollbackStatus 로 따로 둔다.
          * @enum {string}
          */
-        MigrationErrorCode: "PREFLIGHT_FAILED" | "TRAFFIC_APPLY_FAILED" | "HEALTH_CHECK_FAILED" | "METRICS_UNAVAILABLE" | "THRESHOLD_EXCEEDED" | "DATA_LAG_EXCEEDED" | "ABORTED" | "WORKER_LOST" | "INTERNAL_ERROR" | "TARGET_NOT_RECEIVING";
+        MigrationErrorCode: "PREFLIGHT_FAILED" | "TRAFFIC_APPLY_FAILED" | "HEALTH_CHECK_FAILED" | "METRICS_UNAVAILABLE" | "THRESHOLD_EXCEEDED" | "DATA_LAG_EXCEEDED" | "ABORTED" | "WORKER_LOST" | "INTERNAL_ERROR" | "TARGET_NOT_RECEIVING" | "SECURITY_GATE_BLOCKED";
         /** MigrationLogLineResponse */
         MigrationLogLineResponse: {
             /** Seq */
@@ -1534,6 +2277,7 @@ export interface components {
          * MigrationPlanDetailResponse
          * @description 단건 응답. maxWaitSeconds 는 계획 행의 observe_seconds 칸(새 계획은 단계 최대 대기, 8-1 전
          *     계획은 그 계획의 지켜보기 초)이다. progress 는 비율 단계를 세는 동안만 값이 있다(1초 폴링용).
+         *     result 는 고객 DB 의 컷오버 결과이고 상세 GET 만 읽는다(쓰기 응답은 끝난 계획이면 칸 전부 null).
          */
         MigrationPlanDetailResponse: {
             /**
@@ -1609,6 +2353,7 @@ export interface components {
             abortRequestedAt: string | null;
             /** Errormessage */
             errorMessage: string | null;
+            result: components["schemas"]["MigrationPlanResultResponse"] | null;
         };
         /**
          * MigrationPlanMode
@@ -1619,6 +2364,35 @@ export interface components {
          * @enum {string}
          */
         MigrationPlanMode: "PLANNED" | "EMERGENCY" | "FAILBACK";
+        /**
+         * MigrationPlanResultResponse
+         * @description 인프라 스크립트가 고객 DB 에 남긴 컷오버·롤백 결과(API 서버 16).
+         *
+         *     행이 없거나 읽지 못하면 칸이 전부 null 이다. measuredBy 는 행이 있을 때 값을 잰 쪽이다.
+         */
+        MigrationPlanResultResponse: {
+            /** Writepausems */
+            writePauseMs: number | null;
+            /** Missingrows */
+            missingRows: number | null;
+            /** Duplicaterows */
+            duplicateRows: number | null;
+            /** Rowstotal */
+            rowsTotal: number | null;
+            kind: components["schemas"]["CutoverKind"] | null;
+            /** Measuredby */
+            measuredBy: "INFRA_SCRIPT" | null;
+            /** Pausedat */
+            pausedAt: string | null;
+            /** Resumedat */
+            resumedAt: string | null;
+            /** Drainms */
+            drainMs: number | null;
+            /** Catchupms */
+            catchupMs: number | null;
+            /** Switchms */
+            switchMs: number | null;
+        };
         /**
          * MigrationPlanStatus
          * @description 이전 계획 상태. 승인이 곧 실행 시작이다. 끝 상태는 되감지 않는다.
@@ -1835,6 +2609,17 @@ export interface components {
             /** Size */
             size: number;
         };
+        /** Page[AuditLogResponse] */
+        Page_AuditLogResponse_: {
+            /** Items */
+            items: components["schemas"]["AuditLogResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Size */
+            size: number;
+        };
         /** Page[DeployRequestSummaryResponse] */
         Page_DeployRequestSummaryResponse_: {
             /** Items */
@@ -1901,6 +2686,28 @@ export interface components {
             /** Size */
             size: number;
         };
+        /** Page[SecurityExceptionResponse] */
+        Page_SecurityExceptionResponse_: {
+            /** Items */
+            items: components["schemas"]["SecurityExceptionResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Size */
+            size: number;
+        };
+        /** Page[SecurityFindingResponse] */
+        Page_SecurityFindingResponse_: {
+            /** Items */
+            items: components["schemas"]["SecurityFindingResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Size */
+            size: number;
+        };
         /** Page[ServiceSummaryResponse] */
         Page_ServiceSummaryResponse_: {
             /** Items */
@@ -1911,6 +2718,240 @@ export interface components {
             page: number;
             /** Size */
             size: number;
+        };
+        /** PrecheckBlockedAttemptResponse */
+        PrecheckBlockedAttemptResponse: {
+            /** Action */
+            action: string;
+            /** Target */
+            target: string;
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            /** Reason */
+            reason: string;
+            /** Auditlogid */
+            auditLogId?: string | null;
+            /**
+             * Confirmed
+             * @default false
+             */
+            confirmed: boolean;
+        };
+        /** PrecheckConfigDiffResponse */
+        PrecheckConfigDiffResponse: {
+            /** Key */
+            key: string;
+            source?: components["schemas"]["JsonValue"];
+            target?: components["schemas"]["JsonValue"];
+            origin: components["schemas"]["AgentRunOrigin"];
+            severity: components["schemas"]["AgentRunSeverity"];
+        };
+        /** PrecheckDetailResponse */
+        PrecheckDetailResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Serviceid
+             * Format: uuid
+             */
+            serviceId: string;
+            /** Sourceenvironmentid */
+            sourceEnvironmentId: string | null;
+            /** Targetenvironmentid */
+            targetEnvironmentId: string | null;
+            status: components["schemas"]["AgentRunStatus"];
+            /** Failurecode */
+            failureCode: string | null;
+            /** Simulated */
+            simulated: boolean;
+            /** Aireviewed */
+            aiReviewed: boolean;
+            /**
+             * Requestedbyuserid
+             * Format: uuid
+             */
+            requestedByUserId: string;
+            /**
+             * Createdat
+             * Format: date-time
+             */
+            createdAt: string;
+            /** Claimedat */
+            claimedAt: string | null;
+            /** Startedat */
+            startedAt: string | null;
+            /** Finishedat */
+            finishedAt: string | null;
+            /**
+             * Deadlineat
+             * Format: date-time
+             */
+            deadlineAt: string;
+            /** Leaseuntil */
+            leaseUntil: string | null;
+            /** Inputhash */
+            inputHash: string;
+            /** Sandboxid */
+            sandboxId: string | null;
+            /** Steps */
+            steps: components["schemas"]["PrecheckStepResponse"][];
+            model: components["schemas"]["PrecheckModelResponse"] | null;
+            /** Configdiff */
+            configDiff: components["schemas"]["PrecheckConfigDiffResponse"][];
+            /** Featuregaps */
+            featureGaps: components["schemas"]["PrecheckFeatureGapResponse"][];
+            /** Findings */
+            findings: components["schemas"]["PrecheckFindingResponse"][];
+            /** Patches */
+            patches: components["schemas"]["PrecheckPatchResponse"][];
+            /** Blockedattempts */
+            blockedAttempts: components["schemas"]["PrecheckBlockedAttemptResponse"][];
+        };
+        /** PrecheckFeatureGapResponse */
+        PrecheckFeatureGapResponse: {
+            /** Source */
+            source: string;
+            /** Target */
+            target: string;
+            /** Gap */
+            gap: string;
+            /** Action */
+            action: string;
+            /** Hasreplacement */
+            hasReplacement: boolean;
+            severity: components["schemas"]["AgentRunSeverity"];
+            origin: components["schemas"]["AgentRunOrigin"];
+        };
+        /** PrecheckFindingResponse */
+        PrecheckFindingResponse: {
+            /** Control */
+            control: string;
+            /** Environmentid */
+            environmentId?: string | null;
+            result: components["schemas"]["SecurityResult"];
+            /** Title */
+            title: string;
+            /** Reason */
+            reason: string;
+            origin: components["schemas"]["AgentRunOrigin"];
+            /** Suggestedfix */
+            suggestedFix?: string | null;
+            confirmation?: components["schemas"]["AiFindingConfirmation"] | null;
+        };
+        /** PrecheckLogLineResponse */
+        PrecheckLogLineResponse: {
+            /** Seq */
+            seq: number;
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            step: components["schemas"]["AgentRunStep"];
+            level: components["schemas"]["LogLevel"];
+            /** Message */
+            message: string;
+            /** Data */
+            data: {
+                [key: string]: unknown;
+            } | null;
+        };
+        /**
+         * PrecheckLogPageResponse
+         * @description after 다음 줄부터. nextAfter 를 다음 호출의 after 로 넘긴다(새 줄이 없으면 그대로다).
+         */
+        PrecheckLogPageResponse: {
+            /** Items */
+            items: components["schemas"]["PrecheckLogLineResponse"][];
+            /** Nextafter */
+            nextAfter: number;
+        };
+        /** PrecheckModelResponse */
+        PrecheckModelResponse: {
+            /** Id */
+            id: string;
+            /** Effort */
+            effort?: string | null;
+            /** Promptversion */
+            promptVersion?: string | null;
+            /**
+             * Refusal
+             * @default false
+             */
+            refusal: boolean;
+        };
+        /** PrecheckPatchCheckResponse */
+        PrecheckPatchCheckResponse: {
+            /** Name */
+            name: string;
+            /** Result */
+            result: string;
+            /** Toolversion */
+            toolVersion?: string | null;
+            /** Policyversion */
+            policyVersion?: string | null;
+            /** Summary */
+            summary?: string | null;
+        };
+        /** PrecheckPatchResponse */
+        PrecheckPatchResponse: {
+            /** Id */
+            id: string;
+            /** Patchhash */
+            patchHash: string;
+            /** Files */
+            files: string[];
+            /** Diff */
+            diff: string;
+            /** Reason */
+            reason: string;
+            /** Touchesprotectedfiles */
+            touchesProtectedFiles: boolean;
+            /** Checks */
+            checks: components["schemas"]["PrecheckPatchCheckResponse"][];
+            status: components["schemas"]["AgentPatchStatus"];
+            /** Blockreason */
+            blockReason?: string | null;
+            verification: components["schemas"]["PrecheckPatchVerificationResponse"];
+        };
+        /** PrecheckPatchVerificationResponse */
+        PrecheckPatchVerificationResponse: {
+            /** Passed */
+            passed: number;
+            /** Total */
+            total: number;
+        };
+        /** PrecheckStepResponse */
+        PrecheckStepResponse: {
+            name: components["schemas"]["AgentRunStep"];
+            /**
+             * Firstat
+             * Format: date-time
+             */
+            firstAt: string;
+            /**
+             * Lastat
+             * Format: date-time
+             */
+            lastAt: string;
+            level: components["schemas"]["LogLevel"];
+        };
+        /**
+         * PutServiceVariableRequest
+         * @description 값을 넣거나 바꾼다. 범위 검사(1~16,384바이트)는 서비스가 고정 코드로 거절한다.
+         */
+        PutServiceVariableRequest: {
+            /**
+             * Value
+             * Format: password
+             */
+            value: string;
         };
         /** RefResponse */
         RefResponse: {
@@ -1988,6 +3029,245 @@ export interface components {
              */
             failAt: "DEPLOYING" | "VERIFYING";
         };
+        /** SavedServiceVariableResponse */
+        SavedServiceVariableResponse: {
+            /** Key */
+            key: string;
+            /** Version */
+            version: number;
+            /** Secretref */
+            secretRef: string;
+            /**
+             * Updatedat
+             * Format: date-time
+             */
+            updatedAt: string;
+            updatedBy: components["schemas"]["ServiceVariableUpdatedByResponse"];
+            /** Appliedversion */
+            appliedVersion: number | null;
+            /** Pendingredeploy */
+            pendingRedeploy: boolean;
+            /** Simulated */
+            simulated: boolean;
+        };
+        /** SecurityCellResponse */
+        SecurityCellResponse: {
+            result: components["schemas"]["SecurityResult"];
+            /** Findingcount */
+            findingCount: number;
+            /** Hasexception */
+            hasException: boolean;
+            mode: components["schemas"]["SecurityFindingMode"] | null;
+            /** Checkedat */
+            checkedAt: string | null;
+            /** Expiresat */
+            expiresAt: string | null;
+            /** Controls */
+            controls: components["schemas"]["SecurityControlResponse"][];
+        };
+        /**
+         * SecurityCheckPhase
+         * @description 판정 시점. 준비(배포·설정 변경·주기 수집) · 실행(이전 승인·일꾼 시작) · 전환 직후.
+         * @enum {string}
+         */
+        SecurityCheckPhase: "PREPARATION" | "EXECUTION" | "POST_SWITCH";
+        /**
+         * SecurityControlId
+         * @description 보안 통제 ID(보안·거버넌스 1 SPEC §5.1). 문서·화면과 같은 표기로 저장한다.
+         * @enum {string}
+         */
+        SecurityControlId: "C-IMG-1" | "C-IMG-2" | "C-IMG-3" | "C-CFG-1" | "C-TLS-1" | "C-TLS-2" | "C-NET-1" | "C-NET-2" | "C-IAM-1" | "C-IAM-2" | "C-SEC-1" | "C-AUD-1" | "C-AUD-2" | "C-CI-1" | "C-AI-1" | "C-DB-1" | "C-DST-1" | "C-POST-1";
+        /**
+         * SecurityControlResponse
+         * @description 칸 안의 통제 하나의 판정. 서비스 단위 통제는 서비스마다 한 줄이다.
+         */
+        SecurityControlResponse: {
+            controlId: components["schemas"]["SecurityControlId"];
+            /** Title */
+            title: string;
+            result: components["schemas"]["SecurityResult"];
+            /** Ismandatory */
+            isMandatory: boolean;
+            /** Reasons */
+            reasons: components["schemas"]["SecurityReasonCode"][];
+            /** Findingids */
+            findingIds: string[];
+            mode: components["schemas"]["SecurityFindingMode"] | null;
+            /** Checkedat */
+            checkedAt: string | null;
+            /** Expiresat */
+            expiresAt: string | null;
+            /** Serviceid */
+            serviceId: string | null;
+        };
+        /** SecurityExceptionResponse */
+        SecurityExceptionResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            controlId: components["schemas"]["SecurityControlId"];
+            status: components["schemas"]["SecurityExceptionStatus"];
+            /** Serviceid */
+            serviceId: string | null;
+            /** Environmentid */
+            environmentId: string | null;
+            /** Imagedigest */
+            imageDigest: string | null;
+            /** Configcommit */
+            configCommit: string | null;
+            /** Wasversion */
+            wasVersion: string | null;
+            /** Reason */
+            reason: string;
+            requestedBy: components["schemas"]["UserRefResponse"] | null;
+            approvedBy: components["schemas"]["UserRefResponse"] | null;
+            /** Approvedat */
+            approvedAt: string | null;
+            revokedBy: components["schemas"]["UserRefResponse"] | null;
+            /** Revokedat */
+            revokedAt: string | null;
+            /**
+             * Createdat
+             * Format: date-time
+             */
+            createdAt: string;
+            /**
+             * Expiresat
+             * Format: date-time
+             */
+            expiresAt: string;
+        };
+        /**
+         * SecurityExceptionStatus
+         * @description 기한부 예외의 상태(응답용, 저장하지 않고 승인·철회·만료 칸과 지금 시각으로 정한다).
+         *
+         *     REVOKED > EXPIRED > ACTIVE(승인됨) > PENDING(승인 대기) 순서로 본다. 판정에는 ACTIVE 만 쓴다.
+         * @enum {string}
+         */
+        SecurityExceptionStatus: "PENDING" | "ACTIVE" | "EXPIRED" | "REVOKED";
+        /**
+         * SecurityFindingMode
+         * @description 증거를 어떻게 얻었나. SIMULATED(가짜 실행기·목업) 증거는 판정에 쓰지 않는다.
+         * @enum {string}
+         */
+        SecurityFindingMode: "REAL" | "CACHE" | "SIMULATED";
+        /** SecurityFindingResponse */
+        SecurityFindingResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            controlId: components["schemas"]["SecurityControlId"];
+            result: components["schemas"]["SecurityResult"];
+            /** Reason */
+            reason: string | null;
+            source: components["schemas"]["SecurityFindingSource"];
+            origin: components["schemas"]["FindingOrigin"];
+            mode: components["schemas"]["SecurityFindingMode"];
+            confirmation: components["schemas"]["AiFindingConfirmation"] | null;
+            /** Policyversion */
+            policyVersion: string;
+            /** Toolversion */
+            toolVersion: string | null;
+            /** Serviceid */
+            serviceId: string | null;
+            /** Environmentid */
+            environmentId: string | null;
+            /** Imagedigest */
+            imageDigest: string | null;
+            /** Configcommit */
+            configCommit: string | null;
+            /** Wasversion */
+            wasVersion: string | null;
+            /**
+             * Collectedat
+             * Format: date-time
+             */
+            collectedAt: string;
+            /**
+             * Expiresat
+             * Format: date-time
+             */
+            expiresAt: string;
+            /** Evidenceref */
+            evidenceRef: string | null;
+            /** Revieweruserid */
+            reviewerUserId: string | null;
+            /** Basisurl */
+            basisUrl: string | null;
+            /** Items */
+            items: components["schemas"]["FindingItemResponse"][];
+            /** Totalitems */
+            totalItems: number;
+        };
+        /**
+         * SecurityFindingSource
+         * @description 증거를 만든 도구·경로. 통제마다 받을 수 있는 출처가 규칙표에 정해져 있다.
+         * @enum {string}
+         */
+        SecurityFindingSource: "TRIVY_IMAGE" | "TRIVY_CONFIG" | "TRIVY_SECRET" | "GITLEAKS" | "TLS_PROBE" | "MANUAL_REVIEW" | "WAS_TEST" | "WAS_STATE" | "AUDIT_LOG" | "PRECHECK" | "ENTRYPOINT" | "DATA_ENGINE" | "CLOUD_API" | "KUBERNETES_API" | "GITHUB_API" | "AI_REVIEW";
+        /** SecurityMatrixCellsResponse */
+        SecurityMatrixCellsResponse: {
+            iam: components["schemas"]["SecurityCellResponse"];
+            encryption: components["schemas"]["SecurityCellResponse"];
+            auditLog: components["schemas"]["SecurityCellResponse"];
+            policy: components["schemas"]["SecurityCellResponse"];
+        };
+        /** SecurityMatrixResponse */
+        SecurityMatrixResponse: {
+            /** Policyversion */
+            policyVersion: string;
+            phase: components["schemas"]["SecurityCheckPhase"];
+            /**
+             * Checkedat
+             * Format: date-time
+             */
+            checkedAt: string;
+            /** Rows */
+            rows: components["schemas"]["SecurityMatrixRowResponse"][];
+        };
+        /** SecurityMatrixRowResponse */
+        SecurityMatrixRowResponse: {
+            /**
+             * Environmentid
+             * Format: uuid
+             */
+            environmentId: string;
+            /** Environmentname */
+            environmentName: string;
+            /** Environmentkind */
+            environmentKind: string;
+            /** Services */
+            services: components["schemas"]["SecurityMatrixServiceResponse"][];
+            cells: components["schemas"]["SecurityMatrixCellsResponse"];
+        };
+        /** SecurityMatrixServiceResponse */
+        SecurityMatrixServiceResponse: {
+            /**
+             * Serviceid
+             * Format: uuid
+             */
+            serviceId: string;
+            /** Name */
+            name: string;
+            /** Imagedigest */
+            imageDigest: string;
+        };
+        /**
+         * SecurityReasonCode
+         * @description 통제 판정 사유(기계 판독용). 게이트가 막으면 이 값을 통제 ID 와 함께 돌려준다.
+         * @enum {string}
+         */
+        SecurityReasonCode: "CONTROL_FAILED" | "CONTROL_WARNING" | "EVIDENCE_UNKNOWN" | "EVIDENCE_MISSING" | "EVIDENCE_EXPIRED" | "EVIDENCE_SIMULATED" | "EVIDENCE_INCOMPLETE" | "SOURCE_NOT_ALLOWED" | "SCOPE_MISMATCH" | "POLICY_VERSION_MISMATCH" | "PRECHECK_MISSING" | "AI_UNCONFIRMED" | "AI_ESCALATED" | "EXCEPTION_APPLIED" | "EXCEPTION_EXPIRED" | "NOT_APPLICABLE";
+        /**
+         * SecurityResult
+         * @description 증거·통제·매트릭스 칸의 결과. 확인하지 못한 것(UNKNOWN)과 목업은 PASS 가 아니다.
+         * @enum {string}
+         */
+        SecurityResult: "PASS" | "WARN" | "FAIL" | "UNKNOWN" | "NA";
         /**
          * ServiceDetailResponse
          * @description 서비스 한 건 + 올라간 환경들(만든 순서) + 끝나지 않은 이전 계획 id(없으면 null).
@@ -2117,6 +3397,42 @@ export interface components {
              */
             updatedAt: string;
         };
+        /** ServiceVariableListResponse */
+        ServiceVariableListResponse: {
+            /** Items */
+            items: components["schemas"]["ServiceVariableResponse"][];
+            /** Simulated */
+            simulated: boolean;
+        };
+        /** ServiceVariableResponse */
+        ServiceVariableResponse: {
+            /** Key */
+            key: string;
+            /** Version */
+            version: number;
+            /** Secretref */
+            secretRef: string;
+            /**
+             * Updatedat
+             * Format: date-time
+             */
+            updatedAt: string;
+            updatedBy: components["schemas"]["ServiceVariableUpdatedByResponse"];
+            /** Appliedversion */
+            appliedVersion: number | null;
+            /** Pendingredeploy */
+            pendingRedeploy: boolean;
+        };
+        /** ServiceVariableUpdatedByResponse */
+        ServiceVariableUpdatedByResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Githublogin */
+            githubLogin: string;
+        };
         /**
          * SimulateRequest
          * @description 가짜 실행기 모드에서만 받는다. 이 단계에서 요청을 일부러 실패시킨다.
@@ -2184,6 +3500,15 @@ export interface components {
             finishedAt: string | null;
             metrics: components["schemas"]["StepMetricsResponse"] | null;
             failureCode: components["schemas"]["MigrationErrorCode"] | null;
+        };
+        /** SubmitRunEventsResponse */
+        SubmitRunEventsResponse: {
+            /** Acceptedupto */
+            acceptedUpTo: number;
+        };
+        /** SubmitRunResultResponse */
+        SubmitRunResultResponse: {
+            status: components["schemas"]["AgentRunStatus"];
         };
         /**
          * TeardownErrorCode
@@ -3310,6 +4635,112 @@ export interface operations {
             };
         };
     };
+    search_service_variables_api_v1_orgs__org_id__services__service_id__environments__environment_id__variables_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                service_id: string;
+                environment_id: string;
+                /** @description 조직 id(uuid) */
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_ServiceVariableListResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_service_variable_api_v1_orgs__org_id__services__service_id__environments__environment_id__variables__key__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                service_id: string;
+                environment_id: string;
+                key: string;
+                /** @description 조직 id(uuid) */
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PutServiceVariableRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_SavedServiceVariableResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_service_variable_api_v1_orgs__org_id__services__service_id__environments__environment_id__variables__key__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                service_id: string;
+                environment_id: string;
+                key: string;
+                /** @description 조직 id(uuid) */
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_deploy_request_api_v1_orgs__org_id__deploy_requests__deploy_request_id__get: {
         parameters: {
             query?: never;
@@ -3679,6 +5110,763 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiResponse_MigrationLogPageResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_audit_logs_api_v1_orgs__org_id__audit_logs_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                actorType?: components["schemas"]["ActorType"] | null;
+                result?: components["schemas"]["AuditResult"] | null;
+                action?: string | null;
+                targetType?: string | null;
+                targetId?: string | null;
+                from?: string | null;
+                to?: string | null;
+                q?: string | null;
+                includeReads?: boolean;
+            };
+            header?: never;
+            path: {
+                /** @description 조직 id(uuid) */
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_Page_AuditLogResponse__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_security_matrix_api_v1_orgs__org_id__security_matrix_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 조직 id(uuid) */
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_SecurityMatrixResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_security_findings_api_v1_orgs__org_id__security_findings_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                environmentId?: string | null;
+                serviceId?: string | null;
+                controlId?: components["schemas"]["SecurityControlId"] | null;
+                findingId?: string[] | null;
+                includeExpired?: boolean;
+            };
+            header?: never;
+            path: {
+                /** @description 조직 id(uuid) */
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_Page_SecurityFindingResponse__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_security_exceptions_api_v1_orgs__org_id__security_exceptions_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                controlId?: components["schemas"]["SecurityControlId"][] | null;
+                serviceId?: string | null;
+                environmentId?: string | null;
+                status?: components["schemas"]["SecurityExceptionStatus"][] | null;
+            };
+            header?: never;
+            path: {
+                /** @description 조직 id(uuid) */
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_Page_SecurityExceptionResponse__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_security_exception_api_v1_orgs__org_id__security_exceptions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 조직 id(uuid) */
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateSecurityExceptionRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_SecurityExceptionResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_security_exception_api_v1_orgs__org_id__security_exceptions__exception_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                exception_id: string;
+                /** @description 조직 id(uuid) */
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_SecurityExceptionResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    approve_security_exception_api_v1_orgs__org_id__security_exceptions__exception_id__approve_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                exception_id: string;
+                /** @description 조직 id(uuid) */
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_SecurityExceptionResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    revoke_security_exception_api_v1_orgs__org_id__security_exceptions__exception_id__revoke_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                exception_id: string;
+                /** @description 조직 id(uuid) */
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_SecurityExceptionResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_precheck_api_v1_orgs__org_id__prechecks_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 조직 id(uuid) */
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePrecheckRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_PrecheckDetailResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_precheck_api_v1_orgs__org_id__prechecks__precheck_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                precheck_id: string;
+                /** @description 조직 id(uuid) */
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_PrecheckDetailResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_precheck_logs_api_v1_orgs__org_id__prechecks__precheck_id__logs_get: {
+        parameters: {
+            query?: {
+                after?: number;
+                size?: number;
+            };
+            header?: never;
+            path: {
+                precheck_id: string;
+                /** @description 조직 id(uuid) */
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_PrecheckLogPageResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cancel_precheck_api_v1_orgs__org_id__prechecks__precheck_id__cancel_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                precheck_id: string;
+                /** @description 조직 id(uuid) */
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_PrecheckDetailResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    claim_run_api_v1_runner_runs_claim_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClaimRunRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_ClaimRunResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    send_run_heartbeat_api_v1_runner_runs__run_id__heartbeat_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description AI 실행 id(uuid) */
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_HeartbeatResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    submit_run_events_api_v1_runner_runs__run_id__events_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description AI 실행 id(uuid) */
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /** Events */
+                    events: {
+                        /** Seq */
+                        seq: number;
+                        /**
+                         * At
+                         * Format: date-time
+                         */
+                        at: string;
+                        /**
+                         * AgentRunStep
+                         * @description 러너 진행 이벤트의 단계(러너 `RunStep` 과 같은 값).
+                         * @enum {string}
+                         */
+                        step: "SANDBOX_CREATE" | "INPUT_LOAD" | "CONFIG_DIFF" | "ANALYZE" | "PATCH_PROPOSE" | "PATCH_VERIFY" | "SANDBOX_DELETE";
+                        /**
+                         * LogLevel
+                         * @description 로그 한 줄의 수준(배포 작업 로그·빌드·실행 로그 공통).
+                         * @enum {string}
+                         */
+                        level: "INFO" | "WARN" | "ERROR";
+                        /** Message */
+                        message: string;
+                        /** Data */
+                        data?: {
+                            [key: string]: unknown;
+                        } | null;
+                    }[];
+                };
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_SubmitRunEventsResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    submit_run_result_api_v1_runner_runs__run_id__result_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description AI 실행 id(uuid) */
+                run_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": {
+                    /**
+                     * Status
+                     * @enum {string}
+                     */
+                    status: "SUCCEEDED" | "FAILED";
+                    /** Failurecode */
+                    failureCode?: string | null;
+                    /** Simulated */
+                    simulated: boolean;
+                    sandbox?: {
+                        /** Id */
+                        id: string;
+                        /**
+                         * Startedat
+                         * Format: date-time
+                         */
+                        startedAt: string;
+                        /** Finishedat */
+                        finishedAt?: string | null;
+                        /** Network */
+                        network: string;
+                        /** Deletedat */
+                        deletedAt?: string | null;
+                    } | null;
+                    model?: {
+                        /** Id */
+                        id: string;
+                        /** Effort */
+                        effort?: string | null;
+                        /** Promptversion */
+                        promptVersion?: string | null;
+                        /**
+                         * Refusal
+                         * @default false
+                         */
+                        refusal?: boolean;
+                    } | null;
+                    /**
+                     * Configdiff
+                     * @default []
+                     */
+                    configDiff?: {
+                        /** Key */
+                        key: string;
+                        source: unknown;
+                        target: unknown;
+                        /**
+                         * AgentRunOrigin
+                         * @description 러너 결과 한 줄의 출처. RULE 은 고정 규칙 비교, AI 는 모델 판단이다.
+                         * @enum {string}
+                         */
+                        origin: "RULE" | "AI";
+                        /**
+                         * AgentRunSeverity
+                         * @description 설정 차이·기능 차이의 심각도.
+                         * @enum {string}
+                         */
+                        severity: "INFO" | "WARN" | "FAIL";
+                    }[];
+                    /**
+                     * Featuregaps
+                     * @default []
+                     */
+                    featureGaps?: {
+                        /** Source */
+                        source: string;
+                        /** Target */
+                        target: string;
+                        /** Gap */
+                        gap: string;
+                        /** Action */
+                        action: string;
+                        /** Hasreplacement */
+                        hasReplacement: boolean;
+                        /**
+                         * AgentRunSeverity
+                         * @description 설정 차이·기능 차이의 심각도.
+                         * @enum {string}
+                         */
+                        severity: "INFO" | "WARN" | "FAIL";
+                        /**
+                         * AgentRunOrigin
+                         * @description 러너 결과 한 줄의 출처. RULE 은 고정 규칙 비교, AI 는 모델 판단이다.
+                         * @enum {string}
+                         */
+                        origin: "RULE" | "AI";
+                    }[];
+                    /**
+                     * Findings
+                     * @default []
+                     */
+                    findings?: {
+                        /** Control */
+                        control: string;
+                        /** Environmentid */
+                        environmentId?: string | null;
+                        /**
+                         * Result
+                         * @enum {string}
+                         */
+                        result: "PASS" | "WARN" | "FAIL" | "UNKNOWN";
+                        /** Title */
+                        title: string;
+                        /** Reason */
+                        reason: string;
+                        /**
+                         * AgentRunOrigin
+                         * @description 러너 결과 한 줄의 출처. RULE 은 고정 규칙 비교, AI 는 모델 판단이다.
+                         * @enum {string}
+                         */
+                        origin: "RULE" | "AI";
+                        /** Suggestedfix */
+                        suggestedFix?: string | null;
+                    }[];
+                    /**
+                     * Patches
+                     * @default []
+                     */
+                    patches?: {
+                        /** Id */
+                        id: string;
+                        /** Patchhash */
+                        patchHash: string;
+                        /** Files */
+                        files: string[];
+                        /** Diff */
+                        diff: string;
+                        /** Reason */
+                        reason: string;
+                        /** Touchesprotectedfiles */
+                        touchesProtectedFiles: boolean;
+                        /** Checks */
+                        checks: {
+                            /** Name */
+                            name: string;
+                            /** Result */
+                            result: string;
+                            /** Toolversion */
+                            toolVersion?: string | null;
+                            /** Policyversion */
+                            policyVersion?: string | null;
+                            /** Summary */
+                            summary?: string | null;
+                        }[];
+                    }[];
+                    /**
+                     * Blockedattempts
+                     * @default []
+                     */
+                    blockedAttempts?: {
+                        /** Action */
+                        action: string;
+                        /** Target */
+                        target: string;
+                        /**
+                         * At
+                         * Format: date-time
+                         */
+                        at: string;
+                        /** Reason */
+                        reason: string;
+                    }[];
+                };
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_SubmitRunResultResponse_"];
                 };
             };
             /** @description Validation Error */

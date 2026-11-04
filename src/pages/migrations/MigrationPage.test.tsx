@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { HttpResponse, http } from 'msw';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { Me, MigrationPlan } from '@/lib/api/types';
-import { AT, migrationPlan, step } from '@/test/migration-fixtures';
+import { AT, cutoverResult, migrationPlan, step } from '@/test/migration-fixtures';
 import { server } from '@/test/msw-server';
 import { renderRoute } from '@/test/render';
 import MigrationPage from './MigrationPage';
@@ -59,6 +59,22 @@ describe('MigrationPage', () => {
 
     expect(await screen.findByText('Zero failed requests while traffic moved')).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Result' })).toHaveAttribute('aria-selected', 'true');
+  });
+
+  it('Result 는 인프라 스크립트가 잰 쓰기 정지와 누락·중복을 보인다', async () => {
+    serve(
+      migrationPlan({
+        status: 'SUCCEEDED',
+        finishedAt: '2026-11-05T03:00:25Z',
+        result: cutoverResult(),
+      }),
+    );
+    renderPage();
+
+    expect(await screen.findByText('5.556 s')).toBeInTheDocument();
+    expect(screen.getByText('0 · 0')).toBeInTheDocument();
+    expect(screen.getByText('169 rows compared')).toBeInTheDocument();
+    expect(screen.getByText('DB cutover · measured by infra script')).toBeInTheDocument();
   });
 
   it('Roll back 은 확인을 거친 뒤 중단 API 를 부른다', async () => {

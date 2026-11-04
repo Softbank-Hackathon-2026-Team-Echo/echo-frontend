@@ -249,9 +249,7 @@
   "This run ended as {{status}}.": "이번 실행의 결과는 {{status}}입니다.",
   "{{n}} requests judged": "판정한 요청 {{n}}건",
   "Missing · duplicate rows": "누락 · 중복 행",
-  "data check API pending (infra #7)": "데이터 확인 API 준비 중(infra #7)",
   "Write pause": "쓰기 정지 시간",
-  "writer cutover not in this plan yet": "이 계획에는 아직 쓰기 전환이 없습니다",
   "Total time": "총 시간",
   "planned {{duration}}": "계획 {{duration}}",
   "Stage": "단계",
@@ -261,5 +259,11 @@
   "measured by the replication engine (infra #7)": "복제 엔진이 측정합니다(infra #7)",
   "Max replication lag": "최대 복제 지연",
   "data sync check": "데이터 동기화 확인",
-  "Source environment": "출발 환경"
+  "Source environment": "출발 환경",
+  "DB cutover · measured by infra script": "DB 쓰기 전환 · 인프라 스크립트 측정",
+  "DB rollback · measured by infra script": "DB 롤백 · 인프라 스크립트 측정",
+  "Waiting for the DB cutover result": "DB 쓰기 전환 결과를 기다리는 중",
+  "Waiting for the DB rollback result": "DB 롤백 결과를 기다리는 중",
+  "No DB cutover recorded for this plan": "이 계획에 기록된 DB 쓰기 전환이 없습니다",
+  "{{n}} rows compared": "{{n}}행 비교"
 }

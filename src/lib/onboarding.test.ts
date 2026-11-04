@@ -8,6 +8,7 @@ function environment(id: string, createdAt: string): EnvironmentSummary {
     name: id,
     kind: 'aws',
     location: 'ap-northeast-1',
+    coordinates: null,
     config: {},
     secretRef: null,
     connectionStatus: 'CONNECTED',

@@ -32,6 +32,7 @@ function environment(id: string, name: string, location: string): EnvironmentSum
     name,
     kind: 'aws',
     location,
+    coordinates: null,
     config: {},
     secretRef: null,
     connectionStatus: 'CONNECTED',

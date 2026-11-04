@@ -18,7 +18,6 @@
   "Failed requests": "失敗リクエスト",
   "of {{total}} judged requests": "判定リクエスト {{total}} 件中",
   "Write pause": "書き込み停止時間",
-  "writer cutover not in this plan yet": "この計画にはまだ書き込み切り替えがありません",
   "Data loss (RPO)": "データ損失(RPO)",
   "measured by the replication engine": "レプリケーションエンジンが計測します",
   "Stay on dashboard": "ダッシュボードに留まる",

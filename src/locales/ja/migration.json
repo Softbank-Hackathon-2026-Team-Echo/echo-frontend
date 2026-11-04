@@ -249,9 +249,7 @@
   "This run ended as {{status}}.": "今回の実行の結果は{{status}}です。",
   "{{n}} requests judged": "判定したリクエスト {{n}} 件",
   "Missing · duplicate rows": "欠落 · 重複行",
-  "data check API pending (infra #7)": "データ確認 API 待ち(infra #7)",
   "Write pause": "書き込み停止時間",
-  "writer cutover not in this plan yet": "この計画にはまだ書き込み切り替えがありません",
   "Total time": "合計時間",
   "planned {{duration}}": "計画 {{duration}}",
   "Stage": "ステージ",
@@ -261,5 +259,11 @@
   "measured by the replication engine (infra #7)": "レプリケーションエンジンが測定します(infra #7)",
   "Max replication lag": "最大レプリケーション遅延",
   "data sync check": "データ同期の確認",
-  "Source environment": "移行元環境"
+  "Source environment": "移行元環境",
+  "DB cutover · measured by infra script": "DB書き込み切り替え · インフラスクリプトで計測",
+  "DB rollback · measured by infra script": "DBロールバック · インフラスクリプトで計測",
+  "Waiting for the DB cutover result": "DB書き込み切り替えの結果を待っています",
+  "Waiting for the DB rollback result": "DBロールバックの結果を待っています",
+  "No DB cutover recorded for this plan": "この計画にDB書き込み切り替えの記録はありません",
+  "{{n}} rows compared": "{{n}}行を比較"
 }

@@ -6,7 +6,13 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/compone
 import { useMigrationPlan } from '@/lib/api/migrations';
 import type { MigrationPlanSummary } from '@/lib/api/types';
 import { t } from '@/lib/i18n';
-import { failedRequests, requestCount, totalSeconds } from '@/lib/migration-metrics';
+import {
+  failedRequests,
+  requestCount,
+  totalSeconds,
+  writePauseCaption,
+  writePauseText,
+} from '@/lib/migration-metrics';
 import { duration } from '@/lib/migration-stages';
 
 // 방금 끝난 이전만 카드로 띄운다. 오래된 기록이 대시보드를 열 때마다 뜨지 않게
@@ -112,8 +118,8 @@ export function CompletionCard({
           />
           <Stat
             label={t('Write pause')}
-            value="—"
-            caption={t('writer cutover not in this plan yet')}
+            value={writePauseText(plan.data) ?? '—'}
+            caption={writePauseCaption(plan.data)}
           />
           <Stat
             label={t('Data loss (RPO)')}
