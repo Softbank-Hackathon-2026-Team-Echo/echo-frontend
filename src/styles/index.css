@@ -122,7 +122,7 @@
   --shadow-xl: var(--ep-shadow-xl);
 
   /* 글꼴: @fontsource-variable 이 등록하는 이름을 토큰 글꼴 앞에 둔다 */
-  --font-sans: "Inter Variable", var(--ep-font-sans);
+  --font-sans: "Inter Variable", var(--font-cjk), var(--ep-font-sans);
   --font-mono: "Geist Mono Variable", var(--ep-font-mono);
 
   /* 글자 스타일: 크기·행간·굵기·자간을 한 클래스로 */
@@ -222,6 +222,15 @@
 @theme {
   --breakpoint-compact: 1024px;
   --breakpoint-wide: 1280px;
+}
+
+/* Inter 에 없는 글자는 시스템 글꼴로 그린다. 같은 한자도 언어마다 모양이 달라 lang 으로 나눈다 */
+:root:lang(ko) {
+  --font-cjk: "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR";
+}
+
+:root:lang(ja) {
+  --font-cjk: "Hiragino Sans", "Yu Gothic", "Noto Sans JP";
 }
 
 @layer base {

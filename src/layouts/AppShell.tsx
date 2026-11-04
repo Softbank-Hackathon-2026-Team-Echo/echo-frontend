@@ -46,12 +46,14 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { useLocale } from '@/hooks/useLocale';
 import { type Theme, useTheme } from '@/hooks/useTheme';
 import { useLogout } from '@/lib/api/auth';
 import { useActiveDisasters } from '@/lib/api/disasters';
 import { useOrgEvents } from '@/lib/api/events';
 import { useCurrentOrg } from '@/lib/api/me';
 import type { Organization, User } from '@/lib/api/types';
+import { LOCALE_LABELS, t } from '@/lib/i18n';
 import { setMonitoringUser } from '@/lib/monitoring';
 import { roleLabel } from '@/lib/roles';
 import { prefetchRoute } from '@/lib/route-prefetch';
@@ -133,6 +135,7 @@ function NavItem({
 /** 사이드바 아래 사용자. 눌러서 테마 · 로그아웃 */
 function UserMenu({ user, organization }: { user: User; organization: Organization }) {
   const { theme, setTheme, themes } = useTheme();
+  const { locale, locales, setLocale } = useLocale();
   const logout = useLogout();
   return (
     <DropdownMenu>
@@ -165,6 +168,14 @@ function UserMenu({ user, organization }: { user: User; organization: Organizati
             </DropdownMenuItem>
           );
         })}
+        <DropdownMenuSeparator />
+        <DropdownMenuLabel>{t('Language')}</DropdownMenuLabel>
+        {locales.map((name) => (
+          <DropdownMenuItem key={name} onSelect={() => setLocale(name)}>
+            <span className="flex-1">{LOCALE_LABELS[name]}</span>
+            {name === locale && <Check aria-hidden />}
+          </DropdownMenuItem>
+        ))}
         <DropdownMenuSeparator />
         <DropdownMenuItem disabled={logout.isPending} onSelect={() => logout.mutate()}>
           <LogOut aria-hidden />

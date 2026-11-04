@@ -1,4 +1,5 @@
 import { Link } from 'react-router';
+import { LanguageMenu } from '@/components/LanguageMenu';
 import { Logo } from '@/components/Logo';
 import { Button } from '@/components/ui/button';
 import { githubLoginUrl } from '@/lib/api/auth';
@@ -30,6 +31,7 @@ export function LandingHeader() {
           ))}
         </nav>
         <div className="flex items-center gap-2">
+          <LanguageMenu />
           <Button asChild variant="ghost">
             <Link to="/login">Sign in</Link>
           </Button>

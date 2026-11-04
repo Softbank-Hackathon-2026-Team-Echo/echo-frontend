@@ -1,4 +1,4 @@
-const RELATIVE = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
+import { currentLocale } from './i18n';
 
 const UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
   ['day', 86_400],
@@ -13,7 +13,10 @@ export function timeAgo(iso: string | null | undefined, now = Date.now()): strin
   const seconds = Math.round((new Date(iso).getTime() - now) / 1000);
   for (const [unit, size] of UNITS) {
     if (Math.abs(seconds) >= size || unit === 'second') {
-      return RELATIVE.format(Math.round(seconds / size), unit);
+      return new Intl.RelativeTimeFormat(currentLocale(), { numeric: 'auto' }).format(
+        Math.round(seconds / size),
+        unit,
+      );
     }
   }
   return '—';
@@ -35,7 +38,7 @@ export function elapsed(
 
 export function dateTime(iso: string | null | undefined): string {
   if (!iso) return '—';
-  return new Date(iso).toLocaleString('en', {
+  return new Date(iso).toLocaleString(currentLocale(), {
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
