@@ -209,5 +209,6 @@
   "Service account key older than 90 days": "90일이 넘은 서비스 계정 키",
   "Rotate the key, or move to workload identity.": "키를 교체하거나 워크로드 아이덴티티로 옮기세요.",
   "K3s API reachable from LAN": "LAN에서 K3s API에 접속 가능",
-  "Limit the API server to the management network.": "API 서버를 관리 네트워크로 제한하세요."
+  "Limit the API server to the management network.": "API 서버를 관리 네트워크로 제한하세요.",
+  "Replication lag could not be read. A failback needs the DB cutover first": "복제 지연을 읽지 못했습니다. 복귀 전에 DB 쓰기 전환이 필요합니다"
 }

@@ -199,6 +199,27 @@ const MIGRATION_ERRORS: Record<string, string> = {
   INTERNAL_ERROR: k('Internal error'),
 };
 
+/**
+ * 단계까지 아는 실패 이유. 데이터 확인에서 지표를 못 받으면 역방향 복제가 없는 복귀일 수 있다.
+ * 역방향 복제는 DB 쓰기 전환 때 생겨서, 시연 순서를 놓쳐도 화면에서 바로 알게 한다
+ */
+export function migrationFailureLabel(code: string, stepKind: string | undefined): string {
+  if (code === 'METRICS_UNAVAILABLE' && stepKind === 'DATA_SYNC_CHECK') {
+    return t('Replication lag could not be read. A failback needs the DB cutover first');
+  }
+  return migrationErrorLabel(code);
+}
+
+/** 계획이 끝난 이유. 어느 단계에서 실패했는지 찾아 위 문구를 고른다 */
+export function planFailureLabel(plan: {
+  errorCode: string | null;
+  steps: { kind: string; result?: { failureCode?: string | null } | null }[];
+}): string | null {
+  if (!plan.errorCode) return null;
+  const failed = plan.steps.find((step) => step.result?.failureCode === plan.errorCode);
+  return migrationFailureLabel(plan.errorCode, failed?.kind);
+}
+
 export function migrationErrorLabel(code: string): string {
   return labelOf(MIGRATION_ERRORS, code);
 }

@@ -4,6 +4,7 @@ import {
   clusterInfoErrorLabel,
   connectionStatusView,
   migrationModeLabel,
+  planFailureLabel,
   securityCellLabel,
   securityCompareNote,
   securityResultView,
@@ -65,6 +66,27 @@ describe('보안 표시', () => {
     expect(securityCompareNote(row('PASS', 'UNKNOWN'))).toBe('not collected');
     expect(securityCompareNote(row('PASS', 'WARN'))).toBe('warning only');
     expect(securityCompareNote(row('PASS', 'PASS'))).toBe('same');
+  });
+});
+
+describe('planFailureLabel', () => {
+  const plan = (kind: string) => ({
+    errorCode: 'METRICS_UNAVAILABLE',
+    steps: [{ kind, result: { failureCode: 'METRICS_UNAVAILABLE' } }],
+  });
+
+  it('데이터 확인에서 지표를 못 받으면 DB 쓰기 전환을 안내한다', () => {
+    expect(planFailureLabel(plan('DATA_SYNC_CHECK'))).toBe(
+      'Replication lag could not be read. A failback needs the DB cutover first',
+    );
+  });
+
+  it('다른 단계의 같은 코드는 일반 문구다', () => {
+    expect(planFailureLabel(plan('SHIFT'))).toBe('Metrics were not available');
+  });
+
+  it('실패 코드가 없으면 비운다', () => {
+    expect(planFailureLabel({ errorCode: null, steps: [] })).toBeNull();
   });
 });
 

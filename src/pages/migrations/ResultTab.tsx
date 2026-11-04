@@ -17,7 +17,7 @@ import {
   totalSeconds,
 } from '@/lib/migration-metrics';
 import { duration } from '@/lib/migration-stages';
-import { migrationErrorLabel } from '@/lib/status';
+import { migrationFailureLabel, planFailureLabel } from '@/lib/status';
 import { Kpi } from './Kpi';
 
 const clock = (iso: string | null | undefined) =>
@@ -47,7 +47,8 @@ function stepResult(step: MigrationStep) {
   const result = step.result;
   if (!result) return '—';
   const status = statusWord(result.status);
-  if (result.failureCode) return `${status} · ${migrationErrorLabel(result.failureCode)}`;
+  if (result.failureCode)
+    return `${status} · ${migrationFailureLabel(result.failureCode, step.kind)}`;
   const metrics = result.metrics;
   if (step.kind === 'DATA_SYNC_CHECK' && metrics?.replicationLagSeconds != null) {
     return t('{{status}} · lag {{seconds}} s', {
@@ -103,7 +104,7 @@ export function ResultTab({ plan }: { plan: MigrationPlan }) {
           <p className="text-body-medium">
             {plan.status === 'ROLLED_BACK'
               ? t('Rolled back to the source ({{reason}}).', {
-                  reason: plan.errorCode ? migrationErrorLabel(plan.errorCode) : t('stopped'),
+                  reason: planFailureLabel(plan) ?? t('stopped'),
                 })
               : t('This run ended as {{status}}.', { status: statusWord(plan.status) })}{' '}
             {plan.errorMessage}

@@ -33,7 +33,7 @@ import type { MigrationPlan } from '@/lib/api/types';
 import { t } from '@/lib/i18n';
 import { totalSeconds } from '@/lib/migration-metrics';
 import { duration, planStages } from '@/lib/migration-stages';
-import { migrationErrorLabel, migrationPlanStatusView } from '@/lib/status';
+import { migrationPlanStatusView, planFailureLabel } from '@/lib/status';
 import { cn } from '@/lib/utils';
 import { LiveTab } from './LiveTab';
 import { ResultTab } from './ResultTab';
@@ -288,7 +288,7 @@ export default function MigrationPage() {
             </p>
             <p className="text-small">
               {current.errorCode
-                ? t('{{reason}}.', { reason: migrationErrorLabel(current.errorCode) })
+                ? t('{{reason}}.', { reason: planFailureLabel(current) ?? '' })
                 : ''}{' '}
               {current.errorMessage ?? ''}
               {current.rollbackStatus === 'FAILED' &&
