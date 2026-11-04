@@ -8,8 +8,13 @@ import { StatusBadge } from '@/components/StatusBadge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useNow } from '@/hooks/useNow';
 import { useCurrentOrg } from '@/lib/api/me';
-import { isTerminalStatus, useDeployRequest, useService } from '@/lib/api/services';
-import type { DeployRequestDetail, ServiceDetail } from '@/lib/api/types';
+import {
+  isTerminalStatus,
+  useDeployRequest,
+  useService,
+  useStandbySyncs,
+} from '@/lib/api/services';
+import type { DeployRequestDetail, DeployRequestSummary, ServiceDetail } from '@/lib/api/types';
 import { dateTime, elapsed } from '@/lib/format';
 import { k, t } from '@/lib/i18n';
 import { deployErrorLabel, deployStatusView, deployTriggerLabel, shortSha } from '@/lib/status';
@@ -91,13 +96,18 @@ function StepCircle({ state, index }: { state: StageState; index: number }) {
  * 예비가 없으면 건너뛴 것으로, 있으면 몇 곳이 따라갔는지 보여 준다
  */
 export function standbyStep(
-  request: Pick<DeployRequestDetail, 'status' | 'trigger' | 'commitSha' | 'serviceEnvironmentId'>,
+  request: Pick<DeployRequestDetail, 'status' | 'trigger' | 'serviceEnvironmentId'>,
   service: Pick<ServiceDetail, 'environments'> | undefined,
+  syncs: Pick<DeployRequestSummary, 'id' | 'status' | 'environment'>[] | undefined,
 ): { state: StageState; detail: string; syncingRequestId?: string } {
   if (request.trigger === 'STANDBY_SYNC') {
     const state: StageState =
       request.status === 'SUCCEEDED' ? 'done' : request.status === 'FAILED' ? 'failed' : 'current';
     return { state, detail: t('this deploy is the sync') };
+  }
+  if (request.status === 'SUCCEEDED') {
+    if (!syncs) return { state: 'pending', detail: '—' };
+    return syncResult(syncs);
   }
   if (!service) return { state: 'pending', detail: '—' };
   const standbys = service.environments.filter(
@@ -107,42 +117,57 @@ export function standbyStep(
   if (request.status === 'FAILED' || request.status === 'CANCELLED') {
     return { state: 'pending', detail: t('not triggered') };
   }
-  if (request.status !== 'SUCCEEDED') {
+  return {
+    state: 'pending',
+    detail: t('{{count}} standby will follow', { count: standbys.length }),
+  };
+}
+
+/** 성공한 배포의 예비 칸은 지금 예비 버전이 아니라 그 배포가 만든 따라가기 요청의 결과다 */
+function syncResult(syncs: Pick<DeployRequestSummary, 'id' | 'status' | 'environment'>[]) {
+  if (syncs.length === 0) {
+    return { state: 'skipped' as const, detail: t('no standby followed') };
+  }
+  const running = syncs.find((sync) => !isTerminalStatus(sync.status));
+  if (running) {
     return {
-      state: 'pending',
-      detail: t('{{count}} standby will follow', { count: standbys.length }),
+      state: 'current' as const,
+      detail: t('syncing {{name}}', { name: running.environment.name }),
+      syncingRequestId: running.id,
     };
   }
-  const syncing = standbys.find((link) => link.activeRequestId || link.queuedRequestId);
-  if (syncing) {
+  const failed = syncs.filter((sync) => sync.status !== 'SUCCEEDED');
+  if (failed[0]) {
     return {
-      state: 'current',
-      detail: t('syncing {{name}}', { name: syncing.environment.name }),
-      syncingRequestId: syncing.activeRequestId ?? syncing.queuedRequestId ?? undefined,
+      state: 'failed' as const,
+      detail: t('{{failed}} of {{total}} standby failed', {
+        failed: failed.length,
+        total: syncs.length,
+      }),
+      syncingRequestId: failed[0].id,
     };
   }
-  const synced = standbys.filter((link) => link.currentDeployment?.commitSha === request.commitSha);
-  return synced.length === standbys.length
-    ? { state: 'done', detail: t('{{count}} standby in sync', { count: synced.length }) }
-    : {
-        state: 'pending',
-        detail: t('{{count}} standby behind', { count: standbys.length - synced.length }),
-      };
+  return {
+    state: 'done' as const,
+    detail: t('{{count}} standby in sync', { count: syncs.length }),
+  };
 }
 
 function Stepper({
   request,
   service,
+  syncs,
   now,
   requestLink,
 }: {
   request: DeployRequestDetail;
   service: ServiceDetail | undefined;
+  syncs: DeployRequestSummary[] | undefined;
   now: number;
   /** 다른 배포 요청 화면 주소를 만든다 (예비 동기화 배포로 가는 링크) */
   requestLink: (deployRequestId: string) => string;
 }) {
-  const standby = standbyStep(request, service);
+  const standby = standbyStep(request, service, syncs);
   const states = stageStates(request);
   const live: StageState =
     request.status === 'SUCCEEDED' ? 'done' : request.status === 'FAILED' ? 'failed' : 'pending';
@@ -289,6 +314,7 @@ export default function DeployProgressPage() {
     error,
     refetch,
   } = useDeployRequest(organization?.id, deployRequestId);
+  const syncs = useStandbySyncs(organization?.id, serviceId, request);
   const now = useNow(Boolean(request && !isTerminalStatus(request.status)));
 
   if (isError) return <ErrorState error={error} onRetry={() => refetch()} />;
@@ -348,6 +374,7 @@ export default function DeployProgressPage() {
       <Stepper
         request={request}
         service={service.data}
+        syncs={syncs.data}
         now={now}
         requestLink={(id) => `/o/${slug}/services/${serviceId}/deploys/${id}`}
       />
