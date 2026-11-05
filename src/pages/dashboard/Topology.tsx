@@ -36,6 +36,7 @@ const ENV_WIDTH = 232;
 const ENV_HEIGHT = 128;
 const PROXY_WIDTH = 200;
 const PROXY_HEIGHT = 64;
+const STRAIGHT_LABEL_OFFSET = 48;
 const GROUP_PADDING = '[top=36,left=14,bottom=14,right=14]';
 // 복제 곡선이 노드 아래로 나가므로 아래 여백을 넉넉히 둔다
 const FIT_PADDING = { top: '12px', left: '12px', right: '12px', bottom: '72px' } as const;
@@ -234,7 +235,9 @@ function TrafficEdge(props: EdgeProps<Edge<TrafficEdgeData>>) {
   });
   const curve = replication ? replicationPath(sourceX, sourceY, targetX, targetY) : null;
   const path = curve?.path ?? trafficPath;
-  const labelX = curve?.labelX ?? trafficLabelX;
+  // 곧은 선은 글자가 선 위의 빛을 가리지 않게 옆으로 뺀다
+  const straight = !replication && Math.abs(targetX - sourceX) < 1;
+  const labelX = curve?.labelX ?? trafficLabelX + (straight ? STRAIGHT_LABEL_OFFSET : 0);
   const labelY = curve?.labelY ?? trafficLabelY;
   const weight = data?.weight ?? 0;
   const lineWidth = weight > 0 ? 3 + weight / 14 : 2;
@@ -301,7 +304,8 @@ async function layout(
       'elk.direction': 'DOWN',
       'elk.hierarchyHandling': 'INCLUDE_CHILDREN',
       'elk.spacing.nodeNode': '24',
-      'elk.layered.spacing.nodeNodeBetweenLayers': '48',
+      // 프록시 바로 아래 환경도 트래픽 선이 충분히 길게 보이도록 띄운다
+      'elk.layered.spacing.nodeNodeBetweenLayers': '104',
     },
     children: [
       { id: 'proxy', width: PROXY_WIDTH, height: PROXY_HEIGHT },

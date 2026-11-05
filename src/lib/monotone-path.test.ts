@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { monotonePath } from './monotone-path';
+import { monotonePath, spreadPositions } from './monotone-path';
 
 /** path 의 제어점 y 값을 모두 꺼낸다. 곡선은 제어점이 만드는 범위를 벗어나지 않는다 */
 function controlYs(path: string) {
@@ -54,5 +54,32 @@ describe('monotonePath', () => {
       { x: 10, y: 0 },
     ]);
     expect(path.startsWith('M0,50')).toBe(true);
+  });
+});
+
+describe('spreadPositions', () => {
+  it('간격이 넉넉하면 시간 비율 그대로다', () => {
+    expect(spreadPositions([0, 50, 100], 0.1)).toEqual([0, 0.5, 1]);
+  });
+
+  it('붙어 있는 시각은 최소 간격만큼 벌린다', () => {
+    const [, second = 0] = spreadPositions([0, 2, 100], 0.12);
+    expect(second).toBeGreaterThan(0.1);
+  });
+
+  it('순서를 지키고 0에서 1까지 간다', () => {
+    const positions = spreadPositions([0, 1, 2, 90, 100], 0.12);
+    expect(positions[0]).toBe(0);
+    expect(positions.at(-1)).toBe(1);
+    expect([...positions].sort((a, b) => a - b)).toEqual(positions);
+  });
+
+  it('같은 시각은 같은 위치다', () => {
+    const positions = spreadPositions([0, 10, 10, 100], 0.05);
+    expect(positions[1]).toBe(positions[2]);
+  });
+
+  it('시간 폭이 없으면 모두 0이다', () => {
+    expect(spreadPositions([5, 5], 0.1)).toEqual([0, 0]);
   });
 });

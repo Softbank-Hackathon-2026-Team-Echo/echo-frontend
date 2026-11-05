@@ -1,10 +1,12 @@
 import { t } from '@/lib/i18n';
 import type { WeightPoint } from '@/lib/migration-metrics';
-import { monotonePath } from '@/lib/monotone-path';
+import { monotonePath, spreadPositions } from '@/lib/monotone-path';
 
 const WIDTH = 560;
 const HEIGHT = 180;
 const PAD = { top: 12, right: 8, bottom: 20, left: 32 };
+// 시작 직후 첫 단계가 수직선처럼 꺾여 보이지 않게 구간마다 차지할 최소 폭. 가로축에 시간 눈금이 없어 비율 값은 그대로다
+const MIN_SEGMENT_SHARE = 0.14;
 
 /** A(출발, 주황)·B(도착, 남색) 트래픽 비율. 두 선이 교차하는 장면이 무중단 이전의 증거다(F7) */
 export function TrafficChart({
@@ -16,10 +18,15 @@ export function TrafficChart({
   sourceName: string;
   targetName: string;
 }) {
-  const first = points[0]?.at ?? 0;
-  const last = points.at(-1)?.at ?? first + 1;
-  const span = Math.max(1, last - first);
-  const x = (at: number) => PAD.left + ((at - first) / span) * (WIDTH - PAD.left - PAD.right);
+  const chartWidth = WIDTH - PAD.left - PAD.right;
+  const positions = spreadPositions(
+    points.map((point) => point.at),
+    MIN_SEGMENT_SHARE,
+  );
+  const xByTime = new Map(
+    points.map((point, index) => [point.at, PAD.left + (positions[index] ?? 0) * chartWidth]),
+  );
+  const x = (at: number) => xByTime.get(at) ?? PAD.left;
   const y = (value: number) => PAD.top + (1 - value / 100) * (HEIGHT - PAD.top - PAD.bottom);
   const errors = points.filter((point) => point.errorRate !== null);
   const line = (value: (point: WeightPoint) => number) =>
@@ -82,7 +89,7 @@ export function TrafficChart({
             </g>
           ))}
           <path
-            d={`${targetLine} V${y(0)} H${x(first)} Z`}
+            d={`${targetLine} V${y(0)} H${PAD.left} Z`}
             className="fill-chart-1 stroke-none"
             fillOpacity={0.08}
           />
