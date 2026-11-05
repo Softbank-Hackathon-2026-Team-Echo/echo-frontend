@@ -8,6 +8,7 @@ import { App } from '@/App';
 import { initTheme } from '@/hooks/useTheme';
 import { initLocale } from '@/lib/i18n';
 import { initMonitoring } from '@/lib/monitoring';
+import { installStaleChunkReload } from '@/lib/stale-chunk';
 
 /**
  * 예전 목업 빌드가 등록한 MSW 서비스 워커가 브라우저에 남아 있으면 지운다.
@@ -27,6 +28,7 @@ async function removeMockWorker() {
 }
 
 initTheme();
+installStaleChunkReload();
 
 Promise.all([removeMockWorker(), initLocale()]).then(() => {
   const root = document.getElementById('root');
