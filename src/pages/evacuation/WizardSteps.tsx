@@ -14,17 +14,21 @@ const PRECHECK_STEP = 1;
 export function WizardSteps({
   current,
   precheckSkipped = false,
+  precheckDone = false,
 }: {
   current: number;
   precheckSkipped?: boolean;
+  /** 점검이 성공으로 끝나 사람이 다음으로 넘어갈 차례다 */
+  precheckDone?: boolean;
 }) {
   return (
     <ol className="flex items-center gap-3 rounded-lg max-compact:flex-col max-compact:items-start border border-line bg-surface px-4 py-3">
       {STEPS.map((step, index) => {
         const skipped = precheckSkipped && index === PRECHECK_STEP;
+        const finished = precheckDone && index === PRECHECK_STEP;
         const state = skipped
           ? 'skipped'
-          : index < current
+          : finished || index < current
             ? 'done'
             : index === current
               ? 'current'
