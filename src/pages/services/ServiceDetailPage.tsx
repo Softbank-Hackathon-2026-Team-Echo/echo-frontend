@@ -52,6 +52,7 @@ import {
   versionStatusView,
 } from '@/lib/status';
 import { EditServiceDialog } from './EditServiceDialog';
+import { ServiceVariables } from './ServiceVariables';
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -393,6 +394,15 @@ export default function ServiceDetailPage() {
 
       <Section title={t('Environments')}>
         <EnvironmentLinks service={service} orgSlug={organization.slug} />
+      </Section>
+
+      <Section title={t('Environment variables')}>
+        <ServiceVariables
+          orgId={organization.id}
+          service={service}
+          disabledReason={deleting ? t('This service is being deleted') : undefined}
+          onDeploy={() => setDeployOpen(true)}
+        />
       </Section>
 
       <Section title={t('Deploy history')}>
