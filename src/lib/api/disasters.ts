@@ -27,6 +27,11 @@ export const EPICENTER_PRESETS: { label: string; epicenter: LatLng }[] = [
   { label: k('near Seoul'), epicenter: { lat: 37.5, lng: 127.0 } },
 ];
 
+// 규모 M5.0 ~ M9.0, 0.2 단계 (데모 기본 M7.2)
+export const DISASTER_MAGNITUDES = Array.from({ length: 21 }, (_, index) =>
+  Number((5 + index * 0.2).toFixed(1)),
+);
+
 /** 화면 안내용 지진 규모 기준. 실제 판정은 서버 meetsThreshold 다 */
 export const EVACUATION_MIN_MAGNITUDE = 7;
 

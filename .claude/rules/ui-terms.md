@@ -63,6 +63,7 @@
 | Audit log | `/o/:slug/audit` | AUD |
 | Settings | `/o/:slug/settings/{environments,members}` | SET |
 | — | `/login` | L01-b |
+| — | `/o/:slug/remote` (사이드바 없음, 휴대폰 시연 리모컨) | S01-R |
 | — | `/o/:slug/onboarding` (사이드바 없음, Skip setup → 대시보드) | O01 ~ O03 |
 
 경로는 fe-1에서 정하는 가칭이다. 바꾸면 이 표를 같은 PR에서 고친다.

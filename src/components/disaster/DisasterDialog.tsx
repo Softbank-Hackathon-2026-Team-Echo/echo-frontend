@@ -1,5 +1,5 @@
 import { Activity, TriangleAlert, Wind } from 'lucide-react';
-import { type FormEvent, useState } from 'react';
+import { type FormEvent, lazy, Suspense, useState } from 'react';
 import { toast } from 'sonner';
 import { ProviderLabel } from '@/components/ProviderLabel';
 import { SimulatedBadge } from '@/components/SimulatedBadge';
@@ -21,7 +21,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
+  DISASTER_MAGNITUDES,
   type DisasterPlan,
   type DisasterType,
   EPICENTER_PRESETS,
@@ -39,8 +41,7 @@ import { disasterPlanReasonLabel } from '@/lib/status';
 import { cn } from '@/lib/utils';
 import { DisasterMap } from './DisasterMap';
 
-// 규모 M5.0 ~ M9.0, 0.2 단계 (데모 기본 M7.2)
-const MAGNITUDES = Array.from({ length: 21 }, (_, index) => Number((5 + index * 0.2).toFixed(1)));
+const RemoteQr = lazy(() => import('./RemoteQr'));
 
 const TYPES: { type: DisasterType; label: string; hint: string; icon: typeof Activity }[] = [
   { type: 'EARTHQUAKE', label: k('Earthquake'), hint: 'M5–M9', icon: Activity },
@@ -97,7 +98,9 @@ export function DisasterDialog({
   const items = environments.data?.items ?? [];
   const create = useCreateDisaster(orgId);
   const me = useMe();
-  const selfApproval = me.data?.organizations.find((item) => item.id === orgId)?.allowSelfApproval;
+  const organization = me.data?.organizations.find((item) => item.id === orgId);
+  const selfApproval = organization?.allowSelfApproval;
+  const [remoteOpen, setRemoteOpen] = useState(false);
   const defaultPreset = EPICENTER_PRESETS[0];
   const [type, setType] = useState<DisasterType>('EARTHQUAKE');
   const [epicenter, setEpicenter] = useState<LatLng>(
@@ -201,7 +204,7 @@ export function DisasterDialog({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {MAGNITUDES.map((value) => (
+                {DISASTER_MAGNITUDES.map((value) => (
                   <SelectItem key={value} value={String(value)}>
                     M{value.toFixed(1)}
                     {/* 선택 칸에도 같은 글자가 들어가므로 짧게 쓴다 */}
@@ -294,6 +297,23 @@ export function DisasterDialog({
               ))}
             </ul>
           </div>
+
+          {organization && (
+            <details
+              className="text-small text-fg-secondary"
+              onToggle={(event) => setRemoteOpen(event.currentTarget.open)}
+            >
+              <summary className="cursor-pointer">{t('Open the remote on a phone')}</summary>
+              {remoteOpen && (
+                <div className="mt-2 flex items-center gap-3">
+                  <Suspense fallback={<Skeleton className="size-40" />}>
+                    <RemoteQr url={`${window.location.origin}/o/${organization.slug}/remote`} />
+                  </Suspense>
+                  <span>{t('Scan and sign in with a Developer account.')}</span>
+                </div>
+              )}
+            </details>
+          )}
 
           {startsMigration && (
             <div role="alert" className="flex flex-col gap-2 rounded-lg bg-danger-bg p-3">
