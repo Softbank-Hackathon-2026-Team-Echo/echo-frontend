@@ -52,7 +52,7 @@ src/
 ├─ lib/
 │  ├─ api/               # client(api = openapi-fetch + unwrap, 스키마 밖 경로는 apiFetch) · errors · notify · form-errors(422 → 칸 오류)
 │  │                     #   query-client · query-keys · schema.d.ts(gen:api 생성) · types(스키마 별칭)
-│  │                     #   me(useMe · 로그인 전에도 쓰는 조용한 useSession) · environments · services(서비스·배포 요청) · disasters(재난 · 미리보기 · 종료) · auth
+│  │                     #   dashboard-prefetch(첫 화면 데이터 미리 부르기) · me(useMe · 로그인 전에도 쓰는 조용한 useSession) · environments · services(서비스·배포 요청) · disasters(재난 · 미리보기 · 종료) · auth
 │  │                     #   events(실시간 채널 → 쿼리 무효화) · evacuation(🆕 대피 후보 규칙 점수, API 전까지 브라우저 계산) · prechecks(AI 사전 점검) · variables(앱 환경 변수) · security(보안 매트릭스 · 증거. 이전 전후 비교 🆕 만 API 전까지 브라우저 시뮬레이션)
 │  ├─ roles.ts           # hasRole · 역할 표기
 │  ├─ audit.ts           # 감사 행동 이름 · 행위자 · 결과 → 화면 문구
@@ -228,3 +228,4 @@ docs/                    # api-contract.md, perf.md(성능 측정 방법 · 기�
 | 11/5 | 위험 환경 카드는 테두리가 깜빡이고, 이전 중 트래픽을 받는 카드는 테두리를 빛이 돌고 스피너와 "Receiving traffic" 을 보인다(되돌리는 중이면 출발 환경). 움직임 줄이기면 멈추고, 토폴로지가 화면 밖이면 애니메이션을 멈춘다 | 대시보드만 봐도 어디가 위험하고 어디로 옮겨 가는지 보이게. 반짝임만으로는 진행 중으로 읽히지 않아 로딩 표현과 글자를 쓴다. 움직임은 CSS 라 폴링 렌더와 무관하다 |
 | 11/5 | A·B 그래프 가로축은 시간 그대로가 아니라 구간마다 최소 폭(14%)을 준다 | 시작과 첫 단계가 2초 차이라 수직선처럼 꺾여 보였다. 가로축에 시간 눈금이 없고 세로 비율 값은 그대로다. 시간 눈금을 달면 되돌린다 |
 | 11/5 | 조직 주소(`/o/…`)로 들어오면 `main.tsx` 가 `/me` 를 미리 부르고, API 주소는 `index.html` 에서 미리 연결한다. QueryClient 는 `main.tsx` 가 만들어 `App` 에 넘긴다 | 대시보드 LCP 가 API 3단계를 기다리고 첫 단계가 언어 파일 뒤에 출발했다. 소개 화면은 로그인 전 방문자가 401 로 튕기면 안 되어 부르지 않는다 |
+| 11/5 | 대시보드 주소(`/o/:slug`)로 바로 들어오면 `vite.config.ts` 의 `dashboardPreload` 가 넣은 HTML 스크립트가 `/me` · 대시보드 코드를 받고, `main.tsx` 가 `prefetchDashboard` 로 환경 · 서비스 · 상세 · 최근 활동을 미리 부른다 | 같은 조건 측정에서 LCP 896 → 580ms. 코드 미리 받기만으로는 44ms 였고, 화면 코드가 뜬 뒤 출발하던 데이터 요청이 병목이었다. 파일 이름의 해시를 빌드 뒤에야 알아 HTML 에 넣는다 |

@@ -1,5 +1,5 @@
 // 감사 로그 (API 서버 7, echo-was docs/api/audit-logs.md). 쓰는 API 는 없다
-import { keepPreviousData, useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import { keepPreviousData, queryOptions, useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { api, unwrap } from './client';
 import { queryKeys } from './query-keys';
 import type { AuditActorType } from './types';
@@ -32,19 +32,21 @@ export function useAuditLogs(orgId: string | undefined, filters: AuditFilters) {
 }
 
 /** 대시보드 최근 활동. 에이전트 읽기 줄은 뺀다 */
-export function useRecentActivity(orgId: string | undefined) {
-  return useQuery({
-    queryKey: queryKeys.recentActivity(orgId ?? ''),
+export const recentActivityQuery = (orgId: string) =>
+  queryOptions({
+    queryKey: queryKeys.recentActivity(orgId),
     queryFn: () =>
       unwrap(
         api.GET('/api/v1/orgs/{org_id}/audit-logs', {
           params: {
-            path: { org_id: orgId ?? '' },
+            path: { org_id: orgId },
             query: { includeReads: false, page: 0, size: RECENT_SIZE },
           },
         }),
       ),
-    enabled: Boolean(orgId),
     staleTime: 0,
   });
+
+export function useRecentActivity(orgId: string | undefined) {
+  return useQuery({ ...recentActivityQuery(orgId ?? ''), enabled: Boolean(orgId) });
 }
