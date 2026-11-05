@@ -47,7 +47,7 @@ src/
 │  ├─ disaster/          # 재난 시뮬레이션 다이얼로그(S01-D) · 지도(DisasterMap, d3-geo + world-atlas 50m 지연 로드)
 │  └─ *.tsx              # 두 화면 이상에서 쓰는 앱 컴포넌트 (Panel, RoleButton, StatusBadge, SimulatedBadge, ProviderLabel, FormField, ConfirmDeleteDialog, ExternalLink, EmptyState, ErrorState, ScreenErrorBoundary, Logo, OrthoGlobe, 등록·배포 다이얼로그(EnvironmentFormDialog · RegisterServiceDialog · DeployDialog) …)
 ├─ layouts/AppShell.tsx  # 사이드바(워드마크 · Operate/Resilience/Govern 묶음 · 사용자 메뉴=테마·로그아웃) + 상단 바(브레드크럼 · Org 선택 · Simulate disaster · 알림)
-├─ pages/                # 화면 단위 폴더 (login/, root/, landing/(L01 소개), onboarding/(O01~O03), dashboard/, services/, evacuation/, migrations/, security/, audit/, settings/, dev/). 한 화면에서만 쓰는 컴포넌트는 그 폴더 안에
+├─ pages/                # 화면 단위 폴더 (login/, root/, landing/(L01 소개), onboarding/(O01~O03), dashboard/, services/, evacuation/, migrations/, security/, audit/, remote/(S01-R 휴대폰 리모컨), settings/, dev/). 한 화면에서만 쓰는 컴포넌트는 그 폴더 안에
 ├─ hooks/                # useTheme(테마 3개, localStorage), useRole(현재 조직 역할), useNow(경과 시간), usePrefersReducedMotion, useInViewOnce(처음 화면에 들어오면 true)
 ├─ lib/
 │  ├─ api/               # client(api = openapi-fetch + unwrap, 스키마 밖 경로는 apiFetch) · errors · notify · form-errors(422 → 칸 오류)
@@ -219,3 +219,4 @@ docs/                    # api-contract.md, perf.md(성능 측정 방법 · 기�
 | 11/5 | 앱 환경 변수는 서비스 상세의 환경 탭별 표로 둔다(배포 다이얼로그가 아니다). 값 칸은 가린 입력이고 닫으면 뮤테이션 상태까지 지운다. 넣기 · 바꾸기는 개발자, 지우기는 어드민 + 키 이름 입력이다 | 연결이 첫 배포 때 생겨 배포 전에는 넣을 수 없고, 값을 바꿔도 앱은 다시 배포해야 바뀐다. 시연 화면에 값이 보이지 않게 하고 값을 브라우저에 남기지 않는다 |
 | 11/5 | SEC 에 Exceptions 탭을 더해 기한부 예외를 읽기만 한다. 게이트가 승인을 막으면 E01-3 에 통제와 사유를 보인다 | 시연 예외 4건이 왜 걸렸는지 보여야 한다. 예외 만들기 · 승인은 시연 흐름에 없고 지민님이 직접 넣었다. 게이트는 기본 꺼짐이라 켜도 화면이 준비돼 있게 한다 |
 | 11/5 | 재난은 운영 API 를 부른다(echo-was #70). 기준을 넘고 피해 환경이 있으면 다이얼로그가 실제 트래픽이 옮겨진다고 밝히고 체크해야 보낸다. 판정은 서버 미리보기, 지도 원만 같은 식으로 바로 그린다. 진행 중 재난은 5초 폴링이고, 긴급 이전은 Active disaster 칸에서 잇는다. 복귀 버튼은 서버 `failback.allowed` 를 따른다 | 재난은 시뮬레이션이어도 이전은 실제이고 자기 승인이 켜지면 바로 시작한다. 버튼 이름만 보고 누르면 위험하다. 폴링은 휴대폰 리모컨 등 다른 기기의 재난을 보이기 위해서고 실시간 채널이 없다 |
+| 11/5 | S01-R 리모컨은 `/o/:slug/remote`(사이드바 없음)이고 재난 다이얼로그의 QR 로 연다. 실제 이전이 시작되는 재난은 5초 안에 두 번 눌러야 보낸다. 진행 중 재난이 있으면 새로 내지 않고 Sent 와 End simulation 을 보인다. QR 은 `qrcode-generator` 를 쓰고 펼칠 때만 불러온다 | 무대에서 휴대폰 하나로 재난을 내되 잘못 눌러 운영 트래픽이 움직이지 않게 한다. 바탕은 어두운 테마에서도 읽히게 흰색이다 |
