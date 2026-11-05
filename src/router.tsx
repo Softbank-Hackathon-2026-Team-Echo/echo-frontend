@@ -117,7 +117,7 @@ const routes: RouteObject[] = [
       {
         path: 'audit',
         handle: crumb(k('Audit log')),
-        element: <PlaceholderPage title={k('Audit log')} />,
+        lazy: () => import('@/pages/audit/AuditPage').then((m) => ({ Component: m.default })),
       },
       {
         path: 'settings',
