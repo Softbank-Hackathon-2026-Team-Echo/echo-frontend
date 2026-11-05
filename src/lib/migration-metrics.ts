@@ -48,9 +48,9 @@ export function rowCheck(plan: CutoverPlan) {
 const seconds = (from: string | null, to: string | null, now = Date.now()) =>
   from ? Math.max(0, Math.round(((to ? Date.parse(to) : now) - Date.parse(from)) / 1000)) : null;
 
-/** 단계 판정에서 본 실패 요청 수. 서버가 센 도착 5xx(8-1)를 먼저 쓰고, 없으면 오류율 × 요청 수. 판정한 단계가 없으면 null */
+/** 단계 판정에서 본 실패 요청 수. 서버가 센 도착 5xx(8-1)를 먼저 쓰고, 없으면 오류율 × 요청 수. 판정한 요청이 없으면 null */
 export function failedRequests(plan: Pick<MigrationPlan, 'steps'>): number | null {
-  const judged = plan.steps.filter((step) => step.result?.metrics?.requestCount != null);
+  const judged = plan.steps.filter((step) => (step.result?.metrics?.requestCount ?? 0) > 0);
   if (judged.length === 0) return null;
   return judged.reduce((sum, step) => {
     const metrics = step.result?.metrics;
@@ -58,6 +58,13 @@ export function failedRequests(plan: Pick<MigrationPlan, 'steps'>): number | nul
     if (typeof metrics.errors5xx === 'number') return sum + metrics.errors5xx;
     return sum + Math.round(((metrics.errorRatePercent ?? 0) / 100) * metrics.requestCount);
   }, 0);
+}
+
+/** 요청이 없어 헬스 체크로만 통과했는가. 이때 실패 0건은 잰 값이 아니다 */
+export function passedOnHealthOnly(plan: Pick<MigrationPlan, 'steps'>): boolean {
+  return (
+    failedRequests(plan) === null && plan.steps.some((step) => step.result?.metrics?.lowTraffic)
+  );
 }
 
 export function requestCount(plan: Pick<MigrationPlan, 'steps'>): number {

@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { ExternalLink } from '@/components/ExternalLink';
 import { SimulatedBadge } from '@/components/SimulatedBadge';
 import { StatusBadge } from '@/components/StatusBadge';
+import { Button } from '@/components/ui/button';
 import {
   Sheet,
   SheetContent,
@@ -14,6 +16,9 @@ import type { SecurityControlCheck, SecurityFinding, SecurityMatrixCell } from '
 import { dateTime } from '@/lib/format';
 import { t } from '@/lib/i18n';
 import { securityReasonLabel, securityResultView, securitySeverityLabel } from '@/lib/status';
+
+// 취약점이 수십 건이면 아래 통제까지 한참 내려가야 해서 처음에는 접어 둔다
+const ITEM_PREVIEW = 5;
 
 export type FindingSelection =
   | { kind: 'cell'; environmentId: string; control: SecurityControl }
@@ -35,6 +40,9 @@ function shortDigest(digest: string) {
 }
 
 function FindingDetail({ finding }: { finding: SecurityFinding }) {
+  const [expanded, setExpanded] = useState(false);
+  const items = expanded ? finding.items : finding.items.slice(0, ITEM_PREVIEW);
+
   return (
     <div className="flex flex-col gap-1.5 rounded-md bg-subtle p-2">
       <div className="flex flex-wrap items-center gap-2">
@@ -67,7 +75,7 @@ function FindingDetail({ finding }: { finding: SecurityFinding }) {
       {finding.basisUrl && <ExternalLink href={finding.basisUrl} />}
       {finding.items.length > 0 && (
         <ul className="flex flex-col gap-0.5 font-mono text-mono">
-          {finding.items.map((item) => (
+          {items.map((item) => (
             <li key={item.itemId} className="break-all">
               {item.severity ? `${securitySeverityLabel(item.severity)} · ` : ''}
               {item.itemId}
@@ -78,6 +86,19 @@ function FindingDetail({ finding }: { finding: SecurityFinding }) {
             </li>
           ))}
         </ul>
+      )}
+      {finding.items.length > ITEM_PREVIEW && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="self-start"
+          aria-expanded={expanded}
+          onClick={() => setExpanded(!expanded)}
+        >
+          {expanded
+            ? t('Show less')
+            : t('Show all {{total}} items', { total: finding.items.length })}
+        </Button>
       )}
       {finding.totalItems > finding.items.length && (
         <p className="text-caption text-fg-muted">

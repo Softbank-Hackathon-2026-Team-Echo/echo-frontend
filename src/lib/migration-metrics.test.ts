@@ -5,6 +5,7 @@ import {
   failedRequests,
   isAwaitingCutover,
   maxReplicationLag,
+  passedOnHealthOnly,
   rowCheck,
   weightTimeline,
   writePauseCaption,
@@ -33,6 +34,14 @@ describe('migration-metrics', () => {
     });
     expect(failedRequests(plan)).toBe(2);
     expect(failedRequests(migrationPlan({ steps: [step(0, 'PREFLIGHT', null)] }))).toBeNull();
+  });
+
+  it('요청이 0건이면 실패 0건이라고 말하지 않고 헬스 체크 통과로 본다', () => {
+    const plan = migrationPlan({
+      steps: [step(1, 'SHIFT', 10, 'PASSED', { requestCount: 0, lowTraffic: true })],
+    });
+    expect(failedRequests(plan)).toBeNull();
+    expect(passedOnHealthOnly(plan)).toBe(true);
   });
 
   it('복제 지연은 데이터 확인 단계 값을 쓴다', () => {

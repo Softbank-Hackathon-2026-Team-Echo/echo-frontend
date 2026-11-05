@@ -14,6 +14,7 @@ import {
   failedRequests,
   isAwaitingCutover,
   maxReplicationLag,
+  passedOnHealthOnly,
   requestCount,
   rowCheck,
   stepSeconds,
@@ -87,7 +88,7 @@ export function ResultTab({ plan }: { plan: MigrationPlan }) {
   const total = totalSeconds(plan);
   const lag = maxReplicationLag(plan);
   const requests = requestCount(plan);
-  const clean = plan.status === 'SUCCEEDED' && (failed ?? 0) === 0;
+  const clean = plan.status === 'SUCCEEDED' && failed === 0;
   const rows = rowCheck(plan);
   // 기다리는 시간이 지나면 다시 부르기가 멈춰도 문구가 바뀌도록 시계를 돌린다
   const now = useNow(isAwaitingCutover(plan));
@@ -102,7 +103,9 @@ export function ResultTab({ plan }: { plan: MigrationPlan }) {
               {clean ? t('Zero failed requests while traffic moved') : t('Migration finished')}
             </p>
             <p className="text-small">
-              {t('Numbers come from the step judgements EchoPort recorded during this run.')}
+              {passedOnHealthOnly(plan)
+                ? t('Too few requests to judge, so stages passed on health checks.')
+                : t('Numbers come from the step judgements EchoPort recorded during this run.')}
             </p>
           </div>
         </div>

@@ -265,5 +265,8 @@
   "Waiting for the DB cutover result": "DB 쓰기 전환 결과를 기다리는 중",
   "Waiting for the DB rollback result": "DB 롤백 결과를 기다리는 중",
   "No DB cutover recorded for this plan": "이 계획에 기록된 DB 쓰기 전환이 없습니다",
-  "{{n}} rows compared": "{{n}}행 비교"
+  "{{n}} rows compared": "{{n}}행 비교",
+  "Too few requests to judge, so stages passed on health checks.": "판정할 요청이 없어 헬스 체크로 단계를 통과했습니다.",
+  "Show less": "접기",
+  "Show all {{total}} items": "{{total}}개 모두 보기"
 }

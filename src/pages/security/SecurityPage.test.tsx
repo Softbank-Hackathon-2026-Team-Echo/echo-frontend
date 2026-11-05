@@ -206,6 +206,20 @@ describe('SecurityPage', () => {
     expect(queries.some((query) => query.includes('findingId=f1&findingId=f2'))).toBe(true);
   });
 
+  it('긴 취약점 목록은 접어 두고 누르면 모두 보인다', async () => {
+    const items = Array.from({ length: 7 }, (_, index) => ({ itemId: `CVE-2026-${index}` }));
+    serve(ENVIRONMENTS, [{ ...finding, items, totalItems: 7 }]);
+    renderPage();
+
+    await userEvent.click(await screen.findByRole('button', { name: 'aws-tokyo Policy: 1 issue' }));
+    const sheet = await screen.findByRole('dialog');
+
+    expect(await within(sheet).findByText('CVE-2026-4')).toBeInTheDocument();
+    expect(within(sheet).queryByText('CVE-2026-5')).not.toBeInTheDocument();
+    await userEvent.click(within(sheet).getByRole('button', { name: 'Show all 7 items' }));
+    expect(within(sheet).getByText('CVE-2026-6')).toBeInTheDocument();
+  });
+
   it('미수집 칸은 증거가 없다는 이유를 보인다', async () => {
     serve(ENVIRONMENTS);
     renderPage();
