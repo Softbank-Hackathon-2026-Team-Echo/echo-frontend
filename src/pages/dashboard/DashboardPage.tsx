@@ -65,6 +65,13 @@ export default function DashboardPage() {
   const active = disasters.data ?? [];
   const latest = active.at(-1);
   const atRisk = new Set(active.flatMap((disaster) => disaster.affectedEnvironmentIds));
+  // 되돌리는 중이면 트래픽은 출발 환경으로 돌아간다
+  const receivingId =
+    runningPlan.data?.status === 'RUNNING'
+      ? runningPlan.data.targetEnvironmentId
+      : runningPlan.data?.status === 'ROLLING_BACK'
+        ? runningPlan.data.sourceEnvironmentId
+        : undefined;
   const completed = recentCompletion(organization.id, plans.data);
   const byEnvironment = new Map<string, ServiceOnEnvironment[]>();
   let serving: ServiceOnEnvironment | undefined;
@@ -132,6 +139,7 @@ export default function DashboardPage() {
             byEnvironment={byEnvironment}
             atRisk={atRisk}
             edgeUrl={serving?.service.url}
+            receivingId={receivingId}
           />
         </Panel>
         <div className="col-span-4 flex flex-col gap-4 max-wide:col-span-6 max-sm:col-span-12">

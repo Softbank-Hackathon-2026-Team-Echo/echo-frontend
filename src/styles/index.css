@@ -274,3 +274,70 @@
 .echo-flow .react-flow__node {
   font-family: inherit;
 }
+
+/* 토폴로지 선 위를 흐르는 점. 움직임 줄이기면 점 없이 이전처럼 선만 보인다 */
+.echo-flow .flow-dot {
+  display: none;
+  fill: none;
+  pointer-events: none;
+  stroke-linecap: round;
+}
+/* 트래픽을 받는 환경 카드 위를 지나가는 빛. 움직임 줄이기면 테두리 색만 남는다 */
+.echo-flow .topology-sheen {
+  display: none;
+  background: linear-gradient(
+    105deg,
+    transparent 30%,
+    var(--ep-color-status-migrating-bg) 50%,
+    transparent 70%
+  );
+}
+@media (prefers-reduced-motion: no-preference) {
+  .echo-flow .topology-at-risk {
+    animation: topology-at-risk 1.4s ease-in-out infinite;
+  }
+  .echo-flow .topology-sheen {
+    display: block;
+    animation: topology-sheen 1.8s ease-in-out infinite;
+  }
+  .echo-flow .flow-rail {
+    stroke-opacity: 0.35;
+  }
+  .echo-flow .flow-dot {
+    display: inline;
+    animation: flow-forward var(--flow-duration) linear infinite;
+  }
+  .echo-flow .flow-dot-return {
+    opacity: 0.55;
+    animation-name: flow-return;
+  }
+}
+.flow-paused .flow-dot,
+.flow-paused .topology-sheen,
+.flow-paused .topology-at-risk {
+  animation-play-state: paused;
+}
+@keyframes topology-at-risk {
+  50% {
+    border-color: var(--ep-color-status-danger-bg);
+    box-shadow: 0 0 0 4px var(--ep-color-status-danger-solid);
+  }
+}
+@keyframes topology-sheen {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+@keyframes flow-forward {
+  to {
+    stroke-dashoffset: calc(var(--flow-period) * -1);
+  }
+}
+@keyframes flow-return {
+  to {
+    stroke-dashoffset: var(--flow-period);
+  }
+}

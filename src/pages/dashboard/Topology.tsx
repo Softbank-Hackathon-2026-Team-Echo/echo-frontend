@@ -19,7 +19,7 @@ import {
 } from '@xyflow/react';
 import ELK from 'elkjs/lib/elk-api.js';
 import { TriangleAlert } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { type CSSProperties, useEffect, useMemo, useRef, useState } from 'react';
 import { ProviderLabel } from '@/components/ProviderLabel';
 import { StatusBadge } from '@/components/StatusBadge';
 import { useInViewOnce } from '@/hooks/useInViewOnce';
@@ -32,7 +32,8 @@ import { replicationPath } from './topology-path';
 import type { ServiceOnEnvironment } from './types';
 
 const ENV_WIDTH = 232;
-const ENV_HEIGHT = 112;
+// projector 글자에서도 네 줄이 넘치지 않는 높이
+const ENV_HEIGHT = 128;
 const PROXY_WIDTH = 200;
 const PROXY_HEIGHT = 64;
 const GROUP_PADDING = '[top=36,left=14,bottom=14,right=14]';
@@ -43,6 +44,7 @@ type EnvNodeData = {
   environment: EnvironmentSummary;
   links: ServiceOnEnvironment[];
   atRisk: boolean;
+  receiving: boolean;
 };
 type GroupNodeData = { label: string; risky: boolean };
 type ProxyNodeData = { url: string | undefined };
@@ -64,7 +66,7 @@ function standbyText(link: ServiceOnEnvironment['link'] | undefined): string {
 
 /** 환경 노드: 역할 · 버전 · 트래픽 막대 · 위험 */
 function EnvironmentNode({ data }: NodeProps<Node<EnvNodeData, 'environment'>>) {
-  const { environment, links, atRisk } = data;
+  const { environment, links, atRisk, receiving } = data;
   const primary = links.find((item) => item.link.role === 'SERVING') ?? links[0];
   const weight = links.reduce((sum, item) => sum + item.link.trafficWeight, 0);
   const role = primary?.link.role;
@@ -77,11 +79,20 @@ function EnvironmentNode({ data }: NodeProps<Node<EnvNodeData, 'environment'>>) 
   return (
     <div
       className={cn(
-        'flex flex-col gap-2 rounded-md border bg-surface p-3 shadow-xs',
-        atRisk ? 'border-danger-solid ring-2 ring-danger-bg' : 'border-line',
+        'relative isolate flex flex-col justify-between rounded-md border bg-surface p-3 shadow-xs',
+        atRisk
+          ? 'topology-at-risk border-danger-solid ring-2 ring-danger-bg'
+          : receiving
+            ? 'border-migrating-solid'
+            : 'border-line',
       )}
       style={{ width: ENV_WIDTH, height: ENV_HEIGHT }}
     >
+      {receiving && (
+        <span aria-hidden className="absolute inset-0 -z-10 overflow-hidden rounded-md">
+          <span className="topology-sheen absolute inset-0" />
+        </span>
+      )}
       <Handle
         type="target"
         position={Position.Top}
@@ -102,6 +113,12 @@ function EnvironmentNode({ data }: NodeProps<Node<EnvNodeData, 'environment'>>) 
       />
       <span className="flex items-center justify-between gap-2">
         <span className="truncate text-body-medium">{environment.name}</span>
+        {weight > 0 && (
+          <span aria-hidden className="relative flex size-2 shrink-0">
+            <span className="absolute size-full rounded-full bg-success-solid opacity-60 motion-safe:animate-ping" />
+            <span className="relative size-full rounded-full bg-success-solid" />
+          </span>
+        )}
       </span>
       <span className="flex flex-wrap items-center gap-1.5">
         <ProviderLabel kind={environment.kind} showLocation={false} />
@@ -118,7 +135,7 @@ function EnvironmentNode({ data }: NodeProps<Node<EnvNodeData, 'environment'>>) 
       </span>
       <span className="flex items-center justify-between gap-2 text-caption text-fg-muted">
         <span className="truncate">{roleText}</span>
-        <span className="font-mono">{environment.location ?? '—'}</span>
+        <span className="shrink-0 font-mono">{environment.location ?? '—'}</span>
       </span>
       <span className="flex items-center gap-2">
         <span className="h-1 flex-1 overflow-hidden rounded-full bg-subtle">
@@ -167,7 +184,45 @@ function ProxyNode({ data }: NodeProps<Node<ProxyNodeData, 'proxy'>>) {
   );
 }
 
-/** 트래픽 선은 굵기 = 비율, 복제 선은 점선 */
+/** 점 사이 간격(px). 비율이 높을수록 촘촘하다. 점은 비율을 그린 것이고 요청 수가 아니다 */
+function flowPeriod(weight: number) {
+  return Math.round(96 - weight * 0.64);
+}
+
+/** 선을 따라 흐르는 점. 움직임은 CSS 만 쓰고, 움직임 줄이기면 그리지 않는다 */
+function FlowDots({
+  path,
+  period,
+  speed,
+  width,
+  color,
+  className,
+}: {
+  path: string;
+  period: number;
+  speed: number;
+  width: number;
+  color: string;
+  className: string;
+}) {
+  return (
+    <path
+      d={path}
+      className={className}
+      style={
+        {
+          '--flow-period': `${period}px`,
+          '--flow-duration': `${period / speed}s`,
+          stroke: color,
+          strokeWidth: width,
+          strokeDasharray: `0.1 ${period - 0.1}`,
+        } as CSSProperties
+      }
+    />
+  );
+}
+
+/** 트래픽 선은 굵기 = 비율, 복제 선은 점선. 흐름 방향이 곧 트래픽 · 복제 방향이다 */
 function TrafficEdge(props: EdgeProps<Edge<TrafficEdgeData>>) {
   const { sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, data } = props;
   const replication = data?.kind === 'replication';
@@ -184,21 +239,55 @@ function TrafficEdge(props: EdgeProps<Edge<TrafficEdgeData>>) {
   const labelX = curve?.labelX ?? trafficLabelX;
   const labelY = curve?.labelY ?? trafficLabelY;
   const weight = data?.weight ?? 0;
+  const lineWidth = Math.max(1.5, weight / 12);
   return (
     <>
       <BaseEdge
         path={path}
+        className={weight > 0 ? 'flow-rail' : undefined}
         style={{
           stroke: replication
             ? 'var(--ep-color-text-muted)'
             : weight > 0
               ? 'var(--ep-color-chart-3)'
               : 'var(--ep-color-brand-default)',
-          strokeWidth: replication ? 1.5 : Math.max(1.5, weight / 12),
+          strokeWidth: replication ? 1.5 : lineWidth,
           strokeDasharray: replication || weight === 0 ? '5 4' : undefined,
           transition: 'stroke-width 400ms ease',
         }}
       />
+      {replication ? (
+        <FlowDots
+          path={path}
+          period={72}
+          speed={36}
+          width={3}
+          color="var(--ep-color-text-muted)"
+          className="flow-dot"
+        />
+      ) : (
+        weight > 0 && (
+          <>
+            <FlowDots
+              path={path}
+              period={flowPeriod(weight)}
+              speed={90}
+              width={Math.max(4, lineWidth)}
+              color="var(--ep-color-chart-3)"
+              className="flow-dot"
+            />
+            {/* 응답: 요청과 반대로 돌아온다 */}
+            <FlowDots
+              path={path}
+              period={flowPeriod(weight)}
+              speed={60}
+              width={Math.max(2.5, lineWidth / 2)}
+              color="var(--ep-color-chart-3)"
+              className="flow-dot flow-dot-return"
+            />
+          </>
+        )
+      )}
       <EdgeLabelRenderer>
         <span
           className="nodrag nopan absolute rounded-sm bg-surface px-1 font-mono text-caption text-fg-muted shadow-xs"
@@ -276,9 +365,17 @@ type TopologyProps = {
   byEnvironment: Map<string, ServiceOnEnvironment[]>;
   atRisk: Set<string>;
   edgeUrl: string | undefined;
+  /** 이전으로 지금 트래픽이 옮겨 가는 환경 */
+  receivingId?: string;
 };
 
-function TopologyCanvas({ environments, byEnvironment, atRisk, edgeUrl }: TopologyProps) {
+function TopologyCanvas({
+  environments,
+  byEnvironment,
+  atRisk,
+  edgeUrl,
+  receivingId,
+}: TopologyProps) {
   const { fitView } = useReactFlow();
   const [positions, setPositions] = useState<Positions>(new Map());
 
@@ -394,13 +491,14 @@ function TopologyCanvas({ environments, byEnvironment, atRisk, edgeUrl }: Topolo
             environment,
             links: byEnvironment.get(environment.id) ?? [],
             atRisk: atRisk.has(environment.id),
+            receiving: environment.id === receivingId,
           },
           draggable: false,
         });
       }
     }
     return list;
-  }, [positions, groups, byEnvironment, atRisk, edgeUrl]);
+  }, [positions, groups, byEnvironment, atRisk, edgeUrl, receivingId]);
 
   // 캔버스 왼쪽 아래 버튼의 툴팁. 기본값이 영어 문구라 그대로 번역한다
   const ariaLabelConfig = useMemo(
@@ -439,12 +537,22 @@ function TopologyCanvas({ environments, byEnvironment, atRisk, edgeUrl }: Topolo
 
 /**
  * S01 토폴로지 캔버스 (ADR 11/2: React Flow + elkjs).
- * 지역별로 묶은 환경 노드 + 앞단 프록시, 트래픽 선 굵기 = 비율, 서비스 중 → 예비 복제 점선
+ * 지역별로 묶은 환경 노드 + 앞단 프록시, 트래픽 선 굵기 = 비율, 서비스 중 → 예비 복제 점선. 선 위 점은 방향을 보여 주는 그림이다
  */
 export function Topology(props: TopologyProps) {
   const ref = useRef<HTMLDivElement>(null);
   // 화면에 들어올 때 캔버스를 만들고 배치(elk 워커)를 계산한다. 그전에는 같은 크기 자리만 둔다
   const inView = useInViewOnce(ref);
+  // 화면 밖이면 선과 카드의 움직임을 멈춘다. 탭을 숨기면 브라우저가 알아서 멈춘다
+  useEffect(() => {
+    const element = ref.current;
+    if (!element || typeof IntersectionObserver === 'undefined') return;
+    const observer = new IntersectionObserver(([entry]) => {
+      element.classList.toggle('flow-paused', !entry?.isIntersecting);
+    });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
   return (
     <div ref={ref} className="h-96 w-full overflow-hidden rounded-md bg-canvas">
       {inView ? (
