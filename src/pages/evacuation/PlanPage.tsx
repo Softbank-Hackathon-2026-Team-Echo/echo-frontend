@@ -26,7 +26,7 @@ import { dateTime } from '@/lib/format';
 import { k, t } from '@/lib/i18n';
 import { duration, planStages } from '@/lib/migration-stages';
 import { hasRole, roleLabel } from '@/lib/roles';
-import { migrationPlanStatusView, securityControlLabel } from '@/lib/status';
+import { migrationPlanStatusView, securityControlLabel, securityReasonLabel } from '@/lib/status';
 import { PlanDraft } from './PlanDraft';
 import { SecurityComparison } from './SecurityComparison';
 import { WizardSteps } from './WizardSteps';
@@ -183,6 +183,11 @@ export default function PlanPage() {
         ? t('Fix the security mismatch first')
         : undefined;
   const actionError = approve.error ?? reject.error ?? cancel.error;
+  // 게이트는 막은 통제마다 details 한 칸을 준다: {field: 통제 ID, reason: 사유}
+  const gateBlocks =
+    isApiError(approve.error) && approve.error.code === 'SECURITY_GATE_BLOCKED'
+      ? approve.error.details
+      : [];
   const closedText = CLOSED_TEXT[current.status];
   const mismatchValues = {
     n: mismatches.length,
@@ -273,6 +278,15 @@ export default function PlanPage() {
           {describeApiError(actionError)}
         </p>
       ) : null}
+      {gateBlocks.length > 0 && (
+        <ul className="flex flex-col gap-1 rounded-lg border border-line bg-surface px-3 py-2">
+          {gateBlocks.map((block) => (
+            <li key={`${block.field}-${block.reason}`} className="text-small text-fg-secondary">
+              <span className="font-mono">{block.field}</span> · {securityReasonLabel(block.reason)}
+            </li>
+          ))}
+        </ul>
+      )}
       {(() => {
         const changes = staleChanges(
           approve.error,

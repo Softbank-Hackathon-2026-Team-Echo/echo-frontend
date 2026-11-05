@@ -159,6 +159,33 @@ function serve(items: EnvironmentSummary[], findings: SecurityFinding[] = [findi
         ),
       }),
     ),
+    http.get(`${API}/orgs/o1/security/exceptions`, () =>
+      ok({
+        items: [
+          {
+            id: 'x1',
+            controlId: 'C-DB-1',
+            status: 'ACTIVE',
+            serviceId: 's1',
+            environmentId: 'e2',
+            imageDigest: null,
+            configCommit: null,
+            wasVersion: null,
+            reason: 'Demo writes are paused by hand',
+            requestedBy: { id: 'u2', login: 'Saccharine1211' },
+            approvedBy: { id: 'u2', login: 'Saccharine1211' },
+            approvedAt: AT,
+            revokedBy: null,
+            revokedAt: null,
+            createdAt: AT,
+            expiresAt: AT,
+          },
+        ],
+        total: 1,
+        page: 0,
+        size: 100,
+      }),
+    ),
     http.get(`${API}/orgs/o1/security/findings`, ({ request }) => {
       findingQueries.push(new URL(request.url).search);
       return ok({ items: findings, total: findings.length, page: 0, size: 100 });
@@ -261,6 +288,18 @@ describe('SecurityPage', () => {
     renderPage();
 
     expect(await screen.findByRole('button', { name: 'Retry' })).toBeInTheDocument();
+  });
+
+  it('Exceptions 탭은 범위와 승인자를 보인다', async () => {
+    serve(ENVIRONMENTS);
+    renderPage();
+
+    await userEvent.click(await screen.findByRole('tab', { name: 'Exceptions' }));
+
+    expect(await screen.findByText('C-DB-1')).toBeInTheDocument();
+    expect(screen.getByText('demo · gcp-seoul')).toBeInTheDocument();
+    expect(screen.getByText('Active')).toBeInTheDocument();
+    expect(screen.getByText('Saccharine1211')).toBeInTheDocument();
   });
 
   it('Compare 탭은 두 환경을 나란히 보여 준다', async () => {

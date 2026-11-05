@@ -1,5 +1,5 @@
-// 환경 좌표 (계약 4-1 🆕 가칭). 서버가 환경 응답에 coordinates 를 실어 주기 전까지
-// 클라우드 리전·온프레 도시 이름으로 프론트가 좌표를 찾는다. 서버 값이 생기면 그것을 먼저 쓴다.
+// 환경 좌표. 서버가 환경 응답에 주는 coordinates 를 먼저 쓴다(echo-was #68).
+// 서버가 null 을 주면 리전·도시 이름 표로 찾고, 표는 화면 이름과 재난 지도 도시에도 쓴다.
 import type { EnvironmentSummary } from './api/types';
 import { k, t } from './i18n';
 

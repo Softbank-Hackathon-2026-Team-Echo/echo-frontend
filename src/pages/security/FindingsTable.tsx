@@ -67,9 +67,11 @@ export function FindingsTable({
                   >
                     {controlTitles.get(finding.controlId) ?? finding.controlId}
                   </button>
-                  <span className="ml-2 font-mono text-mono text-fg-muted">
-                    {finding.controlId}
-                  </span>
+                  {controlTitles.has(finding.controlId) && (
+                    <span className="ml-2 font-mono text-mono text-fg-muted">
+                      {finding.controlId}
+                    </span>
+                  )}
                 </TableCell>
                 <TableCell>{names.get(finding.environmentId ?? '') ?? '—'}</TableCell>
                 <TableCell>{serviceNames.get(finding.serviceId ?? '') ?? '—'}</TableCell>
