@@ -38,3 +38,23 @@ export function monotonePath(input: Point[]): string {
   });
   return [`M${first.x},${first.y}`, ...segments].join(' ');
 }
+
+/**
+ * 시각을 0~1 위치로 바꾼다. 간격이 전체의 minShare 보다 좁으면 그만큼 넓혀서 붙어 있는 단계가 수직선처럼 보이지 않게 한다.
+ * 그래프에 시간 눈금이 없을 때만 쓴다. 같은 시각은 같은 위치다
+ */
+export function spreadPositions(times: number[], minShare: number): number[] {
+  const first = times[0] ?? 0;
+  const span = (times.at(-1) ?? first) - first;
+  if (span <= 0) return times.map(() => 0);
+  const gaps = times.map((time, index) => {
+    const gap = time - (times[index - 1] ?? time);
+    return gap === 0 ? 0 : Math.max(gap, span * minShare);
+  });
+  const total = gaps.reduce((sum, gap) => sum + gap, 0);
+  let position = 0;
+  return gaps.map((gap) => {
+    position += gap;
+    return position / total;
+  });
+}
