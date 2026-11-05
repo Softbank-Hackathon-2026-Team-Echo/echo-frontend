@@ -3,7 +3,7 @@
 import { distanceKm, environmentCoordinates, placeCountry } from '../geo';
 import { t } from '../i18n';
 import type { Disaster } from './disasters';
-import type { EnvironmentSummary, ServiceDetail } from './types';
+import type { CloudCosts, EnvironmentSummary, ServiceDetail } from './types';
 
 export const EVACUATION_API_READY = false;
 
@@ -92,6 +92,17 @@ export function servingEnvironmentId(service: ServiceDetail): string | null {
   return service.environments.find((link) => link.role === 'SERVING')?.environment.id ?? null;
 }
 
+/** 서버 비용이 있으면 후보 중 가장 싼 환경을 100 으로 둔다. 값이 없는 환경(온프레 등)은 기본값이다 */
+function costScore(environment: EnvironmentSummary, costs: CloudCosts | undefined): number {
+  const fallback = COST_BY_KIND[environment.kind] ?? 60;
+  const prices = (costs?.environments ?? []).flatMap((item) =>
+    item.hourlyUsd ? [{ id: item.environmentId, hourly: item.hourlyUsd }] : [],
+  );
+  const hourly = prices.find((item) => item.id === environment.id)?.hourly;
+  if (!hourly) return fallback;
+  return clamp((Math.min(...prices.map((item) => item.hourly)) / hourly) * 100);
+}
+
 /**
  * 재난 반경 밖의 등록 환경을 규칙 점수로 줄 세운다. 반경 안·접속 실패·위치 모름은 이유와 함께 뺀다
  */
@@ -99,6 +110,7 @@ export function rankEvacuationTargets(
   disaster: Disaster,
   service: ServiceDetail,
   environments: EnvironmentSummary[],
+  costs?: CloudCosts,
 ): EvacuationCandidates {
   const sourceId = servingEnvironmentId(service);
   const result: EvacuationCandidates = { source: null, candidates: [], excluded: [] };
@@ -148,7 +160,7 @@ export function rankEvacuationTargets(
     const scores: Record<ScoreKey, number> = {
       safety: clamp(100 * (1 - Math.exp(-margin))),
       capacity: warm ? 86 : deployed ? 70 : 52,
-      cost: COST_BY_KIND[environment.kind] ?? 60,
+      cost: costScore(environment, costs),
       failbackTime: warm ? 80 : deployed ? 66 : 55,
       dataResidency: country === null ? 50 : ALLOWED_COUNTRIES.has(country) ? 86 : 30,
     };

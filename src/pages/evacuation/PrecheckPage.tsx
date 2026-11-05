@@ -23,7 +23,12 @@ import { useService } from '@/lib/api/services';
 import type { PrecheckDetail } from '@/lib/api/types';
 import { t } from '@/lib/i18n';
 import { hasRole } from '@/lib/roles';
-import { precheckFailureLabel, precheckStatusView, precheckStepLabel } from '@/lib/status';
+import {
+  precheckFailureLabel,
+  precheckStatusView,
+  precheckStepLabel,
+  processingView,
+} from '@/lib/status';
 import { PrecheckResults } from './PrecheckResults';
 import { WizardSteps } from './WizardSteps';
 
@@ -200,6 +205,7 @@ export default function PrecheckPage() {
               {t('No AI review · rule comparison only')}
             </span>
           ))}
+        {!active && <StatusBadge {...processingView(current.processing)} />}
         {current.sandboxId && (
           <span className="font-mono text-mono text-fg-muted">{current.sandboxId}</span>
         )}

@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useCloudCosts } from '@/lib/api/costs';
 import { EVACUATION_MIN_MAGNITUDE, useActiveDisasters } from '@/lib/api/disasters';
 import { useEnvironments } from '@/lib/api/environments';
 import {
@@ -51,6 +52,7 @@ export default function EvacuationPage() {
   const { organization } = useCurrentOrg(slug);
   const orgId = organization?.id;
   const environments = useEnvironments(orgId);
+  const costs = useCloudCosts(orgId);
   const services = useServices(orgId);
   const details = useServiceDetails(orgId, services.data?.items.map((service) => service.id) ?? []);
   const disasters = useActiveDisasters(orgId);
@@ -112,7 +114,7 @@ export default function EvacuationPage() {
 
   const service = atRisk.find((item) => item.id === searchParams.get('service')) ?? atRisk[0];
   if (!service) return null;
-  const ranking = rankEvacuationTargets(disaster, service, envList);
+  const ranking = rankEvacuationTargets(disaster, service, envList, costs.data);
   const source = ranking.source ? byId.get(ranking.source.environmentId) : undefined;
   const selected =
     ranking.candidates.find((item) => item.environmentId === picked) ?? ranking.candidates[0];

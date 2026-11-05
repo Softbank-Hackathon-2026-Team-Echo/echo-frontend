@@ -1,5 +1,6 @@
 import { CircleCheck, CircleHelp, CircleX, type LucideIcon, TriangleAlert } from 'lucide-react';
 import type { SecurityCell } from '@/lib/api/security';
+import { t } from '@/lib/i18n';
 import { securityCellLabel, securityResultView, type Tone } from '@/lib/status';
 import { cn } from '@/lib/utils';
 
@@ -12,6 +13,8 @@ const NEUTRAL = { className: 'bg-subtle text-fg-muted', icon: CircleHelp };
 
 type SecurityCheckCellProps = {
   cell: SecurityCell;
+  /** 기한부 예외로 게이트를 통과하는 칸. 색은 증거 값 그대로 두고 표시만 더한다 */
+  waived?: boolean;
   /** 있으면 눌러서 근거를 연다 */
   onClick?: () => void;
   /** 누를 수 있을 때 읽어 주는 이름 (환경 · 항목) */
@@ -19,10 +22,11 @@ type SecurityCheckCellProps = {
 };
 
 /** 보안 칸 하나. 매트릭스와 이전 전후 비교가 같이 쓴다 */
-export function SecurityCheckCell({ cell, onClick, label }: SecurityCheckCellProps) {
+export function SecurityCheckCell({ cell, waived, onClick, label }: SecurityCheckCellProps) {
   const view = TONE[securityResultView(cell.result).tone] ?? NEUTRAL;
   const Icon = view.icon;
-  const text = securityCellLabel(cell.result, cell.findingCount);
+  const result = securityCellLabel(cell.result, cell.findingCount);
+  const text = waived ? `${result} · ${t('Exception')}` : result;
   const className = cn(
     'flex h-10 w-full items-center justify-center gap-1.5 rounded-md text-label',
     view.className,

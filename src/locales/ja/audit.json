@@ -47,5 +47,7 @@
   "set app variable": "アプリ変数を保存",
   "started AI run": "AI実行を開始",
   "updated environment": "環境を更新",
-  "updated service": "サービスを更新"
+  "updated service": "サービスを更新",
+  "approved AI patch": "AIパッチを承認",
+  "rejected AI patch": "AIパッチを却下"
 }

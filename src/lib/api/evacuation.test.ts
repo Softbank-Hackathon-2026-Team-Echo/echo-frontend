@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Disaster } from './disasters';
 import { rankEvacuationTargets } from './evacuation';
-import type { EnvironmentSummary, ServiceDetail, ServiceEnvironment } from './types';
+import type { CloudCosts, EnvironmentSummary, ServiceDetail, ServiceEnvironment } from './types';
 
 const AT = '2026-11-02T00:00:00Z';
 
@@ -113,5 +113,37 @@ describe('rankEvacuationTargets', () => {
     const result = rankEvacuationTargets(tokyoQuake, service, unhealthy);
     expect(result.candidates).toHaveLength(1);
     expect(result.excluded.map((item) => item.reason)).toContain('UNHEALTHY');
+  });
+});
+
+describe('rankEvacuationTargets 비용', () => {
+  const costs = (hourly: Record<string, number | null>) =>
+    ({
+      environments: Object.entries(hourly).map(([environmentId, hourlyUsd]) => ({
+        environmentId,
+        hourlyUsd,
+      })),
+    }) as CloudCosts;
+
+  it('서버 비용이 있으면 가장 싼 환경을 100 으로 둔다', () => {
+    const ids = environments.map((item) => item.id);
+    const prices = Object.fromEntries(ids.map((id, index) => [id, 0.2 * (index + 1)]));
+    const { candidates } = rankEvacuationTargets(tokyoQuake, service, environments, costs(prices));
+
+    const cheapest = Math.max(...candidates.map((item) => item.scores.cost));
+    expect(cheapest).toBeLessThanOrEqual(100);
+    for (const item of candidates) {
+      const hourly = prices[item.environmentId] ?? 0;
+      expect(item.scores.cost).toBe(Math.round((0.2 / hourly) * 100));
+    }
+  });
+
+  it('값이 없는 환경은 기본 점수를 쓴다', () => {
+    const { candidates } = rankEvacuationTargets(tokyoQuake, service, environments, costs({}));
+    const plain = rankEvacuationTargets(tokyoQuake, service, environments).candidates;
+
+    expect(candidates.map((item) => item.scores.cost)).toEqual(
+      plain.map((item) => item.scores.cost),
+    );
   });
 });

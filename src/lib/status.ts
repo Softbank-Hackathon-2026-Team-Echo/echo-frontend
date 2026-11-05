@@ -1,4 +1,5 @@
 // 서버 상태 값 → 화면 문구·색. 상태 표시는 여기와 StatusBadge 한 곳에서만 정한다 (ui-terms §4)
+import type { PrecheckProcessing } from '@/lib/api/types';
 import { k, t } from './i18n';
 
 export type Tone = 'neutral' | 'success' | 'warning' | 'danger' | 'migrating' | 'ai';
@@ -270,6 +271,51 @@ export function patchBlockReasonLabel(reason: string): string {
   return labelOf(PATCH_BLOCK_REASONS, reason);
 }
 
+const PATCH_STATUSES: Record<string, StatusView> = {
+  BLOCKED: { label: k('Blocked'), tone: 'danger' },
+  REJECTED: { label: k('Rejected'), tone: 'neutral' },
+  APPROVED: { label: k('Approved · waiting to apply'), tone: 'success' },
+  APPLIED: { label: k('Applied'), tone: 'success' },
+  APPLY_FAILED: { label: k('Apply failed'), tone: 'danger' },
+};
+
+/** 승인 전(PROPOSED)은 버튼을 보여서 배지가 없다 */
+export function patchStatusView(status: string): StatusView | null {
+  if (status === 'PROPOSED') return null;
+  return viewOf(PATCH_STATUSES, status);
+}
+
+/** 사전 점검 처리 위치. 기록이 없다고 밖으로 안 나갔다는 뜻은 아니다 */
+export function processingView(processing: PrecheckProcessing | null | undefined): StatusView {
+  if (!processing) return { label: t('No processing record'), tone: 'neutral' };
+  if (!processing.externalTransfer) {
+    const place = processing.sandbox ? t('sandbox') : null;
+    return {
+      label: [t('No external transfer'), processing.location, place].filter(Boolean).join(' · '),
+      tone: 'success',
+    };
+  }
+  return {
+    label: [
+      t('External transfer'),
+      [processing.modelProvider, processing.model].filter(Boolean).join(' '),
+      processing.dataClasses.join(', '),
+    ]
+      .filter(Boolean)
+      .join(' · '),
+    tone: processing.dataClasses.includes('SECRETS') ? 'danger' : 'warning',
+  };
+}
+
+const RESIDENCY_REASONS: Record<string, string> = {
+  MODEL_REGION_NOT_ALLOWED: k('Model region is not on the allowed list'),
+  FORBIDDEN_CLASS_SENT_EXTERNALLY: k('A forbidden data class was sent outside'),
+};
+
+export function residencyReasonLabel(reason: string): string {
+  return labelOf(RESIDENCY_REASONS, reason);
+}
+
 /** 비교 표 판정 칸 */
 export function securityCompareNote(row: {
   source: { result: string };
@@ -304,6 +350,10 @@ const MIGRATION_ERRORS: Record<string, string> = {
   TARGET_NOT_RECEIVING: k('Target received no traffic'),
   ABORTED: k('Stopped by a person'),
   SECURITY_GATE_BLOCKED: k('Blocked by the security gate'),
+  DB_CUTOVER_FAILED: k('DB writer cutover failed'),
+  DB_CUTOVER_TIMEOUT: k('DB writer cutover timed out'),
+  DB_CUTOVER_PARTIAL: k('DB writer cutover stopped halfway'),
+  DATA_INTEGRITY_FAILED: k('Rows are missing or duplicated after the cutover'),
   WORKER_LOST: k('The worker stopped responding'),
   INTERNAL_ERROR: k('Internal error'),
 };

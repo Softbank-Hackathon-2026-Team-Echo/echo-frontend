@@ -53,7 +53,7 @@ src/
 │  ├─ api/               # client(api = openapi-fetch + unwrap, 스키마 밖 경로는 apiFetch) · errors · notify · form-errors(422 → 칸 오류)
 │  │                     #   query-client · query-keys · schema.d.ts(gen:api 생성) · types(스키마 별칭)
 │  │                     #   dashboard-prefetch(첫 화면 데이터 미리 부르기) · me(useMe · 로그인 전에도 쓰는 조용한 useSession) · environments · services(서비스·배포 요청) · disasters(재난 · 미리보기 · 종료) · auth
-│  │                     #   events(실시간 채널 → 쿼리 무효화) · evacuation(🆕 대피 후보 규칙 점수, API 전까지 브라우저 계산) · prechecks(AI 사전 점검) · variables(앱 환경 변수) · security(보안 매트릭스 · 증거. 이전 전후 비교 🆕 만 API 전까지 브라우저 시뮬레이션)
+│  │                     #   costs(클라우드 비용) · residency(AI 데이터 레지던시) · events(실시간 채널 → 쿼리 무효화) · evacuation(🆕 대피 후보 규칙 점수, API 전까지 브라우저 계산) · prechecks(AI 사전 점검) · variables(앱 환경 변수) · security(보안 매트릭스 · 증거. 이전 전후 비교 🆕 만 API 전까지 브라우저 시뮬레이션)
 │  ├─ roles.ts           # hasRole · 역할 표기
 │  ├─ audit.ts           # 감사 행동 이름 · 행위자 · 결과 → 화면 문구
 │  ├─ status.ts          # 서버 상태 값 → 화면 문구·색 (StatusBadge 와 짝), 오류 코드 → 문구
@@ -229,3 +229,8 @@ docs/                    # api-contract.md, perf.md(성능 측정 방법 · 기�
 | 11/5 | A·B 그래프 가로축은 시간 그대로가 아니라 구간마다 최소 폭(14%)을 준다 | 시작과 첫 단계가 2초 차이라 수직선처럼 꺾여 보였다. 가로축에 시간 눈금이 없고 세로 비율 값은 그대로다. 시간 눈금을 달면 되돌린다 |
 | 11/5 | 조직 주소(`/o/…`)로 들어오면 `main.tsx` 가 `/me` 를 미리 부르고, API 주소는 `index.html` 에서 미리 연결한다. QueryClient 는 `main.tsx` 가 만들어 `App` 에 넘긴다 | 대시보드 LCP 가 API 3단계를 기다리고 첫 단계가 언어 파일 뒤에 출발했다. 소개 화면은 로그인 전 방문자가 401 로 튕기면 안 되어 부르지 않는다 |
 | 11/5 | 대시보드 주소(`/o/:slug`)로 바로 들어오면 `vite.config.ts` 의 `dashboardPreload` 가 넣은 HTML 스크립트가 `/me` · 대시보드 코드를 받고, `main.tsx` 가 `prefetchDashboard` 로 환경 · 서비스 · 상세 · 최근 활동을 미리 부른다 | 같은 조건 측정에서 LCP 896 → 580ms. 코드 미리 받기만으로는 44ms 였고, 화면 코드가 뜬 뒤 출발하던 데이터 요청이 병목이었다. 파일 이름의 해시를 빌드 뒤에야 알아 HTML 에 넣는다 |
+| 11/5 | `app.echoport.uk` 레코드는 DNS only 다. Proxied 로 되돌리면 한국에서 LAX 로 간다 | Proxied 일 때 빈 캐시 첫 화면 약 4.6초, DNS only 는 약 0.56초(ICN). 지민님과 합의했다. 인증서와 보안 헤더는 Pages 가 그대로 준다 |
+| 11/5 | 패치 승인 · 거절은 운영 API 를 부르고 `origin: RULE` 이면 "규칙" 배지를 단다. 승인해도 서버 반영 스위치가 꺼져 있으면 반영 대기다 | echo-was #79. 패치를 사람이 고르는 F15 흐름. 러너가 아직 패치를 내지 않아 운영 값은 0건이다 |
+| 11/5 | 매트릭스는 `gateStatus` 가 `WAIVED` 인 칸에만 "예외" 표시를 더하고 칸 색은 증거 값 그대로 둔다. `BLOCKED` 는 그리지 않는다 | 매트릭스는 준비 시점 판정이라 `C-TLS-1` 이 `BLOCKED` 여도 게이트는 승인 때 TLS 를 직접 시험해 통과한다. 화면에 막힘으로 그리면 실제와 어긋난다 |
+| 11/5 | 대피 비용 점수는 서버 `hourlyUsd` 로 후보 중 최저 ÷ 해당 값 × 100 이고, 값이 없으면 기존 기본값이다. 대시보드에 비용 · 레지던시 칸을 넓은 화면에만 둔다 | 지민님 안내(#16). 반분할 시연은 칸을 늘리지 않는다. 추정과 청구를 섞지 않고, 기록 없는 실행을 0건이라고 단정하지 않는다 |
+| 11/5 | `DB_CUTOVER` 단계 이름과 오류 문구를 서버보다 먼저 넣는다. 타입에 없어 `isDbCutover` 로 글자를 비교한다 | echo-was #75 가 켜지면 이름 없는 "비율 전환" 으로 보이지 않게. 단계가 생기면 타입을 다시 만들어 바꾼다 |

@@ -38,6 +38,8 @@ const ACTIONS: Record<string, string> = {
   SECURITY_EXCEPTION_REVOKED: k('revoked security exception'),
   PRECHECK_REQUESTED: k('requested AI pre-check'),
   PRECHECK_CANCELLED: k('cancelled AI pre-check'),
+  AGENT_PATCH_APPROVED: k('approved AI patch'),
+  AGENT_PATCH_REJECTED: k('rejected AI patch'),
   AGENT_RUN_CLAIMED: k('started AI run'),
   AGENT_RUN_FINISHED: k('finished AI run'),
   AGENT_RUN_TIMED_OUT: k('AI run timed out'),

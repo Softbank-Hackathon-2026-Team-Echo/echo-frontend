@@ -112,6 +112,23 @@ function FindingDetail({ finding }: { finding: SecurityFinding }) {
   );
 }
 
+/** 어떤 예외로 게이트를 통과하는지. 시연 예외는 기한이 있다 */
+function ExceptionNote({
+  exception,
+}: {
+  exception: NonNullable<SecurityControlCheck['exception']>;
+}) {
+  return (
+    <p className="rounded-md bg-subtle px-2.5 py-1.5 text-small text-fg-secondary">
+      {t('Exception: {{reason}}', { reason: exception.reason })}
+      <br />
+      {t('Expires {{time}}', { time: dateTime(exception.expiresAt) })}
+      {exception.approvedBy &&
+        ` · ${t('approved by {{login}}', { login: exception.approvedBy.login })}`}
+    </p>
+  );
+}
+
 function ControlCheck({
   control,
   findings,
@@ -135,6 +152,7 @@ function ControlCheck({
       {control.reasons.length > 0 && (
         <p className="text-body">{control.reasons.map(securityReasonLabel).join(' · ')}</p>
       )}
+      {control.exception && <ExceptionNote exception={control.exception} />}
       {findings.map((finding) => (
         <FindingDetail key={finding.id} finding={finding} />
       ))}

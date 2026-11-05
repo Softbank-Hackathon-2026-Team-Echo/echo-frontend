@@ -126,5 +126,19 @@
   "where it can evacuate to": "退避できる場所",
   "one-touch deploy": "ワンタッチデプロイ",
   "Run a drill": "訓練を実行",
-  "simulate a disaster safely": "災害を安全にシミュレーション"
+  "simulate a disaster safely": "災害を安全にシミュレーション",
+  "Cloud cost": "クラウドコスト",
+  "Cost data is not available right now.": "現在コスト情報を読み込めません。",
+  "{{amount}}/day": "{{amount}}/日",
+  "Live estimate": "リアルタイム推定",
+  "Some prices unverified": "一部の単価は未確認",
+  "AI data residency": "AIデータレジデンシー",
+  "Residency data is not available right now.": "現在レジデンシー情報を読み込めません。",
+  "{{count}} sensitive transfers detected": "機密データの外部送信を{{count}}件検出",
+  "No sensitive data left the platform": "外部に出た機密データ0件",
+  "0 in recorded runs · {{count}} without a record": "記録された実行では0件 · 記録なし{{count}}件",
+  "Last 7 days: {{total}} runs · {{recorded}} recorded · {{external}} sent outside": "直近7日: 実行{{total}}件 · 記録{{recorded}}件 · 外部送信{{external}}件",
+  "Model region is not on the allowed list": "許可リストにないモデルリージョンです",
+  "A forbidden data class was sent outside": "禁止されたデータ種別が外部に送信されました",
+  "{{label}} · billed on {{date}}: {{amount}}": "{{label}} · {{date}}の請求: {{amount}}"
 }

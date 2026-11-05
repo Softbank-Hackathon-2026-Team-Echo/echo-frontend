@@ -251,5 +251,11 @@
   "Too few requests to judge, so stages passed on health checks.": "判定できるリクエストがないため、ヘルスチェックで各段階を通過しました。",
   "Show less": "折りたたむ",
   "Show all {{total}} items": "{{total}}件すべて表示",
-  "Plan the failback": "復帰計画を作成"
+  "Plan the failback": "復帰計画を作成",
+  "DB writer cutover": "DB書き込み切り替え",
+  "missing and duplicate rows must be 0": "欠落・重複行が0件で合格",
+  "DB writer cutover failed": "DB書き込み切り替えに失敗",
+  "DB writer cutover timed out": "DB書き込み切り替えがタイムアウト",
+  "DB writer cutover stopped halfway": "DB書き込み切り替えが途中で停止",
+  "Rows are missing or duplicated after the cutover": "切り替え後に欠落・重複行あり"
 }

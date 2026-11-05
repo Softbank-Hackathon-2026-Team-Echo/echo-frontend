@@ -1,10 +1,9 @@
-// AI 사전 점검 (echo-was docs/api/prechecks.md). 목록 API 가 없어 화면은 만들 때 받은 id 를 주소에 둔다.
-// 패치 승인·거절은 아직 서버에 없다(2차)
+// AI 사전 점검 (echo-was docs/api/prechecks.md). 목록 API 가 없어 화면은 만들 때 받은 id 를 주소에 둔다
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, unwrap } from './client';
 import { isApiError } from './errors';
 import { queryKeys } from './query-keys';
-import type { PrecheckDetail, PrecheckStatus } from './types';
+import type { PrecheckDetail, PrecheckPatch, PrecheckStatus } from './types';
 
 /** 실시간이 생기기 전까지 끝나지 않은 점검은 2초마다 다시 부른다 */
 export const PRECHECK_POLL_MS = 2_000;
@@ -93,6 +92,33 @@ export function useCancelPrecheck(orgId: string) {
         }),
       ),
     onSettled: (_data, _error, precheckId) =>
+      queryClient.invalidateQueries({ queryKey: queryKeys.precheck(orgId, precheckId) }),
+  });
+}
+
+type PatchDecision = { patch: PrecheckPatch; decision: 'approve' | 'reject' };
+
+/** 패치 승인 · 거절. 서버 반영 스위치가 꺼져 있으면 승인해도 반영 대기로 남는다 */
+export function usePatchDecision(orgId: string, precheckId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ patch, decision }: PatchDecision) => {
+      const path = { org_id: orgId, precheck_id: precheckId, patch_id: patch.id };
+      const body = { patchHash: patch.patchHash };
+      return unwrap(
+        decision === 'approve'
+          ? api.POST('/api/v1/orgs/{org_id}/prechecks/{precheck_id}/patches/{patch_id}/approve', {
+              params: { path },
+              body,
+            })
+          : api.POST('/api/v1/orgs/{org_id}/prechecks/{precheck_id}/patches/{patch_id}/reject', {
+              params: { path },
+              body,
+            }),
+      );
+    },
+    // 실패해도 다시 불러온다. 다른 사람이 먼저 결정했거나 패치가 바뀌었을 수 있다
+    onSettled: () =>
       queryClient.invalidateQueries({ queryKey: queryKeys.precheck(orgId, precheckId) }),
   });
 }

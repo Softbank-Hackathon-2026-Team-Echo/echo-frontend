@@ -7,12 +7,14 @@ import { useMigrationPlan } from '@/lib/api/migrations';
 import type { MigrationStep } from '@/lib/api/types';
 import { t } from '@/lib/i18n';
 import { currentWeights } from '@/lib/migration-metrics';
+import { isDbCutover } from '@/lib/migration-stages';
 import { migrationPlanStatusView } from '@/lib/status';
 
 function stepTitle(step: MigrationStep | undefined) {
   if (!step) return '—';
   if (step.kind === 'PREFLIGHT') return t('pre-check');
   if (step.kind === 'DATA_SYNC_CHECK') return t('data sync check');
+  if (isDbCutover(step)) return t('DB writer cutover');
   return t('traffic shift → {{weight}}%', { weight: step.targetWeight ?? '—' });
 }
 

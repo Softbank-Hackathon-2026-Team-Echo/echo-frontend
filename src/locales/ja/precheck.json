@@ -33,5 +33,20 @@
   "Touches protected files": "保護ファイルに触れています",
   "Wait for the pre-check to finish": "事前点検が終わるまでお待ちください",
   "Waiting for a runner": "ランナーを待っています",
-  "{{source}} → {{target}} · requested {{time}}. Nothing in production changes.": "{{source}} → {{target}} · {{time}} に要求。本番環境は変更されません。"
+  "{{source}} → {{target}} · requested {{time}}. Nothing in production changes.": "{{source}} → {{target}} · {{time}} に要求。本番環境は変更されません。",
+  "Reject patch": "パッチを却下",
+  "Rule": "ルール",
+  "Rejected": "却下済み",
+  "Approved · waiting to apply": "承認済み · 適用待ち",
+  "Applied": "適用済み",
+  "Apply failed": "適用失敗",
+  "Only a finished pre-check can have its patches decided.": "完了した事前点検のパッチのみ判断できます。",
+  "This patch changed. Refresh and try again.": "パッチが変更されました。更新してやり直してください。",
+  "Someone already decided this patch.": "このパッチは他の人が先に判断しました。",
+  "This patch is blocked and cannot be approved.": "ブロックされたパッチは承認できません。",
+  "This pre-check expired. Run it again.": "事前点検の期限が切れました。もう一度実行してください。",
+  "No processing record": "処理記録なし",
+  "No external transfer": "外部送信なし",
+  "External transfer": "外部送信",
+  "sandbox": "サンドボックス"
 }

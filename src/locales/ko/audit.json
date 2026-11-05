@@ -47,5 +47,7 @@
   "set app variable": "앱 변수 저장",
   "started AI run": "AI 실행 시작",
   "updated environment": "환경 수정",
-  "updated service": "서비스 수정"
+  "updated service": "서비스 수정",
+  "approved AI patch": "AI 패치 승인",
+  "rejected AI patch": "AI 패치 거절"
 }

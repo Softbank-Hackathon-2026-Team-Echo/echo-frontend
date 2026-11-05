@@ -41,6 +41,7 @@ export function SecurityMatrixTable({ rows, onSelect }: SecurityMatrixTableProps
                         result: row.cells[control].result,
                         findingCount: cellIssueCount(row.cells[control]),
                       }}
+                      waived={row.cells[control].gateStatus === 'WAIVED'}
                       label={`${name} ${securityControlLabel(control)}`}
                       onClick={() => onSelect(row.environmentId, control)}
                     />

@@ -34,6 +34,8 @@ export const queryKeys = {
   migrationPlan: (orgId: string, planId: string) => ['org', orgId, 'migrations', planId] as const,
   migrationLogs: (orgId: string, planId: string) =>
     ['org', orgId, 'migrations', planId, 'logs'] as const,
+  cloudCosts: (orgId: string) => ['org', orgId, 'costs'] as const,
+  aiResidency: (orgId: string) => ['org', orgId, 'ai-residency'] as const,
   security: (orgId: string) => ['org', orgId, 'security'] as const,
   securityMatrix: (orgId: string) => ['org', orgId, 'security', 'matrix'] as const,
   securityExceptions: (orgId: string) => ['org', orgId, 'security', 'exceptions'] as const,

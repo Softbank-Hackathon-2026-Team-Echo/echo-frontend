@@ -126,5 +126,19 @@
   "where it can evacuate to": "대피할 수 있는 곳",
   "one-touch deploy": "원터치 배포",
   "Run a drill": "훈련 실행",
-  "simulate a disaster safely": "안전하게 재난 시뮬레이션"
+  "simulate a disaster safely": "안전하게 재난 시뮬레이션",
+  "Cloud cost": "클라우드 비용",
+  "Cost data is not available right now.": "지금은 비용 정보를 불러올 수 없습니다.",
+  "{{amount}}/day": "{{amount}}/일",
+  "Live estimate": "실시간 추정",
+  "Some prices unverified": "일부 단가 미확인",
+  "AI data residency": "AI 데이터 레지던시",
+  "Residency data is not available right now.": "지금은 레지던시 정보를 불러올 수 없습니다.",
+  "{{count}} sensitive transfers detected": "민감 데이터 외부 전송 {{count}}건 감지",
+  "No sensitive data left the platform": "밖으로 나간 민감 데이터 0건",
+  "0 in recorded runs · {{count}} without a record": "기록된 실행 기준 0건 · 기록 없음 {{count}}건",
+  "Last 7 days: {{total}} runs · {{recorded}} recorded · {{external}} sent outside": "최근 7일: 실행 {{total}}건 · 기록 {{recorded}}건 · 외부 전송 {{external}}건",
+  "Model region is not on the allowed list": "허용 목록에 없는 모델 리전입니다",
+  "A forbidden data class was sent outside": "금지된 데이터 종류가 밖으로 나갔습니다",
+  "{{label}} · billed on {{date}}: {{amount}}": "{{label}} · {{date}} 청구: {{amount}}"
 }

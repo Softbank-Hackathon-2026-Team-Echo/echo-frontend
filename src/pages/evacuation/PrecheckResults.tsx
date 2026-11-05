@@ -197,7 +197,13 @@ export function PrecheckResults({
           <Empty>{t('No patches in this run.')}</Empty>
         ) : (
           precheck.patches.map((patch, index) => (
-            <PatchReview key={patch.id} patch={patch} number={index + 1} />
+            <PatchReview
+              key={patch.id}
+              orgId={orgId}
+              precheckId={precheck.id}
+              patch={patch}
+              number={index + 1}
+            />
           ))
         )}
       </TabsContent>
