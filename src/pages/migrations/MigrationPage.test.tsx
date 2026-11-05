@@ -77,6 +77,22 @@ describe('MigrationPage', () => {
     expect(screen.queryByText('Zero failed requests while traffic moved')).not.toBeInTheDocument();
   });
 
+  it('요청이 1건뿐인 저트래픽 이전도 실패 0건이라고 내세우지 않는다', async () => {
+    serve(
+      migrationPlan({
+        status: 'SUCCEEDED',
+        finishedAt: '2026-11-05T03:00:25Z',
+        steps: [step(1, 'SHIFT', 100, 'PASSED', { requestCount: 1, lowTraffic: true })],
+      }),
+    );
+    renderPage();
+
+    expect(
+      await screen.findByText('Too few requests to judge, so stages passed on health checks.'),
+    ).toBeInTheDocument();
+    expect(screen.queryByText('Zero failed requests while traffic moved')).not.toBeInTheDocument();
+  });
+
   it('Result 는 인프라 스크립트가 잰 쓰기 정지와 누락·중복을 보인다', async () => {
     serve(
       migrationPlan({

@@ -194,7 +194,7 @@ export default function MigrationPage() {
   const elapsed = totalSeconds(current, now);
   // 재난이 끝나지 않은 지역으로는 돌아가지 않는다(ADR 11/2). 판단은 서버가 한다
   const sourceAtRisk = current.failback?.allowed === false;
-  const failbackUrl = `/o/${organization.slug}/evacuation/plan?service=${current.serviceId}&target=${current.sourceEnvironmentId}`;
+  const failbackUrl = `/o/${organization.slug}/evacuation/plan?service=${current.serviceId}&target=${current.sourceEnvironmentId}&failback=1`;
   const selectedTab = tab ?? (finished ? 'result' : 'live');
   const description = [
     t('{{source}} → {{target}} · started {{time}}', {

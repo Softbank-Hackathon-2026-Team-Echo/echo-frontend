@@ -29,6 +29,8 @@ const FIELDS = [
 ] as const;
 
 type PlanDraftProps = {
+  /** 복귀 버튼에서 왔다. 계획 종류는 서버가 정하고 이 값은 제목에만 쓴다 */
+  failback: boolean;
   orgId: string;
   serviceId: string;
   targetId: string;
@@ -75,6 +77,7 @@ function NumberField({
 
 /** E01-3 계획 만들기: 고정 단계를 미리 보고 롤백 조건을 정한다. 만들면 승인 대기(24시간)가 된다 */
 export function PlanDraft({
+  failback,
   orgId,
   serviceId,
   targetId,
@@ -112,7 +115,7 @@ export function PlanDraft({
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-3">
       <PageHeader
-        title={t('Plan the migration')}
+        title={failback ? t('Plan the failback') : t('Plan the migration')}
         description={t(
           '{{source}} → {{target}} · est. {{duration}} · approval needed within 24 hours',
           {
