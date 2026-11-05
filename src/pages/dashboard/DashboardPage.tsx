@@ -1,6 +1,5 @@
-import { ArrowRight, History } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { Link, useParams } from 'react-router';
-import { EmptyState } from '@/components/EmptyState';
 import { ErrorState } from '@/components/ErrorState';
 import { Panel } from '@/components/Panel';
 import { Button } from '@/components/ui/button';
@@ -20,6 +19,7 @@ import { KpiTiles } from './KpiTiles';
 import { LiveEvents } from './LiveEvents';
 import { LiveMigrationPanel } from './LiveMigrationPanel';
 import { MigrationStatusCard } from './MigrationStatusCard';
+import { RecentActivity } from './RecentActivity';
 import { SetupBanner } from './SetupBanner';
 import { StatusPill } from './StatusPill';
 import { Topology } from './Topology';
@@ -175,14 +175,11 @@ export default function DashboardPage() {
           atRisk={atRisk}
           className="col-span-4 max-wide:hidden"
         />
-        <Panel title={t('Recent activity')} className="col-span-4 max-wide:hidden">
-          {/* 감사 로그 조회 API(계약 4-8, API 서버 7)가 생기면 size=3 으로 부른다 */}
-          <EmptyState
-            icon={History}
-            title={t('Activity log is coming')}
-            description={t('Approvals, deploys and agent actions will show here.')}
-          />
-        </Panel>
+        <RecentActivity
+          orgId={organization.id}
+          orgSlug={organization.slug}
+          className="col-span-4 max-wide:hidden"
+        />
       </div>
       {completed && (
         <CompletionCard

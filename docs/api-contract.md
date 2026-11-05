@@ -66,7 +66,7 @@
 | E01-3 계획 승인 | 이전 계획·승인(4-6) · 보안 비교(4-7) | 🆕 |
 | M01 이전 목록 · M02 이전 실행 (계획·긴급·복귀, Live·Result) | 이전 실행·단계·트래픽·쓰기 전환·측정 결과(4-6) | 🆕 |
 | SEC 보안 (Matrix · Compare · 근거 드로어) | 매트릭스·finding ✅ · 비교 🆕 (4-7) | 일부 🆕 |
-| AUD 감사 로그 | 감사 로그 조회(4-8) | 🆕 (지금은 거부 기록만 저장, 조회는 API 서버 7) |
+| AUD 감사 로그 | 감사 로그 조회(4-8) | ✅ |
 
 🔁 서비스 목록 요약: 목록 표에 "어디서 서비스 중인지 · 버전"을 보여 주므로, `ServiceSummary`에 `servingEnvironment {id, name, kind}`와 `currentCommitSha`가 있으면 상세를 서비스마다 부르지 않아도 된다. 없으면 프론트가 상세를 따로 부른다(서비스 수가 적어서 데모에는 문제없음).
 
@@ -213,15 +213,11 @@ KPI 타일 5개(성공률·p95·복제 지연·트래픽 비율·에러 버짓)�
 
 ### 4-8. 감사 로그 (F5)
 
-`GET /orgs/{orgId}/audit-logs?actorType=USER|AGENT|SYSTEM&q=&page&size`
+✅ 운영에 열렸다(echo-was #66, 원본은 echo-was `docs/api/audit-logs.md`).
 
-```json
-{"id": "…", "at": "…", "actor": {"type": "AGENT", "githubLogin": null, "agentTokenName": "echoport-agent"},
- "action": "PATCH_PROPOSED", "target": {"type": "precheck", "id": "…", "label": "patch #3 on gcp-seoul"},
- "result": "SUCCEEDED | DENIED | FAILED", "reason": null, "requestId": "…"}
-```
+`GET /orgs/{orgId}/audit-logs?actorType&result&action&targetType&targetId&from&to&q&includeReads&page&size` → 최신순 페이지 `{id, at, actor{type, userId, githubLogin, agentTokenId, agentTokenName, component}, action, route, path, target{type, id, label}, result: SUCCEEDED | DENIED | FAILED, reason, details, requestId}`.
 
-대시보드 "최근 활동"도 이 API를 `size=3`으로 부른다. 지금 저장하는 거부 기록(`DENIED`) 외에 배포·승인·역할 변경·에이전트 행동도 같은 표에 남겨야 한다(NFR-08).
+`action` 은 문자열로 읽는다(옛 거부 줄은 `POST /api/…` 그대로). 대시보드 "최근 활동"은 `includeReads=false&size=3` 이다. 내보내기 API 는 없다.
 
 ## 5. 열린 질문
 

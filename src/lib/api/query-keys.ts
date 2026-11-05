@@ -35,4 +35,7 @@ export const queryKeys = {
   securityCellFindings: (orgId: string, findingIds: string[]) =>
     ['org', orgId, 'security', 'findings', findingIds] as const,
   audit: (orgId: string) => ['org', orgId, 'audit'] as const,
+  auditLogs: (orgId: string, filters: { actorType?: string; q?: string }) =>
+    ['org', orgId, 'audit', 'logs', filters] as const,
+  recentActivity: (orgId: string) => ['org', orgId, 'audit', 'recent'] as const,
 };

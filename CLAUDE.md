@@ -47,7 +47,7 @@ src/
 │  ├─ disaster/          # 재난 시뮬레이션 다이얼로그(S01-D) · 지도(DisasterMap, d3-geo + world-atlas 50m 지연 로드)
 │  └─ *.tsx              # 두 화면 이상에서 쓰는 앱 컴포넌트 (Panel, RoleButton, StatusBadge, SimulatedBadge, ProviderLabel, FormField, ConfirmDeleteDialog, ExternalLink, EmptyState, ErrorState, ScreenErrorBoundary, Logo, OrthoGlobe, 등록·배포 다이얼로그(EnvironmentFormDialog · RegisterServiceDialog · DeployDialog) …)
 ├─ layouts/AppShell.tsx  # 사이드바(워드마크 · Operate/Resilience/Govern 묶음 · 사용자 메뉴=테마·로그아웃) + 상단 바(브레드크럼 · Org 선택 · Simulate disaster · 알림)
-├─ pages/                # 화면 단위 폴더 (login/, root/, landing/(L01 소개), onboarding/(O01~O03), dashboard/, services/, evacuation/, migrations/, security/, settings/, dev/). 한 화면에서만 쓰는 컴포넌트는 그 폴더 안에
+├─ pages/                # 화면 단위 폴더 (login/, root/, landing/(L01 소개), onboarding/(O01~O03), dashboard/, services/, evacuation/, migrations/, security/, audit/, settings/, dev/). 한 화면에서만 쓰는 컴포넌트는 그 폴더 안에
 ├─ hooks/                # useTheme(테마 3개, localStorage), useRole(현재 조직 역할), useNow(경과 시간), usePrefersReducedMotion, useInViewOnce(처음 화면에 들어오면 true)
 ├─ lib/
 │  ├─ api/               # client(api = openapi-fetch + unwrap, 스키마 밖 경로는 apiFetch) · errors · notify · form-errors(422 → 칸 오류)
@@ -55,6 +55,7 @@ src/
 │  │                     #   me(useMe · 로그인 전에도 쓰는 조용한 useSession) · environments · services(서비스·배포 요청) · disasters(🆕 API 전까지 브라우저 시뮬레이션) · auth
 │  │                     #   events(실시간 채널 → 쿼리 무효화) · evacuation(🆕 대피 후보 규칙 점수, API 전까지 브라우저 계산) · security(보안 매트릭스 · 증거. 이전 전후 비교 🆕 만 API 전까지 브라우저 시뮬레이션)
 │  ├─ roles.ts           # hasRole · 역할 표기
+│  ├─ audit.ts           # 감사 행동 이름 · 행위자 · 결과 → 화면 문구
 │  ├─ status.ts          # 서버 상태 값 → 화면 문구·색 (StatusBadge 와 짝), 오류 코드 → 문구
 │  ├─ migration-*.ts     # 이전 단계 시간(stages) · 결과 숫자(metrics). 두 화면 이상에서 쓴다
 │  ├─ route-prefetch.ts  # 메뉴 의도(마우스 올림 · 포커스) 때 화면 청크 미리 받기 · route-pattern.ts(Sentry 화면 이름)
@@ -153,7 +154,7 @@ docs/                    # api-contract.md, perf.md(성능 측정 방법 · 기�
 | 11/2 | 테마 기본값은 light(시스템 설정을 따르지 않음) | 시연 화면이 사용자 OS 설정에 따라 바뀌지 않게 |
 | 11/2 | 화면 배치는 Figma 「Wire Frame」 v2(조밀한 밀도)를 따른다: 묶음 사이드바, S01 벤토, SVC 목록+오른쪽 패널, 가로 스테퍼, SET 탭+등록 시트, 지도 재난 다이얼로그 | 노션 IA v2 와 와이어프레임이 화면 구성의 기준이다. 디자인(색·모양)은 토큰을 따른다 |
 | 11/2 | 재난은 전역 배너 대신 대시보드 제목 옆 칩 + Active disaster 칸 + 사이드바 Dashboard 숫자로 알린다 | 와이어프레임 v2 배치. 다른 화면을 가리지 않는다 |
-| 11/2 | 지표가 없는 KPI(성공률·p95·복제 지연·에러 버짓)·요청 그래프·최근 활동은 값을 지어내지 않고 비워 둔다 | 지표(4-2)·감사 로그(4-8) API 가 아직 없다. 가짜 숫자는 심사 규칙상 목업 표시가 필요하고 실데이터로 오해될 수 있다 |
+| 11/2 | 지표가 없는 KPI(성공률·p95·복제 지연·에러 버짓)·요청 그래프는 값을 지어내지 않고 비워 둔다(최근 활동은 11/5 에 감사 로그로 채웠다) | 지표(4-2) API 가 아직 없다. 가짜 숫자는 심사 규칙상 목업 표시가 필요하고 실데이터로 오해될 수 있다 |
 | 11/2 | ~~토폴로지는 지역 묶음 + 노드 카드로 먼저 그리고, 연결선·확대는 React Flow 로 옮길 때~~ | 데이터 모양부터 확정하고 라이브러리는 다음 작업에서 |
 | 11/2 | ~~재난 지도는 해안선 없는 격자 지도(정거원통)로 진원지를 찍는다~~ | 지도 데이터·라이브러리 없이 영향 반경 시연이 된다. 실제 지도는 다음 작업 |
 | 11/3 | 토폴로지는 React Flow + elkjs(layered, 지역 묶음 = 부모 노드). 배치용 선(프록시 → 모든 환경)은 그리지 않는다 | ADR 11/2. 서비스가 없는 환경도 프록시 오른쪽에 놓인다. 캔버스 너비가 바뀌면 다시 맞춘다 |
@@ -212,3 +213,4 @@ docs/                    # api-contract.md, perf.md(성능 측정 방법 · 기�
 | 11/4 | 토폴로지는 프록시 위 · 환경 한 줄 아래로 두고, 복제 선은 카드 아래로 돌린다. 배치에는 복제 선을 넣지 않는다 | 복제 선까지 배치에 넣으면 예비가 한 층 뒤로 밀려 트래픽 선이 카드를 지나고 고리처럼 꼬였다. 이전으로 서비스 중 환경이 바뀌어도 배치가 그대로다. 캔버스가 가로로 길어 세로 한 줄보다 글자가 크다 |
 | 11/5 | M02 Result · 완료 카드의 쓰기 정지 · 누락/중복 행은 서버 `result` 값을 쓴다(`measuredBy` 가 있을 때만). 성공한 계획에 값이 없으면 끝난 뒤 10분 동안 5초마다 다시 부른다. RPO 는 계속 `—` 다 | 컷오버는 이전이 끝난 뒤 사람이 스크립트로 돌려서 결과가 늦게 생긴다(echo-was #63). RPO 칸은 서버에 없어 누락 행으로 지어내지 않는다 |
 | 11/5 | SEC Matrix · Findings 는 운영 API 를 부르고, 칸을 열면 통제별 판정 사유와 그 칸의 증거를 보인다. 칸 글자의 건수는 WARN · FAIL 통제 수다. 표에는 통과한 증거도 있어 Severity 대신 Result 를 보인다. Compare · E01-3 비교는 compare API 전까지 시뮬레이션이고 매트릭스와 다를 수 있다고 적는다. Re-scan 은 그대로 비활성이다 | 서버 `findingCount` 는 판정에 쓴 증거 수라 통과도 센다. 차단 판단은 서버 게이트 몫이라 매트릭스 두 행을 화면에서 비교해 막지 않는다 |
+| 11/5 | AUD 는 Figma 배치(행위자 탭 · 검색 · 줄 목록)에 서버 값을 그린다. 전체 화면은 에이전트 읽기 줄도 보이고 대시보드 최근 활동은 뺀다. 들어올 때마다 다시 부르고 폴링은 하지 않는다. Export CSV 는 뺐다 | 방금 한 조작이 보여야 하고(F5), 읽기만 한 증거도 감사 기록이다. 내보내기 API 가 없어 눌러도 되는 척하지 않는다. 표에 없는 행동은 서버 값을 그대로 보인다 |

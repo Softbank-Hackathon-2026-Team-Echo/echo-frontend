@@ -142,6 +142,7 @@ const services = [service('shop-api'), service('shop-web')];
 function serve() {
   server.use(
     http.get(`${API}/me`, () => ok(me)),
+    http.get(`${API}/orgs/o1/audit-logs`, () => ok({ items: [], total: 0, page: 0, size: 3 })),
     http.get(`${API}/orgs/o1/environments`, () =>
       ok({ items: environments, total: environments.length, page: 0, size: 100 }),
     ),
