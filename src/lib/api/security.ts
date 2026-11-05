@@ -54,6 +54,23 @@ export function useSecurityFindings(orgId: string | undefined) {
   });
 }
 
+/** 기한부 예외 최신 100건. 만들기 · 승인 · 철회 화면은 아직 없다 */
+export function useSecurityExceptions(orgId: string | undefined) {
+  return useQuery({
+    queryKey: queryKeys.securityExceptions(orgId ?? ''),
+    queryFn: () =>
+      unwrap(
+        api.GET('/api/v1/orgs/{org_id}/security/exceptions', {
+          params: {
+            path: { org_id: orgId ?? '' },
+            query: { page: 0, size: FINDINGS_PAGE_SIZE },
+          },
+        }),
+      ),
+    enabled: Boolean(orgId),
+  });
+}
+
 /** 칸의 판정에 쓴 증거 id. 증거는 통제 ID 로 오므로 칸과는 이 id 로 잇는다 */
 export function cellFindingIds(cell: SecurityMatrixCell | undefined): string[] {
   const ids = cell?.controls.flatMap((control) => control.findingIds) ?? [];

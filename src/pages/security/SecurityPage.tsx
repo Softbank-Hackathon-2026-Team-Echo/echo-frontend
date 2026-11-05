@@ -13,6 +13,7 @@ import { useEnvironments } from '@/lib/api/environments';
 import { useCurrentOrg } from '@/lib/api/me';
 import {
   cellFindingIds,
+  useSecurityExceptions,
   useSecurityFindings,
   useSecurityFindingsByIds,
   useSecurityMatrix,
@@ -21,6 +22,7 @@ import { dateTime } from '@/lib/format';
 import { k, t } from '@/lib/i18n';
 import { securityControlLabel } from '@/lib/status';
 import { CompareTab } from './CompareTab';
+import { ExceptionsTable } from './ExceptionsTable';
 import { type FindingSelection, FindingSheet } from './FindingSheet';
 import { FindingsTable } from './FindingsTable';
 import { SecurityMatrixTable } from './SecurityMatrixTable';
@@ -38,6 +40,10 @@ const HEADERS: Record<string, { title: string; description: string }> = {
     title: k('Findings'),
     description: k('Results from every scanner in one shape.'),
   },
+  exceptions: {
+    title: k('Security exceptions'),
+    description: k('A control can stop blocking for up to 7 days, with a reason and an approval.'),
+  },
 };
 
 /** SEC 보안: Matrix · Compare · Findings */
@@ -48,6 +54,7 @@ export default function SecurityPage() {
   const environments = useEnvironments(orgId);
   const matrix = useSecurityMatrix(orgId);
   const findings = useSecurityFindings(orgId);
+  const exceptions = useSecurityExceptions(orgId);
   const [tab, setTab] = useState('matrix');
   const [selected, setSelected] = useState<FindingSelection | null>(null);
   const selectedRow =
@@ -137,6 +144,7 @@ export default function SecurityPage() {
               <TabsTrigger value="matrix">{t('Matrix')}</TabsTrigger>
               <TabsTrigger value="compare">{t('Compare')}</TabsTrigger>
               <TabsTrigger value="findings">{t('Findings')}</TabsTrigger>
+              <TabsTrigger value="exceptions">{t('Exceptions')}</TabsTrigger>
             </TabsList>
             {hasSimulated && <SimulatedBadge />}
           </div>
@@ -170,6 +178,21 @@ export default function SecurityPage() {
           </TabsContent>
           <TabsContent value="findings" className="mt-3">
             {findingsTable}
+          </TabsContent>
+          <TabsContent value="exceptions" className="mt-3">
+            {exceptions.isError ? (
+              <ErrorState error={exceptions.error} onRetry={() => exceptions.refetch()} />
+            ) : exceptions.isPending ? (
+              <Skeleton className="h-40" />
+            ) : (
+              <ExceptionsTable
+                exceptions={exceptions.data.items}
+                total={exceptions.data.total}
+                names={names}
+                controlTitles={controlTitles}
+                serviceNames={serviceNames}
+              />
+            )}
           </TabsContent>
         </Tabs>
       )}

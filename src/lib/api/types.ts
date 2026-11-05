@@ -51,6 +51,7 @@ export type SecurityMatrixRow = Schemas['SecurityMatrixRowResponse'];
 export type SecurityMatrixCell = Schemas['SecurityCellResponse'];
 export type SecurityControlCheck = Schemas['SecurityControlResponse'];
 export type SecurityFinding = Schemas['SecurityFindingResponse'];
+export type SecurityException = Schemas['SecurityExceptionResponse'];
 
 export type ConnectionStatus = Schemas['EnvironmentSummaryResponse']['connectionStatus'];
 /** 목록 항목. 저장된 값만 담고 clusterInfo 는 없다 */

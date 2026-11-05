@@ -36,6 +36,7 @@ export const queryKeys = {
     ['org', orgId, 'migrations', planId, 'logs'] as const,
   security: (orgId: string) => ['org', orgId, 'security'] as const,
   securityMatrix: (orgId: string) => ['org', orgId, 'security', 'matrix'] as const,
+  securityExceptions: (orgId: string) => ['org', orgId, 'security', 'exceptions'] as const,
   securityFindings: (orgId: string) => ['org', orgId, 'security', 'findings'] as const,
   securityCellFindings: (orgId: string, findingIds: string[]) =>
     ['org', orgId, 'security', 'findings', findingIds] as const,

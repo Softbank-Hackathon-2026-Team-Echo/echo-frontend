@@ -163,6 +163,17 @@ export function securitySeverityLabel(severity: string): string {
   return labelOf(SECURITY_SEVERITIES, severity);
 }
 
+const SECURITY_EXCEPTION_STATUSES: Record<string, StatusView> = {
+  ACTIVE: { label: k('Active'), tone: 'warning' },
+  PENDING: { label: k('Waiting for approval'), tone: 'neutral' },
+  EXPIRED: { label: k('Expired'), tone: 'neutral' },
+  REVOKED: { label: k('Revoked'), tone: 'neutral' },
+};
+
+export function securityExceptionStatusView(status: string): StatusView {
+  return viewOf(SECURITY_EXCEPTION_STATUSES, status);
+}
+
 const SECURITY_REASONS: Record<string, string> = {
   CONTROL_FAILED: k('Failed this control'),
   CONTROL_WARNING: k('Warning on this control'),
@@ -271,6 +282,7 @@ const MIGRATION_ERRORS: Record<string, string> = {
   DATA_LAG_EXCEEDED: k('Replication lag too high'),
   TARGET_NOT_RECEIVING: k('Target received no traffic'),
   ABORTED: k('Stopped by a person'),
+  SECURITY_GATE_BLOCKED: k('Blocked by the security gate'),
   WORKER_LOST: k('The worker stopped responding'),
   INTERNAL_ERROR: k('Internal error'),
 };

@@ -257,6 +257,32 @@ describe('PlanPage', () => {
     expect(await screen.findByText('A deployment or traffic weight changed')).toBeInTheDocument();
   });
 
+  it('보안 게이트가 승인을 막으면 통제와 사유를 보여 준다', async () => {
+    serve({ allowSelfApproval: true, active: plan.id });
+    server.use(
+      http.post(`${API}/orgs/o1/migration-plans/:id/approve`, () =>
+        HttpResponse.json(
+          {
+            success: false,
+            code: 'SECURITY_GATE_BLOCKED',
+            message: 'blocked',
+            details: [{ field: 'C-AI-1', reason: 'PRECHECK_MISSING' }],
+          },
+          { status: 409 },
+        ),
+      ),
+    );
+    renderPage();
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Approve plan' }));
+
+    expect(
+      (await screen.findAllByText('The security gate blocked this migration.')).length,
+    ).toBeGreaterThan(0);
+    expect(screen.getByText('C-AI-1')).toBeInTheDocument();
+    expect(screen.getByText(/AI pre-check has not run/)).toBeInTheDocument();
+  });
+
   it('도착 환경이 재난 반경 안이면 계획을 만들 수 없다', async () => {
     window.sessionStorage.setItem(
       'echoport.disasters.o1',

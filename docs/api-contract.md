@@ -110,10 +110,7 @@ data: {"seq": 1042, "ts": "2026-11-07T03:05:40Z", "orgId": "…", "resource": {"
 
 ### 4-1. 환경 좌표 (🔁 환경 응답에 보탬)
 
-재난 영향은 "진원지 + 반경 안의 환경"(거리 방식, 11/2 결정)이라 환경마다 좌표가 필요하다. 영향 판정은 서버가 하므로 좌표도 서버가 가진다.
-
-- 환경 응답에 `coordinates: {lat, lng} | null` 추가.
-- 클라우드는 서버가 리전 → 좌표 표를 가진다(예: `ap-northeast-1` → 도쿄). 온프레는 등록할 때 `location`(도시)을 표에서 고르거나 좌표를 직접 받는다.
+✅ 운영에 열렸다(echo-was #68). 환경 목록 · 단건 응답에 `coordinates: {lat, lng} | null` 이 있다. 화면은 서버 값을 먼저 쓰고, `null` 이면 `lib/geo.ts` 의 이름 표로 찾는다. 서비스 상세 · 배포 요청의 `environment` 참조에는 없어서 환경 `id` 로 합친다.
 
 ### 4-2. 대시보드 지표 (F17)
 
@@ -221,6 +218,8 @@ KPI 타일 5개(성공률·p95·복제 지연·트래픽 비율·에러 버짓)�
 > 11/5: 매트릭스 · finding 은 운영 API 를 부른다(echo-was #59). `compare` 는 다음 PR 이라 그전까지 비교만 `lib/api/security.ts` 가 시뮬레이션한다. finding 은 `controlId`(`C-IMG-1`)로 오므로 칸과는 매트릭스의 `controls[].findingIds` 로 잇고, 칸을 열 때 `findingId` 로 그 칸의 증거만 부른다. 서버 `findingCount` 는 판정에 쓴 증거 수라, 칸 글자의 건수는 WARN · FAIL 통제 수로 센다.
 >
 > 11/4: 김형래 제안(슬랙)대로 맞추고 `UNKNOWN` 을 더했다. 서버(echo-was #28)가 생기기 전까지 `lib/api/security.ts` 가 같은 모양으로 시뮬레이션하고 화면에 항상 `simulated` 배지를 단다. 이전 차단은 서버 판정이 기준이고 버튼 비활성은 안내일 뿐이다.
+
+> 11/5: 기한부 예외(echo-was #64) `GET /orgs/{orgId}/security/exceptions` 를 SEC Exceptions 탭에 보인다. 만들기 · 승인 · 철회 화면은 없다. 게이트가 막으면 승인 409 `SECURITY_GATE_BLOCKED` + `details[{field: 통제 ID, reason: 사유}]` 이고 E01-3 에 통제별로 보인다. 일꾼 시작에서 막히면 계획이 `FAILED`(`SECURITY_GATE_BLOCKED`) 다.
 
 ### 4-8. 감사 로그 (F5)
 

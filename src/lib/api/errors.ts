@@ -61,6 +61,7 @@ const CONFLICT_MESSAGES: Record<string, string> = {
   PLAN_NOT_RUNNING: k('This migration is not running.'),
   PLAN_STALE: k('Environments changed after this plan was made. Create a new plan.'),
   PLAN_EXPIRED: k('This plan expired after 24 hours. Create a new plan.'),
+  SECURITY_GATE_BLOCKED: k('The security gate blocked this migration.'),
   RUN_NOT_ACTIVE: k('This pre-check has already finished.'),
   SECRET_STORE_NOT_CONFIGURED: k('The secret store is not set up, so the value was not saved.'),
 };
