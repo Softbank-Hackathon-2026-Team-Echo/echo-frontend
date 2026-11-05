@@ -274,3 +274,76 @@
 .echo-flow .react-flow__node {
   font-family: inherit;
 }
+
+/* 토폴로지 선 위를 흐르는 빛 하나. pathLength 가 1 이라 길이 단위가 선 전체 비율이다. 움직임 줄이기면 선만 보인다 */
+.echo-flow .flow-pulse {
+  display: none;
+  fill: none;
+  pointer-events: none;
+  stroke-dasharray: 0.18 1.2;
+  stroke-linecap: round;
+}
+
+/* 트래픽을 받는 환경 카드: 테두리를 도는 빛(로딩). 카드 테두리 칸만 보이게 가운데를 파낸다 */
+@property --topology-beam-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+.echo-flow .topology-beam {
+  display: none;
+  position: absolute;
+  inset: -1px;
+  padding: 2px;
+  border-radius: inherit;
+  pointer-events: none;
+  background: conic-gradient(
+    from var(--topology-beam-angle),
+    transparent 0 62%,
+    var(--ep-color-status-migrating-solid) 100%
+  );
+  mask:
+    linear-gradient(black 0 0) content-box exclude,
+    linear-gradient(black 0 0);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .echo-flow .topology-at-risk {
+    animation: topology-at-risk 1.4s ease-in-out infinite;
+  }
+  .echo-flow .topology-beam {
+    display: block;
+    animation: topology-beam 1.6s linear infinite;
+  }
+  .echo-flow .flow-rail {
+    stroke-opacity: 0.3;
+  }
+  .echo-flow .flow-pulse {
+    display: inline;
+    animation: flow-pulse var(--flow-duration) linear infinite;
+  }
+}
+.flow-paused .flow-pulse,
+.flow-paused .topology-beam,
+.flow-paused .topology-at-risk,
+.flow-paused [class*="animate-"] {
+  animation-play-state: paused;
+}
+@keyframes topology-at-risk {
+  50% {
+    border-color: var(--ep-color-status-danger-bg);
+    box-shadow: 0 0 0 4px var(--ep-color-status-danger-solid);
+  }
+}
+@keyframes topology-beam {
+  to {
+    --topology-beam-angle: 360deg;
+  }
+}
+@keyframes flow-pulse {
+  from {
+    stroke-dashoffset: 0.18;
+  }
+  to {
+    stroke-dashoffset: -1;
+  }
+}
