@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Panel } from '@/components/Panel';
 import { ProviderLabel } from '@/components/ProviderLabel';
 import { StatusBadge } from '@/components/StatusBadge';
@@ -7,7 +8,7 @@ import { envRoleView } from '@/lib/status';
 import type { ServiceOnEnvironment } from './types';
 
 /** S01 "Environments" 칸: 환경마다 역할 또는 재난 위험 */
-export function EnvironmentsPanel({
+export const EnvironmentsPanel = memo(function EnvironmentsPanel({
   environments,
   byEnvironment,
   atRisk,
@@ -42,4 +43,4 @@ export function EnvironmentsPanel({
       </ul>
     </Panel>
   );
-}
+});
