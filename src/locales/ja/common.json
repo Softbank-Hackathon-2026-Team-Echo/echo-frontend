@@ -145,5 +145,6 @@
   "Continue with GitHub": "GitHubで続行",
   "New accounts start with a personal organization. To join a team, ask an admin to invite your GitHub username.": "新しいアカウントは個人組織から始まります。チームに参加するには、管理者にGitHubユーザー名での招待を依頼してください。",
   "No organizations yet": "組織がまだありません",
-  "Ask an admin to invite your GitHub account to an organization.": "管理者にGitHubアカウントの組織への招待を依頼してください。"
+  "Ask an admin to invite your GitHub account to an organization.": "管理者にGitHubアカウントの組織への招待を依頼してください。",
+  "Loading": "読み込み中"
 }

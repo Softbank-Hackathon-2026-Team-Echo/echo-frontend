@@ -5,6 +5,7 @@ import { registerPrefetchRoutes } from '@/lib/route-prefetch';
 import NotFoundPage from '@/pages/NotFoundPage';
 import { PlaceholderPage } from '@/pages/PlaceholderPage';
 import { RouteErrorPage } from '@/pages/RouteErrorPage';
+import { RouteLoading } from '@/pages/RouteLoading';
 
 function crumb(name: string): RouteHandle {
   return { crumb: name };
@@ -14,26 +15,31 @@ function crumb(name: string): RouteHandle {
 const routes: RouteObject[] = [
   {
     path: '/login',
+    HydrateFallback: RouteLoading,
     lazy: () => import('@/pages/login/LoginPage').then((m) => ({ Component: m.default })),
   },
   {
     path: '/',
+    HydrateFallback: RouteLoading,
     lazy: () => import('@/pages/root/RootRedirect').then((m) => ({ Component: m.default })),
   },
   {
     // 온보딩은 사이드바 없이 한 화면을 다 쓴다(Figma O01~O03)
     path: '/o/:slug/onboarding',
+    HydrateFallback: RouteLoading,
     errorElement: <RouteErrorPage />,
     lazy: () => import('@/pages/onboarding/OnboardingPage').then((m) => ({ Component: m.default })),
   },
   {
     // 시연 리모컨은 휴대폰 한 화면이라 사이드바가 없다(Figma S01-R)
     path: '/o/:slug/remote',
+    HydrateFallback: RouteLoading,
     errorElement: <RouteErrorPage />,
     lazy: () => import('@/pages/remote/RemotePage').then((m) => ({ Component: m.default })),
   },
   {
     path: '/o/:slug',
+    HydrateFallback: RouteLoading,
     element: <AppShell />,
     errorElement: <RouteErrorPage />,
     children: [
