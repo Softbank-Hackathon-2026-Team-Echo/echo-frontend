@@ -9,6 +9,8 @@ export const queryKeys = {
     ['org', orgId, 'environments', environmentId] as const,
   services: (orgId: string) => ['org', orgId, 'services'] as const,
   service: (orgId: string, serviceId: string) => ['org', orgId, 'services', serviceId] as const,
+  serviceVariables: (orgId: string, serviceId: string, environmentId: string) =>
+    ['org', orgId, 'services', serviceId, 'variables', environmentId] as const,
   deployRequests: (orgId: string, serviceId: string) =>
     ['org', orgId, 'services', serviceId, 'deploy-requests'] as const,
   standbySyncs: (orgId: string, serviceId: string, sourceStatus: string) =>

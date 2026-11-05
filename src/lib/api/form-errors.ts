@@ -24,6 +24,10 @@ const REASONS: Record<string, string> = {
   LAST_SYNC_FAILED: k('The last standby sync failed.'),
   SIMULATE_NOT_ALLOWED: k('Failure injection only works while the API runs simulated executors.'),
   SIMULATE_REASON_STEP_MISMATCH: k('That failure cannot happen at this step.'),
+  ENV_VAR_KEY_INVALID: k('Use capital letters, numbers and _, starting with a letter.'),
+  ENV_VAR_KEY_RESERVED: k('PORT and names starting with ECHO_ are reserved.'),
+  ENV_VAR_VALUE_INVALID: k('Enter a value up to 16,384 bytes.'),
+  ENV_VAR_LIMIT_EXCEEDED: k('An environment can hold at most 40 variables.'),
 };
 
 function reasonText(reason: string): string | undefined {
