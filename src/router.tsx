@@ -27,6 +27,12 @@ const routes: RouteObject[] = [
     lazy: () => import('@/pages/onboarding/OnboardingPage').then((m) => ({ Component: m.default })),
   },
   {
+    // 시연 리모컨은 휴대폰 한 화면이라 사이드바가 없다(Figma S01-R)
+    path: '/o/:slug/remote',
+    errorElement: <RouteErrorPage />,
+    lazy: () => import('@/pages/remote/RemotePage').then((m) => ({ Component: m.default })),
+  },
+  {
     path: '/o/:slug',
     element: <AppShell />,
     errorElement: <RouteErrorPage />,
