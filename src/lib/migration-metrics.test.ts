@@ -44,6 +44,27 @@ describe('migration-metrics', () => {
     expect(passedOnHealthOnly(plan)).toBe(true);
   });
 
+  it('요청이 몇 건 있어도 비율 단계가 모두 저트래픽이면 헬스 체크 통과다', () => {
+    const plan = migrationPlan({
+      steps: [
+        step(1, 'SHIFT', 10, 'PASSED', { requestCount: 0, lowTraffic: true }),
+        step(2, 'SHIFT', 100, 'PASSED', { requestCount: 1, lowTraffic: true }),
+      ],
+    });
+    expect(failedRequests(plan)).toBe(0);
+    expect(passedOnHealthOnly(plan)).toBe(true);
+  });
+
+  it('요청으로 판정한 단계가 하나라도 있으면 헬스 체크 통과가 아니다', () => {
+    const plan = migrationPlan({
+      steps: [
+        step(1, 'SHIFT', 10, 'PASSED', { requestCount: 20 }),
+        step(2, 'SHIFT', 100, 'PASSED', { requestCount: 0, lowTraffic: true }),
+      ],
+    });
+    expect(passedOnHealthOnly(plan)).toBe(false);
+  });
+
   it('복제 지연은 데이터 확인 단계 값을 쓴다', () => {
     const plan = migrationPlan({
       steps: [step(3, 'DATA_SYNC_CHECK', null, 'PASSED', { replicationLagSeconds: 0.4 })],

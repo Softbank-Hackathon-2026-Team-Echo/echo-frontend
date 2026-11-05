@@ -153,6 +153,7 @@ export default function PlanPage() {
   if (!planId || !plan.data) {
     return (
       <PlanDraft
+        failback={searchParams.has('failback')}
         orgId={organization.id}
         serviceId={serviceId}
         targetId={targetId}

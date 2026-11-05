@@ -60,11 +60,10 @@ export function failedRequests(plan: Pick<MigrationPlan, 'steps'>): number | nul
   }, 0);
 }
 
-/** 요청이 없어 헬스 체크로만 통과했는가. 이때 실패 0건은 잰 값이 아니다 */
+/** 비율 단계가 모두 저트래픽 통과인가. 요청이 몇 건 있어도 이때 실패 0건은 성과가 아니다 */
 export function passedOnHealthOnly(plan: Pick<MigrationPlan, 'steps'>): boolean {
-  return (
-    failedRequests(plan) === null && plan.steps.some((step) => step.result?.metrics?.lowTraffic)
-  );
+  const shifts = plan.steps.filter((step) => step.kind === 'SHIFT');
+  return shifts.length > 0 && shifts.every((step) => step.result?.metrics?.lowTraffic);
 }
 
 export function requestCount(plan: Pick<MigrationPlan, 'steps'>): number {

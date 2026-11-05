@@ -292,6 +292,16 @@ describe('PlanPage', () => {
     expect(await screen.findByText('A deployment or traffic weight changed')).toBeInTheDocument();
   });
 
+  it('복귀 버튼에서 오면 제목이 복귀 계획이다', async () => {
+    serve({ allowSelfApproval: false, active: null });
+    renderRoute(<PlanPage />, {
+      path: '/o/:slug/evacuation/plan',
+      url: '/o/echo-demo/evacuation/plan?service=s1&target=e2&failback=1',
+    });
+
+    expect(await screen.findByRole('heading', { name: 'Plan the failback' })).toBeInTheDocument();
+  });
+
   it('보안 게이트가 승인을 막으면 통제와 사유를 보여 준다', async () => {
     serve({ allowSelfApproval: true, active: plan.id });
     server.use(

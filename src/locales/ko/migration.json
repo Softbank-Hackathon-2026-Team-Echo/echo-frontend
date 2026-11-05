@@ -250,5 +250,6 @@
   "{{n}} rows compared": "{{n}}행 비교",
   "Too few requests to judge, so stages passed on health checks.": "판정할 요청이 없어 헬스 체크로 단계를 통과했습니다.",
   "Show less": "접기",
-  "Show all {{total}} items": "{{total}}개 모두 보기"
+  "Show all {{total}} items": "{{total}}개 모두 보기",
+  "Plan the failback": "복귀 계획 만들기"
 }
