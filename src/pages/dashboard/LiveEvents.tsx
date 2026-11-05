@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Panel } from '@/components/Panel';
 import type { Disaster } from '@/lib/api/disasters';
 import { useRecentOrgEvents } from '@/lib/api/events';
@@ -28,7 +29,7 @@ function clock(iso: string) {
 /**
  * 최근 이벤트. 실시간 채널(계약 3장 🆕)에서 받은 이벤트에 지금 가진 데이터(재난 · 접속 확인)를 더한다
  */
-export function LiveEvents({
+export const LiveEvents = memo(function LiveEvents({
   disasters,
   environments,
 }: {
@@ -99,4 +100,4 @@ export function LiveEvents({
       )}
     </Panel>
   );
-}
+});

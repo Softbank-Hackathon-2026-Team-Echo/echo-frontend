@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { t } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import type { ServiceOnEnvironment } from './types';
@@ -40,7 +41,7 @@ export type TargetTraffic = { name: string; weight: number };
 /**
  * S01 KPI 타일 5개(반분할 960 은 4개, 에러 버짓을 뺀다). 트래픽 비율만 지금 API(서비스 연결 · 이전 단계)로 채운다
  */
-export function KpiTiles({
+export const KpiTiles = memo(function KpiTiles({
   serving,
   target,
 }: {
@@ -79,4 +80,4 @@ export function KpiTiles({
       </Tile>
     </div>
   );
-}
+});

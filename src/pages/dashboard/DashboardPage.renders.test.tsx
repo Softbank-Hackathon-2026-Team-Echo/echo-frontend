@@ -1,6 +1,6 @@
-// 성능 기준선(#45): 대시보드가 다시 불러오기 한 번에 칸들을 몇 번 다시 그리는지 잰다.
-// 실시간 채널 전까지 대시보드는 폴링으로 갱신되므로, 같은 응답이 다시 와도 다시 그리는 칸이 적을수록 좋다.
-// 숫자는 docs/perf.md 기준선과 함께 보고, React Compiler 적용 전후를 비교한다
+// 성능(#45): 대시보드가 다시 불러오기 한 번에 칸들을 몇 번 다시 그리는지 잰다.
+// 실시간 채널 전까지 대시보드는 폴링으로 갱신되므로, 같은 응답이 다시 오면 칸을 다시 그리지 않아야 한다.
+// 숫자는 docs/perf.md 표와 함께 본다
 import { QueryClient } from '@tanstack/react-query';
 import { act, screen, waitFor } from '@testing-library/react';
 import { HttpResponse, http } from 'msw';
@@ -11,43 +11,44 @@ import { server } from '@/test/msw-server';
 import { renderRoute } from '@/test/render';
 import DashboardPage from './DashboardPage';
 
-const { counts, bump, counted } = vi.hoisted(() => {
+const { counts, bump } = vi.hoisted(() => {
   const counts = new Map<string, number>();
   const bump = (name: string) => counts.set(name, (counts.get(name) ?? 0) + 1);
-  // 원래 컴포넌트를 그대로 그리면서 몇 번 불렸는지만 센다
-  // biome-ignore lint/suspicious/noExplicitAny: 칸마다 props 모양이 달라 공통 타입이 없다
-  const counted = (name: string, Component: (props: any) => unknown) => (props: object) => {
-    bump(name);
-    return Component(props);
-  };
-  return { counts, bump, counted };
+  return { counts, bump };
 });
 
-// 칸 컴포넌트가 몇 번 불렸는지 센다. 토폴로지(React Flow + elk 워커)는 jsdom 에서 그릴 수 없어 세기만 한다
-vi.mock('./Topology', () => ({
-  Topology: () => {
-    bump('Topology');
-    return null;
-  },
+// 칸은 memo 로 감쌌다. 같은 memo 뒤에서 안쪽 컴포넌트가 몇 번 불렸는지만 센다
+// biome-ignore lint/suspicious/noExplicitAny: 칸마다 props 모양이 달라 공통 타입이 없다
+async function counted(name: string, panel: any) {
+  const { memo } = await import('react');
+  return memo((props: object) => {
+    bump(name);
+    return panel.type(props);
+  });
+}
+
+// 토폴로지(React Flow + elk 워커)는 jsdom 에서 그릴 수 없어 세기만 한다
+vi.mock('./Topology', async () => ({
+  Topology: await counted('Topology', { type: () => null }),
 }));
 vi.mock('./KpiTiles', async (importOriginal) => {
   const original = await importOriginal<typeof import('./KpiTiles')>();
-  return { ...original, KpiTiles: counted('KpiTiles', original.KpiTiles) };
+  return { ...original, KpiTiles: await counted('KpiTiles', original.KpiTiles) };
 });
 vi.mock('./LiveEvents', async (importOriginal) => {
   const original = await importOriginal<typeof import('./LiveEvents')>();
-  return { ...original, LiveEvents: counted('LiveEvents', original.LiveEvents) };
+  return { ...original, LiveEvents: await counted('LiveEvents', original.LiveEvents) };
 });
 vi.mock('./EnvironmentsPanel', async (importOriginal) => {
   const original = await importOriginal<typeof import('./EnvironmentsPanel')>();
   return {
     ...original,
-    EnvironmentsPanel: counted('EnvironmentsPanel', original.EnvironmentsPanel),
+    EnvironmentsPanel: await counted('EnvironmentsPanel', original.EnvironmentsPanel),
   };
 });
 vi.mock('./StatusPill', async (importOriginal) => {
   const original = await importOriginal<typeof import('./StatusPill')>();
-  return { ...original, StatusPill: counted('StatusPill', original.StatusPill) };
+  return { ...original, StatusPill: await counted('StatusPill', original.StatusPill) };
 });
 
 const API = 'http://api.test/api/v1';
@@ -142,6 +143,7 @@ const services = [service('shop-api'), service('shop-web')];
 function serve() {
   server.use(
     http.get(`${API}/me`, () => ok(me)),
+    http.get(`${API}/orgs/o1/disasters`, () => ok({ items: [], total: 0, page: 0, size: 50 })),
     http.get(`${API}/orgs/o1/audit-logs`, () => ok({ items: [], total: 0, page: 0, size: 3 })),
     http.get(`${API}/orgs/o1/environments`, () =>
       ok({ items: environments, total: environments.length, page: 0, size: 100 }),
@@ -160,12 +162,12 @@ function serve() {
 
 const results: string[] = [];
 afterAll(() => {
-  // 기준선을 docs/perf.md 에 옮겨 적을 수 있게 남긴다
+  // docs/perf.md 에 옮겨 적을 수 있게 남긴다
   console.warn(`\n[dashboard renders per refetch]\n${results.join('\n')}`);
 });
 
-describe('DashboardPage 다시 그리기 기준선', () => {
-  it('같은 응답으로 다시 불러와도 칸마다 몇 번 다시 그리는지 잰다', async () => {
+describe('DashboardPage 다시 그리기', () => {
+  it('같은 응답으로 다시 불러오면 칸을 다시 그리지 않는다', async () => {
     serve();
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     let commits = 0;
@@ -198,7 +200,6 @@ describe('DashboardPage 다시 그리기 기준선', () => {
       `render ms (jsdom)  ${renderMs.toFixed(1)}`,
       ...['Topology', 'KpiTiles', 'LiveEvents', 'EnvironmentsPanel', 'StatusPill'].map(row),
     );
-    // 기준선 측정용이다. 값이 아니라 측정이 돌아가는지만 확인한다
-    expect(commits).toBeGreaterThan(0);
+    expect(Object.fromEntries(counts)).toEqual({});
   });
 });

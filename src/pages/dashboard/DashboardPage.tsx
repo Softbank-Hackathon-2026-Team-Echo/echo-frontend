@@ -1,14 +1,16 @@
 import { ArrowRight } from 'lucide-react';
+import { useMemo } from 'react';
 import { Link, useParams } from 'react-router';
 import { ErrorState } from '@/components/ErrorState';
 import { Panel } from '@/components/Panel';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useActiveDisasters } from '@/lib/api/disasters';
+import { type Disaster, useActiveDisasters } from '@/lib/api/disasters';
 import { useEnvironments } from '@/lib/api/environments';
 import { useCurrentOrg } from '@/lib/api/me';
 import { isActivePlan, useMigrationPlan, useOrgMigrationPlans } from '@/lib/api/migrations';
 import { useServiceDetails, useServices } from '@/lib/api/services';
+import type { EnvironmentSummary, ServiceDetail } from '@/lib/api/types';
 import { t } from '@/lib/i18n';
 import { currentWeights } from '@/lib/migration-metrics';
 import { onboardingProgress } from '@/lib/onboarding';
@@ -25,6 +27,25 @@ import { StatusPill } from './StatusPill';
 import { Topology } from './Topology';
 import type { ServiceOnEnvironment } from './types';
 
+const NO_ENVIRONMENTS: EnvironmentSummary[] = [];
+const NO_DISASTERS: Disaster[] = [];
+
+/** 환경별 서비스 연결과 첫 번째 서비스 중 연결 */
+function linksByEnvironment(services: ServiceDetail[]) {
+  const byEnvironment = new Map<string, ServiceOnEnvironment[]>();
+  let serving: ServiceOnEnvironment | undefined;
+  for (const service of services) {
+    for (const link of service.environments) {
+      byEnvironment.set(link.environment.id, [
+        ...(byEnvironment.get(link.environment.id) ?? []),
+        { service, link },
+      ]);
+      if (!serving && link.role === 'SERVING') serving = { service, link };
+    }
+  }
+  return { byEnvironment, serving };
+}
+
 /** S01 대시보드 v2 (조밀 벤토): KPI · 토폴로지 · 재난 · 이벤트 · 요청 그래프 · 환경 · 최근 활동 */
 export default function DashboardPage() {
   const { slug } = useParams();
@@ -40,6 +61,31 @@ export default function DashboardPage() {
   );
   const running = plans.data.find((plan) => isActivePlan(plan.status));
   const runningPlan = useMigrationPlan(orgId, running?.id);
+
+  // 폴링으로 같은 응답이 다시 와도 칸들이 다시 그려지지 않게 넘기는 값의 참조를 유지한다.
+  // 쿼리 결과는 응답이 같으면 참조가 그대로라 여기서 새 Map · 객체만 만들지 않으면 된다
+  const envList = environments.data?.items ?? NO_ENVIRONMENTS;
+  const active = disasters.data ?? NO_DISASTERS;
+  const names = useMemo(() => new Map(envList.map((item) => [item.id, item.name])), [envList]);
+  const atRisk = useMemo(
+    () => new Set(active.flatMap((disaster) => disaster.affectedEnvironmentIds)),
+    [active],
+  );
+  const { byEnvironment, serving } = useMemo(
+    () => linksByEnvironment(details.data),
+    [details.data],
+  );
+  const targetWeight = runningPlan.data ? currentWeights(runningPlan.data).target : undefined;
+  const targetName = runningPlan.data
+    ? (names.get(runningPlan.data.targetEnvironmentId) ?? t('target'))
+    : undefined;
+  const migrating = useMemo(
+    () =>
+      targetName !== undefined && targetWeight !== undefined
+        ? { name: targetName, weight: targetWeight }
+        : undefined,
+    [targetName, targetWeight],
+  );
 
   if (environments.isError) {
     return <ErrorState error={environments.error} onRetry={() => environments.refetch()} />;
@@ -58,13 +104,8 @@ export default function DashboardPage() {
     );
   }
 
-  const envList = environments.data.items;
   const setup = onboardingProgress(envList, details.data);
-  const weights = runningPlan.data ? currentWeights(runningPlan.data) : null;
-  const names = new Map(envList.map((item) => [item.id, item.name]));
-  const active = disasters.data ?? [];
   const latest = active.at(-1);
-  const atRisk = new Set(active.flatMap((disaster) => disaster.affectedEnvironmentIds));
   // 되돌리는 중이면 트래픽은 출발 환경으로 돌아간다
   const receivingId =
     runningPlan.data?.status === 'RUNNING'
@@ -73,34 +114,12 @@ export default function DashboardPage() {
         ? runningPlan.data.sourceEnvironmentId
         : undefined;
   const completed = recentCompletion(organization.id, plans.data);
-  const byEnvironment = new Map<string, ServiceOnEnvironment[]>();
-  let serving: ServiceOnEnvironment | undefined;
-  for (const service of details.data) {
-    for (const link of service.environments) {
-      byEnvironment.set(link.environment.id, [
-        ...(byEnvironment.get(link.environment.id) ?? []),
-        { service, link },
-      ]);
-      if (!serving && link.role === 'SERVING') serving = { service, link };
-    }
-  }
 
   return (
     <>
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-h1">{t('Dashboard')}</h1>
-        <StatusPill
-          migrating={
-            runningPlan.data && weights
-              ? {
-                  target: names.get(runningPlan.data.targetEnvironmentId) ?? t('target'),
-                  weight: weights.target,
-                }
-              : undefined
-          }
-          disaster={latest}
-          names={names}
-        />
+        <StatusPill migrating={migrating} disaster={latest} names={names} />
         <span className="ml-auto text-small text-fg-muted max-wide:hidden">{t('Last 15 min')}</span>
         {running && (
           <Button asChild variant="secondary" size="sm" className="max-wide:ml-auto">
@@ -120,17 +139,7 @@ export default function DashboardPage() {
 
       {!details.isPending && <SetupBanner orgSlug={organization.slug} progress={setup} />}
 
-      <KpiTiles
-        serving={serving}
-        target={
-          runningPlan.data && weights
-            ? {
-                name: names.get(runningPlan.data.targetEnvironmentId) ?? t('target'),
-                weight: weights.target,
-              }
-            : undefined
-        }
-      />
+      <KpiTiles serving={serving} target={migrating} />
 
       <div className="grid grid-cols-12 gap-4">
         <Panel title={t('Topology')} className="col-span-8 max-wide:col-span-12">

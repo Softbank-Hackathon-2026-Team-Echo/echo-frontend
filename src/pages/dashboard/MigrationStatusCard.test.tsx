@@ -35,7 +35,7 @@ describe('StatusPill', () => {
   it('이전 중이면 재난보다 이전 비율을 먼저 보인다', () => {
     renderRoute(
       <StatusPill
-        migrating={{ target: 'gcp-seoul-standby', weight: 70 }}
+        migrating={{ name: 'gcp-seoul-standby', weight: 70 }}
         disaster={undefined}
         names={names}
       />,

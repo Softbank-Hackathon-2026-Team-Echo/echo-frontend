@@ -7,14 +7,14 @@ React Compiler · 화면 밖 작업 멈추기 · 화면 미리 받기 같은 최
 
 | 지표 | 도구 | 어디서 보나 |
 |---|---|---|
-| LCP · INP · CLS (실사용자) | Sentry 브라우저 추적, 표본 20%. 화면 이름은 경로 패턴(`/o/:slug/migrations/:id`)으로 묶는다(`lib/route-pattern.ts`) | Sentry → Insights → Web Vitals(또는 Performance), 화면(transaction)별 |
+| LCP · INP · CLS (실사용자) | Sentry 브라우저 추적, 표본 20%. 화면 이름은 경로 패턴(`/o/:slug/migrations/:id`)으로 묶는다(`lib/route-pattern.ts`) | Sentry → Insights → Frontend, 화면(transaction)별. 값은 pageload 가 아니라 따로 보낸 span 에 있다: `span.op:ui.webvital.lcp` · `ui.webvital.cls` · `ui.interaction.click`(INP) |
 | 느린 클릭 원인 | Sentry 긴 애니메이션 프레임(`enableLongAnimationFrame`) | 같은 화면의 span 목록 |
 | 다시 불러오기 1번에 다시 그리는 칸 | `src/pages/dashboard/DashboardPage.renders.test.tsx` (React `Profiler` + 칸별 호출 수) | `pnpm exec vitest run src/pages/dashboard/DashboardPage.renders.test.tsx --silent=false` 출력 |
 | 번들 크기(gzip) | `node scripts/check-bundle.mjs` (CI 예산) | CI 로그 · 로컬 빌드 뒤 |
 
 - 렌더 측정은 jsdom 에서 데모 구성(환경 3 · 서비스 2, 같은 응답)으로 조직 쿼리를 전부 다시 불러온다. 대시보드는 실시간 채널 전까지 폴링으로 갱신되므로 "같은 응답인데 다시 그리는 칸"이 줄어야 한다. 렌더 ms 는 jsdom 값이라 비교용으로만 쓴다.
 - 토폴로지(React Flow + elk 워커)는 jsdom 에서 그릴 수 없어 호출 수만 센다.
-- 운영 Web Vitals 는 데이터가 적다(11/3 기준 환경 1 · 서비스 0). 데모 앱이 세 환경에 올라오면 이전 실행 화면까지 다시 잰다.
+- 운영 Web Vitals 는 표본이 적다. Sentry 의 건수는 표본 20% 를 5배로 늘린 값이라 실제 측정 수는 그 1/5 이다.
 
 ## 2. 기준선 (11/3, 최적화 전)
 
@@ -42,12 +42,16 @@ React Compiler · 화면 밖 작업 멈추기 · 화면 미리 받기 같은 최
 
 ### 운영 Web Vitals
 
-수집 시작 11/3(#41 · #45). 값은 Sentry 에서 화면별로 확인하고, 데모 앱으로 이전을 돌린 뒤 이 표에 적는다.
+수집 시작 11/3(#41 · #45). 11/5 에 최근 3일 값을 읽었다. p75 이고, 표본은 실제 측정 수(LCP · INP · CLS 순)다.
 
 | 화면 | LCP | INP | CLS | 표본 |
 |---|---|---|---|---|
-| `/o/:slug` | — | — | — | — |
-| `/o/:slug/migrations/:id` | — | — | — | — |
+| `/` | 1,872ms | 42ms | 0.004 | 17 · 5 · 16 |
+| `/o/:slug` | 3,598ms | 32ms | 0.002 | 5 · 3 · 4 |
+| `/o/:slug/migrations/:id` | 46ms | 40ms | 0 | 1 · 2 · 1 |
+| `/o/:slug/remote` | 3,902ms | 24ms | — | 1 · 1 · 0 |
+
+표본이 적어 추세로 읽지 않는다. `/o/:slug/migrations/:id` LCP 는 1건이고 메뉴 이동으로 잰 값으로 보인다. 대시보드 LCP 3.6초는 시연 전에 화면을 미리 열어 두면 시연에 드러나지 않는다.
 
 ## 3. 변경 기록
 
@@ -58,4 +62,5 @@ React Compiler · 화면 밖 작업 멈추기 · 화면 미리 받기 같은 최
 | 11/3 | 메뉴 마우스 올림 · 포커스 · 터치 때 화면 청크 미리 받기 (#43) | #48 | 운영 확인: Services 메뉴에 마우스만 올려도(이동 전) `ServicesPage` 청크를 받음, 올리기 전 0건. 첫 화면 +0.1KB |
 | 11/3 | 지구본 육지 데이터를 모듈 로드 즉시 받기 + 준비되면 페이드인 | #50 | 바꾸기 전(캐시 있음): 소개 화면 코드 341ms → 육지 요청 743ms(약 0.4초 비고 대륙이 늦게 나타남). 바꾼 뒤(캐시 없음): 소개 화면 코드 도착 2ms 뒤 육지 요청 시작, 육지가 온 뒤 지구본이 한 번에 페이드인 |
 | 11/3 | 지구본 화면 밖이면 그리기 멈춤 · 토폴로지는 화면에 들어올 때 만듦 (#44) | #49 | 바꾸기 전: 소개 화면을 내려 지구본이 화면 밖이어도 2초에 240번 다시 그림(120Hz 화면). 바꾼 뒤(미리보기): 화면 밖 2초에 0번, 다시 올리면 이어 돈다 |
-| 11/5 | 토폴로지 흐름 · 카드 효과는 CSS 애니메이션이고 화면 밖이면 멈춤 (#79) | 이 PR | 미리보기: 화면 안 애니메이션 진행, 화면 밖 `paused`. 새 라이브러리 없음 |
+| 11/5 | 대시보드가 넘기는 값의 참조를 유지하고 칸을 `memo` 로 감쌈, `useQueries` 합치기 함수를 모듈로 옮김 (#45) | #80 | 같은 응답으로 다시 불러올 때 Topology · KpiTiles · LiveEvents · StatusPill 1 → 0, EnvironmentsPanel 2 → 0. 테스트로 고정했다. 대시보드 청크 65.3KB |
+| 11/5 | 토폴로지 흐름 · 카드 효과는 CSS 애니메이션이고 화면 밖이면 멈춤 (#79) | #81 | 미리보기: 화면 안 애니메이션 진행, 화면 밖 `paused`. 새 라이브러리 없음 |

@@ -1,5 +1,6 @@
 // 이전 계획 (API 서버 8, echo-was docs/api/migration-plans.md). 승인 = 실행 시작이다
 import {
+  type UseQueryResult,
   useInfiniteQuery,
   useMutation,
   useQueries,
@@ -28,6 +29,17 @@ export function isOpenPlan(status: MigrationPlanStatus | undefined): boolean {
   return status !== undefined && OPEN.includes(status);
 }
 
+// 모듈 함수라 참조가 그대로여서 TanStack Query 가 결과가 바뀔 때만 다시 합친다
+function combinePlans(results: UseQueryResult<{ items: MigrationPlanSummary[] }>[]) {
+  return {
+    data: results
+      .flatMap((result) => result.data?.items ?? [])
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
+    isPending: results.some((result) => result.isPending),
+    error: results.find((result) => result.error)?.error ?? null,
+  };
+}
+
 /** 조직 전체 이전 기록(M01). 조직 단위 목록 API 가 없어 서비스마다 목록을 불러 합친다 */
 export function useOrgMigrationPlans(orgId: string | undefined, serviceIds: string[]) {
   return useQueries({
@@ -47,15 +59,7 @@ export function useOrgMigrationPlans(orgId: string | undefined, serviceIds: stri
       refetchInterval: (query: { state: { data?: { items: MigrationPlanSummary[] } } }) =>
         query.state.data?.items.some((plan) => isActivePlan(plan.status)) ? 2_000 : false,
     })),
-    combine: (results) => ({
-      data: results
-        .flatMap((result) => result.data?.items ?? [])
-        .sort((a: MigrationPlanSummary, b: MigrationPlanSummary) =>
-          b.createdAt.localeCompare(a.createdAt),
-        ),
-      isPending: results.some((result) => result.isPending),
-      error: results.find((result) => result.error)?.error ?? null,
-    }),
+    combine: combinePlans,
   });
 }
 
