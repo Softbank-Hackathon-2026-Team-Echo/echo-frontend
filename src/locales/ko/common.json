@@ -110,6 +110,7 @@
   "Result": "결과",
   "Error rate (judged)": "오류율 (판정 값)",
   "Dots mark applied steps": "점은 적용된 단계입니다",
+  "Receiving traffic": "트래픽 받는 중",
   "The graph starts when the first traffic step is applied.": "첫 트래픽 단계가 적용되면 그래프가 시작됩니다.",
   "Traffic share moving from {{source}} to {{target}}": "{{source}}에서 {{target}}(으)로 옮겨 가는 트래픽 비율",
   "error rate {{rate}}%": "오류율 {{rate}}%",

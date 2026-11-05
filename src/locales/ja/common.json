@@ -110,6 +110,7 @@
   "Result": "結果",
   "Error rate (judged)": "エラー率(判定値)",
   "Dots mark applied steps": "点は適用された段階です",
+  "Receiving traffic": "トラフィック受信中",
   "The graph starts when the first traffic step is applied.": "最初のトラフィック段階が適用されるとグラフが始まります。",
   "Traffic share moving from {{source}} to {{target}}": "{{source}} から {{target}} へ移るトラフィックの割合",
   "error rate {{rate}}%": "エラー率 {{rate}}%",

@@ -275,46 +275,57 @@
   font-family: inherit;
 }
 
-/* 토폴로지 선 위를 흐르는 점. 움직임 줄이기면 점 없이 이전처럼 선만 보인다 */
-.echo-flow .flow-dot {
+/* 토폴로지 선 위를 흐르는 빛 하나. pathLength 가 1 이라 길이 단위가 선 전체 비율이다. 움직임 줄이기면 선만 보인다 */
+.echo-flow .flow-pulse {
   display: none;
   fill: none;
   pointer-events: none;
+  stroke-dasharray: 0.18 1.2;
   stroke-linecap: round;
 }
-/* 트래픽을 받는 환경 카드 위를 지나가는 빛. 움직임 줄이기면 테두리 색만 남는다 */
-.echo-flow .topology-sheen {
+
+/* 트래픽을 받는 환경 카드: 테두리를 도는 빛(로딩). 카드 테두리 칸만 보이게 가운데를 파낸다 */
+@property --topology-beam-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+.echo-flow .topology-beam {
   display: none;
-  background: linear-gradient(
-    105deg,
-    transparent 30%,
-    var(--ep-color-status-migrating-bg) 50%,
-    transparent 70%
+  position: absolute;
+  inset: -1px;
+  padding: 2px;
+  border-radius: inherit;
+  pointer-events: none;
+  background: conic-gradient(
+    from var(--topology-beam-angle),
+    transparent 0 62%,
+    var(--ep-color-status-migrating-solid) 100%
   );
+  mask:
+    linear-gradient(black 0 0) content-box exclude,
+    linear-gradient(black 0 0);
 }
 @media (prefers-reduced-motion: no-preference) {
   .echo-flow .topology-at-risk {
     animation: topology-at-risk 1.4s ease-in-out infinite;
   }
-  .echo-flow .topology-sheen {
+  .echo-flow .topology-beam {
     display: block;
-    animation: topology-sheen 1.8s ease-in-out infinite;
+    animation: topology-beam 1.6s linear infinite;
   }
   .echo-flow .flow-rail {
-    stroke-opacity: 0.35;
+    stroke-opacity: 0.3;
   }
-  .echo-flow .flow-dot {
+  .echo-flow .flow-pulse {
     display: inline;
-    animation: flow-forward var(--flow-duration) linear infinite;
-  }
-  .echo-flow .flow-dot-return {
-    opacity: 0.55;
-    animation-name: flow-return;
+    animation: flow-pulse var(--flow-duration) linear infinite;
   }
 }
-.flow-paused .flow-dot,
-.flow-paused .topology-sheen,
-.flow-paused .topology-at-risk {
+.flow-paused .flow-pulse,
+.flow-paused .topology-beam,
+.flow-paused .topology-at-risk,
+.flow-paused [class*="animate-"] {
   animation-play-state: paused;
 }
 @keyframes topology-at-risk {
@@ -323,21 +334,16 @@
     box-shadow: 0 0 0 4px var(--ep-color-status-danger-solid);
   }
 }
-@keyframes topology-sheen {
+@keyframes topology-beam {
+  to {
+    --topology-beam-angle: 360deg;
+  }
+}
+@keyframes flow-pulse {
   from {
-    transform: translateX(-100%);
+    stroke-dashoffset: 0.18;
   }
   to {
-    transform: translateX(100%);
-  }
-}
-@keyframes flow-forward {
-  to {
-    stroke-dashoffset: calc(var(--flow-period) * -1);
-  }
-}
-@keyframes flow-return {
-  to {
-    stroke-dashoffset: var(--flow-period);
+    stroke-dashoffset: -1;
   }
 }

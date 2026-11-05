@@ -18,7 +18,7 @@ import {
   useStore,
 } from '@xyflow/react';
 import ELK from 'elkjs/lib/elk-api.js';
-import { TriangleAlert } from 'lucide-react';
+import { LoaderCircle, TriangleAlert } from 'lucide-react';
 import { type CSSProperties, useEffect, useMemo, useRef, useState } from 'react';
 import { ProviderLabel } from '@/components/ProviderLabel';
 import { StatusBadge } from '@/components/StatusBadge';
@@ -79,20 +79,16 @@ function EnvironmentNode({ data }: NodeProps<Node<EnvNodeData, 'environment'>>) 
   return (
     <div
       className={cn(
-        'relative isolate flex flex-col justify-between rounded-md border bg-surface p-3 shadow-xs',
+        'relative flex flex-col justify-between rounded-md border bg-surface p-3 shadow-xs',
         atRisk
           ? 'topology-at-risk border-danger-solid ring-2 ring-danger-bg'
           : receiving
-            ? 'border-migrating-solid'
+            ? 'border-migrating-solid motion-safe:border-migrating-bg'
             : 'border-line',
       )}
       style={{ width: ENV_WIDTH, height: ENV_HEIGHT }}
     >
-      {receiving && (
-        <span aria-hidden className="absolute inset-0 -z-10 overflow-hidden rounded-md">
-          <span className="topology-sheen absolute inset-0" />
-        </span>
-      )}
+      {receiving && <span aria-hidden className="topology-beam" />}
       <Handle
         type="target"
         position={Position.Top}
@@ -113,11 +109,18 @@ function EnvironmentNode({ data }: NodeProps<Node<EnvNodeData, 'environment'>>) 
       />
       <span className="flex items-center justify-between gap-2">
         <span className="truncate text-body-medium">{environment.name}</span>
-        {weight > 0 && (
-          <span aria-hidden className="relative flex size-2 shrink-0">
-            <span className="absolute size-full rounded-full bg-success-solid opacity-60 motion-safe:animate-ping" />
-            <span className="relative size-full rounded-full bg-success-solid" />
+        {receiving ? (
+          <span className="flex shrink-0 items-center gap-1 text-caption text-migrating-fg">
+            <LoaderCircle aria-hidden className="size-3 motion-safe:animate-spin" />
+            {t('Receiving traffic')}
           </span>
+        ) : (
+          weight > 0 && (
+            <span aria-hidden className="relative flex size-2 shrink-0">
+              <span className="absolute size-full rounded-full bg-success-solid opacity-60 motion-safe:animate-ping" />
+              <span className="relative size-full rounded-full bg-success-solid" />
+            </span>
+          )
         )}
       </span>
       <span className="flex flex-wrap items-center gap-1.5">
@@ -184,38 +187,33 @@ function ProxyNode({ data }: NodeProps<Node<ProxyNodeData, 'proxy'>>) {
   );
 }
 
-/** 점 사이 간격(px). 비율이 높을수록 촘촘하다. 점은 비율을 그린 것이고 요청 수가 아니다 */
-function flowPeriod(weight: number) {
-  return Math.round(96 - weight * 0.64);
+/** 비율이 높을수록 빠르다. 빛은 방향과 비율을 그린 것이고 요청 수가 아니다 */
+function flowSeconds(weight: number) {
+  return 3.2 - weight * 0.018;
 }
 
-/** 선을 따라 흐르는 점. 움직임은 CSS 만 쓰고, 움직임 줄이기면 그리지 않는다 */
-function FlowDots({
+/** 선을 따라 흐르는 빛 하나. pathLength 로 길이를 1로 맞춰 선이 길어도 하나만 보인다. 움직임은 CSS 만 쓴다 */
+function FlowPulse({
   path,
-  period,
-  speed,
+  seconds,
   width,
   color,
-  className,
 }: {
   path: string;
-  period: number;
-  speed: number;
+  seconds: number;
   width: number;
   color: string;
-  className: string;
 }) {
   return (
     <path
       d={path}
-      className={className}
+      pathLength={1}
+      className="flow-pulse"
       style={
         {
-          '--flow-period': `${period}px`,
-          '--flow-duration': `${period / speed}s`,
+          '--flow-duration': `${seconds}s`,
           stroke: color,
           strokeWidth: width,
-          strokeDasharray: `0.1 ${period - 0.1}`,
         } as CSSProperties
       }
     />
@@ -239,7 +237,7 @@ function TrafficEdge(props: EdgeProps<Edge<TrafficEdgeData>>) {
   const labelX = curve?.labelX ?? trafficLabelX;
   const labelY = curve?.labelY ?? trafficLabelY;
   const weight = data?.weight ?? 0;
-  const lineWidth = Math.max(1.5, weight / 12);
+  const lineWidth = weight > 0 ? 3 + weight / 14 : 2;
   return (
     <>
       <BaseEdge
@@ -251,41 +249,21 @@ function TrafficEdge(props: EdgeProps<Edge<TrafficEdgeData>>) {
             : weight > 0
               ? 'var(--ep-color-chart-3)'
               : 'var(--ep-color-brand-default)',
-          strokeWidth: replication ? 1.5 : lineWidth,
+          strokeWidth: replication ? 2 : lineWidth,
           strokeDasharray: replication || weight === 0 ? '5 4' : undefined,
           transition: 'stroke-width 400ms ease',
         }}
       />
       {replication ? (
-        <FlowDots
-          path={path}
-          period={72}
-          speed={36}
-          width={3}
-          color="var(--ep-color-text-muted)"
-          className="flow-dot"
-        />
+        <FlowPulse path={path} seconds={4} width={3} color="var(--ep-color-text-muted)" />
       ) : (
         weight > 0 && (
-          <>
-            <FlowDots
-              path={path}
-              period={flowPeriod(weight)}
-              speed={90}
-              width={Math.max(4, lineWidth)}
-              color="var(--ep-color-chart-3)"
-              className="flow-dot"
-            />
-            {/* 응답: 요청과 반대로 돌아온다 */}
-            <FlowDots
-              path={path}
-              period={flowPeriod(weight)}
-              speed={60}
-              width={Math.max(2.5, lineWidth / 2)}
-              color="var(--ep-color-chart-3)"
-              className="flow-dot flow-dot-return"
-            />
-          </>
+          <FlowPulse
+            path={path}
+            seconds={flowSeconds(weight)}
+            width={lineWidth}
+            color="var(--ep-color-chart-3)"
+          />
         )
       )}
       <EdgeLabelRenderer>
@@ -537,7 +515,7 @@ function TopologyCanvas({
 
 /**
  * S01 토폴로지 캔버스 (ADR 11/2: React Flow + elkjs).
- * 지역별로 묶은 환경 노드 + 앞단 프록시, 트래픽 선 굵기 = 비율, 서비스 중 → 예비 복제 점선. 선 위 점은 방향을 보여 주는 그림이다
+ * 지역별로 묶은 환경 노드 + 앞단 프록시, 트래픽 선 굵기 = 비율, 서비스 중 → 예비 복제 점선. 선 위 빛은 방향을 보여 주는 그림이다
  */
 export function Topology(props: TopologyProps) {
   const ref = useRef<HTMLDivElement>(null);
