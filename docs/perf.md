@@ -10,6 +10,7 @@ React Compiler · 화면 밖 작업 멈추기 · 화면 미리 받기 같은 최
 | LCP · INP · CLS (실사용자) | Sentry 브라우저 추적, 표본 20%. 화면 이름은 경로 패턴(`/o/:slug/migrations/:id`)으로 묶는다(`lib/route-pattern.ts`) | Sentry → Insights → Frontend, 화면(transaction)별. 값은 pageload 가 아니라 따로 보낸 span 에 있다: `span.op:ui.webvital.lcp` · `ui.webvital.cls` · `ui.interaction.click`(INP) |
 | 느린 클릭 원인 | Sentry 긴 애니메이션 프레임(`enableLongAnimationFrame`) | 같은 화면의 span 목록 |
 | 다시 불러오기 1번에 다시 그리는 칸 | `src/pages/dashboard/DashboardPage.renders.test.tsx` (React `Profiler` + 칸별 호출 수) | `pnpm exec vitest run src/pages/dashboard/DashboardPage.renders.test.tsx --silent=false` 출력 |
+| 이전 실행 중 다시 그리는 횟수 | `src/pages/migrations/MigrationPage.renders.test.tsx` (실행 중 계획 3초, 같은 응답) | `pnpm exec vitest run src/pages/migrations/MigrationPage.renders.test.tsx --silent=false` 출력 |
 | 번들 크기(gzip) | `node scripts/check-bundle.mjs` (CI 예산) | CI 로그 · 로컬 빌드 뒤 |
 
 - 렌더 측정은 jsdom 에서 데모 구성(환경 3 · 서비스 2, 같은 응답)으로 조직 쿼리를 전부 다시 불러온다. 대시보드는 실시간 채널 전까지 폴링으로 갱신되므로 "같은 응답인데 다시 그리는 칸"이 줄어야 한다. 렌더 ms 는 jsdom 값이라 비교용으로만 쓴다.
@@ -30,6 +31,16 @@ React Compiler · 화면 밖 작업 멈추기 · 화면 미리 받기 같은 최
 | StatusPill | 1 |
 
 응답이 같아도 모든 칸이 한 번씩 다시 그려진다. 칸 컴포넌트는 `memo` 가 없고 대시보드가 매번 새 `Map` · 객체를 만들어 넘긴다.
+
+### 이전 실행 화면(M02), 실행 중 3초(11/5)
+
+| 측정 | 값 |
+|---|---|
+| 화면 커밋 | 4 |
+| LiveTab | 3 |
+| TrafficChart | 3 |
+
+경과 시간이 1초마다 바뀌어 초당 1번 그린다. 같은 응답의 계획 폴링(1초)은 칸을 더 그리지 않는다. 그래프도 지금 시각까지 이어지므로 줄일 곳이 없어 기준값으로만 둔다.
 
 ### 번들 (gzip)
 
@@ -53,6 +64,18 @@ React Compiler · 화면 밖 작업 멈추기 · 화면 미리 받기 같은 최
 
 표본이 적어 추세로 읽지 않는다. `/o/:slug/migrations/:id` LCP 는 1건이고 메뉴 이동으로 잰 값으로 보인다. 대시보드 LCP 3.6초는 시연 전에 화면을 미리 열어 두면 시연에 드러나지 않는다.
 
+### 대시보드 첫 화면 순서 (11/5 운영, 파일 캐시 있음)
+
+| 시각(ms) | 일 |
+|---|---|
+| 942 | HTML 첫 응답 |
+| 1,053 | 언어 파일까지 받음 |
+| 1,096 ~ 1,345 | `/me` |
+| 1,393 ~ 1,571 | 환경 · 서비스 · 재난 |
+| 1,567 ~ 1,813 | 서비스 상세 · 이전 계획 · 감사 로그 |
+
+LCP 글자는 데이터가 온 뒤 그려지는 칸이라 LCP 는 API 3단계를 기다린다. 이때 브라우저의 FCP · LCP 값(6,080ms)은 창이 앞에 없던 측정이라 쓰지 않았다.
+
 ## 3. 변경 기록
 
 | 날짜 | 변경 | PR | 결과 |
@@ -64,3 +87,4 @@ React Compiler · 화면 밖 작업 멈추기 · 화면 미리 받기 같은 최
 | 11/3 | 지구본 화면 밖이면 그리기 멈춤 · 토폴로지는 화면에 들어올 때 만듦 (#44) | #49 | 바꾸기 전: 소개 화면을 내려 지구본이 화면 밖이어도 2초에 240번 다시 그림(120Hz 화면). 바꾼 뒤(미리보기): 화면 밖 2초에 0번, 다시 올리면 이어 돈다 |
 | 11/5 | 대시보드가 넘기는 값의 참조를 유지하고 칸을 `memo` 로 감쌈, `useQueries` 합치기 함수를 모듈로 옮김 (#45) | #80 | 같은 응답으로 다시 불러올 때 Topology · KpiTiles · LiveEvents · StatusPill 1 → 0, EnvironmentsPanel 2 → 0. 테스트로 고정했다. 대시보드 청크 65.3KB |
 | 11/5 | 토폴로지 흐름 · 카드 효과는 CSS 애니메이션이고 화면 밖이면 멈춤 (#79) | #81 | 미리보기: 화면 안 애니메이션 진행, 화면 밖 `paused`. 새 라이브러리 없음 |
+| 11/5 | `/me` 를 언어 파일과 동시에 출발 · API 주소 미리 연결 (#45) | 이 PR | 로컬: `/me` 가 언어 파일 요청과 같은 시각에 출발하고 한 번만 부른다. `/login` 은 부르지 않는다. 운영 LCP 변화는 표본이 쌓이면 적는다 |

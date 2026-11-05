@@ -1,15 +1,12 @@
-import { QueryClientProvider } from '@tanstack/react-query';
+import { type QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { useState } from 'react';
 import { RouterProvider } from 'react-router';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { useLocale } from '@/hooks/useLocale';
-import { createQueryClient } from '@/lib/api/query-client';
 import { router } from '@/router';
 
-export function App() {
-  const [queryClient] = useState(createQueryClient);
+export function App({ queryClient }: { queryClient: QueryClient }) {
   const { locale } = useLocale();
 
   return (

@@ -1,15 +1,18 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, unwrap } from './client';
 import { ApiError } from './errors';
 import { queryKeys } from './query-keys';
 import type { CreateOrganization, Me, Organization } from './types';
 
+/** 앱을 그리기 전에도 미리 부를 수 있게 옵션만 따로 둔다 */
+export const meQuery = queryOptions({
+  queryKey: queryKeys.me(),
+  queryFn: () => unwrap(api.GET('/api/v1/me')),
+  staleTime: 60_000,
+});
+
 export function useMe() {
-  return useQuery({
-    queryKey: queryKeys.me(),
-    queryFn: () => unwrap(api.GET('/api/v1/me')),
-    staleTime: 60_000,
-  });
+  return useQuery(meQuery);
 }
 
 /**
