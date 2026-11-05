@@ -265,5 +265,8 @@
   "Waiting for the DB cutover result": "DB書き込み切り替えの結果を待っています",
   "Waiting for the DB rollback result": "DBロールバックの結果を待っています",
   "No DB cutover recorded for this plan": "この計画にDB書き込み切り替えの記録はありません",
-  "{{n}} rows compared": "{{n}}行を比較"
+  "{{n}} rows compared": "{{n}}行を比較",
+  "Too few requests to judge, so stages passed on health checks.": "判定できるリクエストがないため、ヘルスチェックで各段階を通過しました。",
+  "Show less": "折りたたむ",
+  "Show all {{total}} items": "{{total}}件すべて表示"
 }
