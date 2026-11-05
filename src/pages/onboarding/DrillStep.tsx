@@ -44,7 +44,7 @@ export function DrillStep({
     <StepShell
       title={t('You are protected. Try a drill.')}
       lead={t(
-        'Simulate an earthquake near your primary. Nothing moves until you approve the plan.',
+        'Simulate an earthquake near your primary. The disaster is simulated, but the migration it starts is real.',
       )}
     >
       <div className="flex items-start gap-3 max-wide:flex-col">

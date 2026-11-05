@@ -40,7 +40,7 @@
 | 자동 원복 결과 | Auto revert | `revertStatus` | 실패한 새 버전을 거둔 결과. Rollback과 다르다 |
 | 빌드 재사용 | Build reused | `build.reused` | 진행 화면 배지 |
 | 가짜 값 | simulated | `simulated: true` | 회색 소문자 배지 `simulated` |
-| 재난 🆕 | Disaster | `Disaster` (`EARTHQUAKE` · `TYPHOON`) | 화면 표기 Earthquake · Typhoon. 시뮬레이션이므로 항상 `simulated` |
+| 재난 | Disaster | `Disaster` (`EARTHQUAKE` · `TYPHOON`) | 화면 표기 Earthquake · Typhoon. 재난은 항상 `simulated` 이고, 기준을 넘으면 그 재난이 시작한 이전은 실제다 |
 | 대피 후보 🆕 | Evacuation | `EvacuationCandidate` | 메뉴 이름 Evacuation |
 | AI 사전 점검 | AI pre-check | `PrecheckDetail` | 패치 = Patch, 막힌 시도 = Blocked attempt |
 | 이전 | Migration | `MigrationPlan.mode` (`PLANNED` · `EMERGENCY` · `FAILBACK`) | 화면 표기 Planned · Emergency · Failback. 서버가 판정한다 |

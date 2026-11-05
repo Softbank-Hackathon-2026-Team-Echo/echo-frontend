@@ -137,7 +137,12 @@ export default function DashboardPage() {
         <div className="col-span-4 flex flex-col gap-4 max-wide:col-span-6 max-sm:col-span-12">
           {latest && (
             <div className="max-wide:hidden">
-              <ActiveDisasterCard orgId={organization.id} disaster={latest} names={names} />
+              <ActiveDisasterCard
+                orgId={organization.id}
+                orgSlug={organization.slug}
+                disaster={latest}
+                names={names}
+              />
             </div>
           )}
           <LiveEvents disasters={active} environments={envList} />
@@ -152,7 +157,12 @@ export default function DashboardPage() {
               names={names}
             />
           ) : latest ? (
-            <ActiveDisasterCard orgId={organization.id} disaster={latest} names={names} />
+            <ActiveDisasterCard
+              orgId={organization.id}
+              orgSlug={organization.slug}
+              disaster={latest}
+              names={names}
+            />
           ) : (
             <EnvironmentsPanel
               environments={envList}

@@ -20,7 +20,6 @@ import {
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useNow } from '@/hooks/useNow';
-import { useActiveDisasters } from '@/lib/api/disasters';
 import { useEnvironments } from '@/lib/api/environments';
 import { useCurrentOrg } from '@/lib/api/me';
 import {
@@ -156,7 +155,6 @@ export default function MigrationPage() {
   const orgId = organization?.id;
   const plan = useMigrationPlan(orgId, planId);
   const environments = useEnvironments(orgId);
-  const disasters = useActiveDisasters(orgId);
   const abort = usePlanAction(orgId ?? '', plan.data?.serviceId ?? '', 'abort');
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [tab, setTab] = useState<string>();
@@ -194,10 +192,8 @@ export default function MigrationPage() {
   const sourceName = names.get(current.sourceEnvironmentId) ?? t('source');
   const targetName = names.get(current.targetEnvironmentId) ?? t('target');
   const elapsed = totalSeconds(current, now);
-  // 재난이 끝나지 않은 지역으로는 돌아가지 않는다(ADR 11/2)
-  const sourceAtRisk = (disasters.data ?? []).some((disaster) =>
-    disaster.affectedEnvironmentIds.includes(current.sourceEnvironmentId),
-  );
+  // 재난이 끝나지 않은 지역으로는 돌아가지 않는다(ADR 11/2). 판단은 서버가 한다
+  const sourceAtRisk = current.failback?.allowed === false;
   const failbackUrl = `/o/${organization.slug}/evacuation/plan?service=${current.serviceId}&target=${current.sourceEnvironmentId}`;
   const selectedTab = tab ?? (finished ? 'result' : 'live');
   const description = [

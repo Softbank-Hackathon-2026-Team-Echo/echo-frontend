@@ -60,7 +60,7 @@
 | SVC 배포 진행 | `GET /orgs/{orgId}/deploy-requests/{id}` (`status`·`stageTimes`·`build.reused`·`errorCode`·`revertStatus`) | ✅ (실시간 전까지 2초 폴링) |
 | SVC 배포 이력 · 되돌리기 · 로그 | 이력 `rollbackable`·`isCurrent` · `POST /orgs/{orgId}/deploy-requests/{id}/rollback` · `GET …/deploy-requests/{id}/logs?source=DEPLOY_JOB\|BUILD\|RUNTIME&cursor&limit` | ✅ (11/3 운영) |
 | S01 대시보드 | 환경 목록 · 서비스 상세 · 지표(4-2) · 진행 중 재난(4-3) · 최근 이벤트·활동(4-8) | ✅ / 🆕 |
-| S01-D 재난 시뮬레이션 · S01-R 휴대폰 리모컨 | 재난 만들기·미리보기(4-3) | 🆕 |
+| S01-D 재난 시뮬레이션 · S01-R 휴대폰 리모컨 | 재난 만들기·미리보기(4-3) | ✅ |
 | E01-1 대피처 고르기 | 대피 후보·점수(4-4) | 🆕 |
 | E01-2 AI 사전 점검 | 실행·단계·로그·패치(4-5) ✅ · 패치 승인 🆕 | 일부 🆕 |
 | E01-3 계획 승인 | 이전 계획·승인(4-6) · 보안 비교(4-7) | 🆕 |
@@ -127,22 +127,20 @@ KPI 타일 5개(성공률·p95·복제 지연·트래픽 비율·에러 버짓)�
 
 ### 4-3. 재난 (2차 P1)
 
-> 11/3: 지진 이전 기준은 규모 M7.0 이상(가칭, 11/2 2부 "7 또는 8"). 프론트는 `EVACUATION_MIN_MAGNITUDE` 상수로 두고 다이얼로그·대시보드·대피 화면에 보인다. 서버가 판정하게 되면 응답에 `meetsThreshold`(가칭)를 실어 주면 그 값을 쓴다. 출처는 `source: SIMULATED | LIVE_FEED`(가칭).
+✅ 운영에 열렸다(echo-was #70, 원본은 echo-was `docs/api/disasters.md`). 재난은 늘 시뮬레이션이지만, 기준을 넘으면 서버가 피해 서비스의 `EMERGENCY` 이전 계획을 만들고 자기 승인이 켜진 조직에서는 **실제 이전이 바로 시작된다**. 화면은 이 경우 확인을 받는다.
 
-| 동작 | 제안 |
+| 동작 | 경로 |
 |---|---|
-| 영향 미리보기 | `POST /orgs/{orgId}/disasters/preview` `{type: EARTHQUAKE \| TYPHOON, epicenter: {lat, lng}, magnitude}` → `{radiusKm, affected: [envId], safe: [envId]}` (저장 안 함. 다이얼로그에서 진원지를 옮길 때마다 부름) |
-| 재난 발생 | `POST /orgs/{orgId}/disasters` (같은 본문, 개발자 이상, `simulated: true`) → `Disaster` |
-| 진행 중 목록 | `GET /orgs/{orgId}/disasters?status=ACTIVE` |
-| 종료 | `POST /orgs/{orgId}/disasters/{id}/end` (복귀 잠금이 풀린다) |
+| 미리보기 | `GET …/disasters/preview?type&lat&lng&magnitude` → `{radiusKm, meetsThreshold, affected[], safe[], unknown[]}` (저장 안 함) |
+| 만들기 | `POST …/disasters` `{type, epicenter{lat, lng}, magnitude}` → 201 `Disaster` (개발자, 사람만) |
+| 조회 | `GET …/disasters?status=ACTIVE\|ENDED&page&size` · `GET …/disasters/{id}` |
+| 종료 | `POST …/disasters/{id}/end` → `ENDED`. 복귀 잠금이 풀린다 |
 
-```json
-{"id": "…", "type": "EARTHQUAKE", "magnitude": 7.2, "epicenter": {"lat": 35.2, "lng": 139.4},
- "radiusKm": 300, "status": "ACTIVE", "affectedEnvironmentIds": ["…"], "safeEnvironmentIds": ["…", "…"],
- "startedAt": "…", "endedAt": null, "simulated": true}
-```
-
-휴대폰 리모컨(S01-R)도 같은 `POST /disasters`를 부른다.
+- `Disaster`: `{id, type, source, simulated, magnitude, epicenter, radiusKm, meetsThreshold, status, affectedEnvironmentIds[], safeEnvironmentIds[], unknownEnvironmentIds[], createdBy, endedBy, startedAt, endedAt, plans[{serviceId, planId, outcome, reason, targetEnvironmentId, planStatus}]}`.
+- 건너뛴 서비스는 만들기 응답의 `plans` 에만 있어서 화면은 그 순간 토스트로 알린다. `epicenterLabel` 은 서버에 없어 좌표로 만든다.
+- 지진 M7.0 이상, 태풍은 늘 기준을 넘는다. 기준 미달은 저장만 하고 복귀 · 도착을 막지 않는다. M7.2 반경은 302km 다.
+- 계획 요약 · 상세에 `disasterId`, 상세에 `failback {allowed, reason, disasterId}` 가 있다. 복귀 버튼은 `failback.allowed` 를 따른다. 끝나지 않은 재난의 피해 환경으로 계획을 만들면 409 `DISASTER_ACTIVE` 다.
+- 실시간 채널이 없어 진행 중인 재난은 5초마다 다시 부른다.
 
 ### 4-4. 대피 후보 (F10·2차)
 

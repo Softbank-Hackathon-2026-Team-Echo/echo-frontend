@@ -197,6 +197,27 @@ export function securityReasonLabel(reason: string): string {
   return labelOf(SECURITY_REASONS, reason);
 }
 
+// 재난이 만든 이전 계획 (echo-was docs/api/disasters.md)
+const DISASTER_PLAN_REASONS: Record<string, string> = {
+  NO_SAFE_TARGET: k('No safe standby to move to'),
+  SELF_APPROVAL_DISABLED: k('Self-approval is off, so another developer has to approve'),
+  SOURCE_NOT_AFFECTED: k('Traffic already left the affected environment'),
+  SECURITY_GATE_BLOCKED: k('The security gate is holding it'),
+  MIGRATION_PLAN_OPEN: k('This service already has an open migration plan'),
+  TARGET_NOT_READY: k('The target has no deployment, or runs a different version'),
+  TARGET_SYNCING: k('The standby is still catching up'),
+  DEPLOY_IN_PROGRESS: k('A deploy is running for this service'),
+  SOURCE_NOT_SINGLE: k('The service is not on exactly one environment'),
+  SERVICE_DELETING: k('This service is being deleted'),
+  ENVIRONMENT_UNHEALTHY: k('The target failed its last connection check'),
+  DISASTER_ACTIVE: k('The target is inside an active disaster'),
+  INTERNAL_ERROR: k('Internal error'),
+};
+
+export function disasterPlanReasonLabel(reason: string): string {
+  return labelOf(DISASTER_PLAN_REASONS, reason);
+}
+
 // AI 사전 점검
 const PRECHECK_STATUSES: Record<string, StatusView> = {
   QUEUED: { label: k('Waiting for a runner'), tone: 'neutral' },

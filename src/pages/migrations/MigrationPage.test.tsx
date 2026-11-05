@@ -108,27 +108,13 @@ describe('MigrationPage', () => {
   });
 
   it('출발 환경이 아직 재난 반경 안이면 복귀를 막는다', async () => {
-    window.sessionStorage.setItem(
-      'echoport.disasters.o1',
-      JSON.stringify([
-        {
-          id: 'd1',
-          type: 'EARTHQUAKE',
-          source: 'SIMULATED',
-          magnitude: 7.2,
-          epicenter: { lat: 35.2, lng: 139.4 },
-          epicenterLabel: 'near Tokyo',
-          radiusKm: 302,
-          status: 'ACTIVE',
-          affectedEnvironmentIds: ['e1'],
-          safeEnvironmentIds: ['e2'],
-          startedAt: AT,
-          endedAt: null,
-          simulated: true,
-        },
-      ]),
+    serve(
+      migrationPlan({
+        status: 'SUCCEEDED',
+        finishedAt: '2026-11-05T03:00:25Z',
+        failback: { allowed: false, reason: 'DISASTER_ACTIVE', disasterId: 'd1' },
+      }),
     );
-    serve(migrationPlan({ status: 'SUCCEEDED', finishedAt: '2026-11-05T03:00:25Z' }));
     renderPage();
 
     expect(await screen.findByRole('button', { name: 'Start failback' })).toHaveAttribute(
