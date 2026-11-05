@@ -141,8 +141,10 @@ export default function PlanPage() {
   const targetName = names.get(plan.data?.targetEnvironmentId ?? targetId) ?? t('target');
   const restartUrl = `/o/${organization.slug}/evacuation/plan?service=${serviceId}&target=${targetId}`;
   // 재난이 끝나지 않은 지역으로는 옮기지 않는다(ADR 11/2). 주소로 바로 들어와도 여기서 막는다
-  const targetAtRisk = (disasters.data ?? []).some((disaster) =>
-    disaster.affectedEnvironmentIds.includes(plan.data?.targetEnvironmentId ?? targetId),
+  const targetAtRisk = (disasters.data ?? []).some(
+    (disaster) =>
+      disaster.meetsThreshold &&
+      disaster.affectedEnvironmentIds.includes(plan.data?.targetEnvironmentId ?? targetId),
   );
   const riskReason = targetAtRisk
     ? t('{{name}} is inside an active disaster radius', { name: targetName })

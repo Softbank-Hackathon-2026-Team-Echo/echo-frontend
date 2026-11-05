@@ -51,6 +51,8 @@ export function migrationPlan(extra: Partial<MigrationPlan> = {}): MigrationPlan
     status: 'RUNNING',
     mode: 'PLANNED',
     result: null,
+    disasterId: null,
+    failback: { allowed: true, reason: null, disasterId: null },
     currentStep: 2,
     expectedSeconds: 25,
     createdBy: { id: 'u2', login: 'dev-a' },

@@ -588,6 +588,84 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/orgs/{org_id}/disasters/preview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Preview Disaster
+         * @description 반경과 피해·안전·모름 환경만 계산한다. 저장하지 않고 계획도 만들지 않는다.
+         */
+        get: operations["preview_disaster_api_v1_orgs__org_id__disasters_preview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/orgs/{org_id}/disasters": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search Disasters */
+        get: operations["search_disasters_api_v1_orgs__org_id__disasters_get"];
+        put?: never;
+        /**
+         * Create Disaster
+         * @description 재난을 저장하고 피해 서비스마다 긴급 이전 계획을 만든다. 서비스별 결과는 plans[] 에 있다.
+         */
+        post: operations["create_disaster_api_v1_orgs__org_id__disasters_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/orgs/{org_id}/disasters/{disaster_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Disaster */
+        get: operations["get_disaster_api_v1_orgs__org_id__disasters__disaster_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/orgs/{org_id}/disasters/{disaster_id}/end": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * End Disaster
+         * @description 재난을 끝낸다. 복귀 잠금이 풀린다.
+         */
+        post: operations["end_disaster_api_v1_orgs__org_id__disasters__disaster_id__end_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/orgs/{org_id}/audit-logs": {
         parameters: {
             query?: never;
@@ -1014,6 +1092,36 @@ export interface components {
             /** Details */
             details?: components["schemas"]["ErrorDetail"][] | null;
         };
+        /** ApiResponse[DisasterPreviewResponse] */
+        ApiResponse_DisasterPreviewResponse_: {
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Code */
+            code?: string | null;
+            /** Message */
+            message?: string | null;
+            data?: components["schemas"]["DisasterPreviewResponse"] | null;
+            /** Details */
+            details?: components["schemas"]["ErrorDetail"][] | null;
+        };
+        /** ApiResponse[DisasterResponse] */
+        ApiResponse_DisasterResponse_: {
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Code */
+            code?: string | null;
+            /** Message */
+            message?: string | null;
+            data?: components["schemas"]["DisasterResponse"] | null;
+            /** Details */
+            details?: components["schemas"]["ErrorDetail"][] | null;
+        };
         /** ApiResponse[EnvironmentDetailResponse] */
         ApiResponse_EnvironmentDetailResponse_: {
             /**
@@ -1206,6 +1314,21 @@ export interface components {
             /** Message */
             message?: string | null;
             data?: components["schemas"]["Page_DeployRequestSummaryResponse_"] | null;
+            /** Details */
+            details?: components["schemas"]["ErrorDetail"][] | null;
+        };
+        /** ApiResponse[Page[DisasterResponse]] */
+        ApiResponse_Page_DisasterResponse__: {
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Code */
+            code?: string | null;
+            /** Message */
+            message?: string | null;
+            data?: components["schemas"]["Page_DisasterResponse_"] | null;
             /** Details */
             details?: components["schemas"]["ErrorDetail"][] | null;
         };
@@ -1674,6 +1797,16 @@ export interface components {
             simulate?: components["schemas"]["SimulateRequest"] | null;
         };
         /**
+         * CreateDisasterRequest
+         * @description 재난 버튼 한 번. 서버가 반경·피해 환경을 계산하고 긴급 이전 계획을 만든다.
+         */
+        CreateDisasterRequest: {
+            type: components["schemas"]["DisasterType"];
+            epicenter: components["schemas"]["EpicenterRequest"];
+            /** Magnitude */
+            magnitude: number | string;
+        };
+        /**
          * CreateEnvironmentRequest
          * @description 환경 등록. config 키는 camelCase 다. 비밀값은 받지 않고 보관 위치(secretRef)만 받는다.
          */
@@ -1924,6 +2057,108 @@ export interface components {
          */
         DeployRequestTrigger: "MANUAL" | "STANDBY_SYNC" | "ROLLBACK";
         /**
+         * DisasterPlanOutcome
+         * @description 재난 응답 plans[] 한 줄의 요약. 실제 상태는 planStatus 와 계획 API 로 본다.
+         * @enum {string}
+         */
+        DisasterPlanOutcome: "APPROVED" | "PENDING_APPROVAL" | "SKIPPED";
+        /**
+         * DisasterPlanResponse
+         * @description 서비스 하나의 트리거 결과. planStatus 는 그 계획의 실제 상태다(계획이 없으면 null).
+         *
+         *     만들기 응답은 그 순간 결과다. 조회는 이 재난이 만든 계획만 싣는다(건너뛴 서비스는 저장되지
+         *     않는다).
+         */
+        DisasterPlanResponse: {
+            /**
+             * Serviceid
+             * Format: uuid
+             */
+            serviceId: string;
+            /** Planid */
+            planId: string | null;
+            outcome: components["schemas"]["DisasterPlanOutcome"];
+            /** Reason */
+            reason: string | null;
+            /** Targetenvironmentid */
+            targetEnvironmentId: string | null;
+            planStatus: components["schemas"]["MigrationPlanStatus"] | null;
+        };
+        /**
+         * DisasterPreviewResponse
+         * @description 저장하지 않는 계산 결과. unknown 은 좌표를 몰라 판정하지 못한 환경이다.
+         */
+        DisasterPreviewResponse: {
+            /** Radiuskm */
+            radiusKm: number;
+            /** Meetsthreshold */
+            meetsThreshold: boolean;
+            /** Affected */
+            affected: string[];
+            /** Safe */
+            safe: string[];
+            /** Unknown */
+            unknown: string[];
+        };
+        /**
+         * DisasterResponse
+         * @description 재난 한 건. 재난은 늘 시뮬레이션(simulated=true)이고, 이전 계획의 simulated 는 따로다.
+         */
+        DisasterResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            type: components["schemas"]["DisasterType"];
+            source: components["schemas"]["DisasterSource"];
+            /** Simulated */
+            simulated: boolean;
+            /** Magnitude */
+            magnitude: number;
+            epicenter: components["schemas"]["CoordinatesResponse"];
+            /** Radiuskm */
+            radiusKm: number;
+            /** Meetsthreshold */
+            meetsThreshold: boolean;
+            status: components["schemas"]["DisasterStatus"];
+            /** Affectedenvironmentids */
+            affectedEnvironmentIds: string[];
+            /** Safeenvironmentids */
+            safeEnvironmentIds: string[];
+            /** Unknownenvironmentids */
+            unknownEnvironmentIds: string[];
+            createdBy: components["schemas"]["UserRefResponse"];
+            endedBy: components["schemas"]["UserRefResponse"] | null;
+            /**
+             * Startedat
+             * Format: date-time
+             */
+            startedAt: string;
+            /** Endedat */
+            endedAt: string | null;
+            /** Plans */
+            plans: components["schemas"]["DisasterPlanResponse"][];
+        };
+        /**
+         * DisasterSource
+         * @description 재난 정보 출처. 지금은 사람이 버튼으로 낸 시뮬레이션뿐이다.
+         * @enum {string}
+         */
+        DisasterSource: "SIMULATED";
+        /**
+         * DisasterStatus
+         * @description ACTIVE 이고 기준을 넘은 재난의 피해 환경은 이전 도착으로 고를 수 없다(복귀 차단).
+         * @enum {string}
+         */
+        DisasterStatus: "ACTIVE" | "ENDED";
+        /**
+         * DisasterType
+         * @description 재난 종류. 지진은 규모 기준이 있고, 태풍은 규모와 상관없이 대상이다.
+         * @enum {string}
+         */
+        DisasterType: "EARTHQUAKE" | "TYPHOON";
+        /**
          * EnvironmentConnectionStatus
          * @description 환경 접속 상태. 등록·다시 확인·config/secretRef 수정 때 바뀐다. 단건 조회는 바꾸지 않는다.
          * @enum {string}
@@ -2039,6 +2274,13 @@ export interface components {
              * Format: date-time
              */
             updatedAt: string;
+        };
+        /** EpicenterRequest */
+        EpicenterRequest: {
+            /** Lat */
+            lat: number;
+            /** Lng */
+            lng: number;
         };
         /**
          * ErrorDetail
@@ -2236,6 +2478,20 @@ export interface components {
          * @enum {string}
          */
         MigrationErrorCode: "PREFLIGHT_FAILED" | "TRAFFIC_APPLY_FAILED" | "HEALTH_CHECK_FAILED" | "METRICS_UNAVAILABLE" | "THRESHOLD_EXCEEDED" | "DATA_LAG_EXCEEDED" | "ABORTED" | "WORKER_LOST" | "INTERNAL_ERROR" | "TARGET_NOT_RECEIVING" | "SECURITY_GATE_BLOCKED";
+        /**
+         * MigrationFailbackResponse
+         * @description 이 계획을 거꾸로 하는 복귀(도착 = 이 계획의 출발 환경)를 지금 만들 수 있는가.
+         *
+         *     출발 환경이 ACTIVE 이고 기준을 넘은 재난의 피해 환경이면 allowed=false 이고 그 재난을 싣는다.
+         */
+        MigrationFailbackResponse: {
+            /** Allowed */
+            allowed: boolean;
+            /** Reason */
+            reason: "DISASTER_ACTIVE" | null;
+            /** Disasterid */
+            disasterId: string | null;
+        };
         /** MigrationLogLineResponse */
         MigrationLogLineResponse: {
             /** Seq */
@@ -2312,6 +2568,8 @@ export interface components {
             targetServiceEnvironmentId: string;
             status: components["schemas"]["MigrationPlanStatus"];
             mode: components["schemas"]["MigrationPlanMode"];
+            /** Disasterid */
+            disasterId: string | null;
             /** Currentstep */
             currentStep: number;
             /** Expectedseconds */
@@ -2354,13 +2612,14 @@ export interface components {
             /** Errormessage */
             errorMessage: string | null;
             result: components["schemas"]["MigrationPlanResultResponse"] | null;
+            failback: components["schemas"]["MigrationFailbackResponse"];
         };
         /**
          * MigrationPlanMode
          * @description 이전 계획 종류. 서버가 만들 때 한 번 판정해 저장한다(클라이언트가 정하지 않는다).
          *
          *     FAILBACK 은 같은 서비스의 가장 늦게 끝난 성공 계획을 출발·도착만 바꿔 거꾸로 하는 계획이다(그
-         *     계획이 FAILBACK 이면 아니다). EMERGENCY 는 재난 자동 이전(API 서버 9)이 만들 때부터 쓴다.
+         *     계획이 FAILBACK 이면 아니다). EMERGENCY 는 재난 트리거(API 서버 9)만 만든다.
          * @enum {string}
          */
         MigrationPlanMode: "PLANNED" | "EMERGENCY" | "FAILBACK";
@@ -2403,8 +2662,8 @@ export interface components {
          * MigrationPlanSummaryResponse
          * @description 이전 계획 목록 한 항목. simulated=true 면 가짜 실행기로 진행하는 계획이다.
          *
-         *     mode 는 서버가 만들 때 판정해 저장한 계획 종류다(PLANNED·FAILBACK. EMERGENCY 는 API 서버 9
-         *     부터 쓴다).
+         *     mode 는 서버가 만들 때 판정해 저장한 계획 종류다(EMERGENCY 는 재난 트리거만 만든다).
+         *     disasterId 는 이 계획을 만든 재난이다(재난 트리거가 아니면 null).
          */
         MigrationPlanSummaryResponse: {
             /**
@@ -2439,6 +2698,8 @@ export interface components {
             targetServiceEnvironmentId: string;
             status: components["schemas"]["MigrationPlanStatus"];
             mode: components["schemas"]["MigrationPlanMode"];
+            /** Disasterid */
+            disasterId: string | null;
             /** Currentstep */
             currentStep: number;
             /** Expectedseconds */
@@ -2624,6 +2885,17 @@ export interface components {
         Page_DeployRequestSummaryResponse_: {
             /** Items */
             items: components["schemas"]["DeployRequestSummaryResponse"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Size */
+            size: number;
+        };
+        /** Page[DisasterResponse] */
+        Page_DisasterResponse_: {
+            /** Items */
+            items: components["schemas"]["DisasterResponse"][];
             /** Total */
             total: number;
             /** Page */
@@ -5110,6 +5382,181 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiResponse_MigrationLogPageResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    preview_disaster_api_v1_orgs__org_id__disasters_preview_get: {
+        parameters: {
+            query: {
+                type: components["schemas"]["DisasterType"];
+                lat: number;
+                lng: number;
+                magnitude: number | string;
+            };
+            header?: never;
+            path: {
+                /** @description 조직 id(uuid) */
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_DisasterPreviewResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_disasters_api_v1_orgs__org_id__disasters_get: {
+        parameters: {
+            query?: {
+                status?: components["schemas"]["DisasterStatus"] | null;
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path: {
+                /** @description 조직 id(uuid) */
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_Page_DisasterResponse__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_disaster_api_v1_orgs__org_id__disasters_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 조직 id(uuid) */
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateDisasterRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_DisasterResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_disaster_api_v1_orgs__org_id__disasters__disaster_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                disaster_id: string;
+                /** @description 조직 id(uuid) */
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_DisasterResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    end_disaster_api_v1_orgs__org_id__disasters__disaster_id__end_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                disaster_id: string;
+                /** @description 조직 id(uuid) */
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_DisasterResponse_"];
                 };
             };
             /** @description Validation Error */

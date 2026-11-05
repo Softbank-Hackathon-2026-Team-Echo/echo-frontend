@@ -1,5 +1,6 @@
 import { Activity, TriangleAlert, Wind } from 'lucide-react';
-import { type FormEvent, useMemo, useState } from 'react';
+import { type FormEvent, useState } from 'react';
+import { toast } from 'sonner';
 import { ProviderLabel } from '@/components/ProviderLabel';
 import { SimulatedBadge } from '@/components/SimulatedBadge';
 import { StatusBadge } from '@/components/StatusBadge';
@@ -21,17 +22,20 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
+  type DisasterPlan,
   type DisasterType,
   EPICENTER_PRESETS,
   EVACUATION_MIN_MAGNITUDE,
   LIVE_FEED,
-  meetsEvacuationThreshold,
-  previewDisaster,
+  radiusForMagnitude,
   useCreateDisaster,
+  useDisasterPreview,
 } from '@/lib/api/disasters';
 import { useEnvironments } from '@/lib/api/environments';
+import { useMe } from '@/lib/api/me';
 import { type LatLng, nearLabel } from '@/lib/geo';
 import { k, t } from '@/lib/i18n';
+import { disasterPlanReasonLabel } from '@/lib/status';
 import { cn } from '@/lib/utils';
 import { DisasterMap } from './DisasterMap';
 
@@ -42,6 +46,37 @@ const TYPES: { type: DisasterType; label: string; hint: string; icon: typeof Act
   { type: 'EARTHQUAKE', label: k('Earthquake'), hint: 'M5–M9', icon: Activity },
   { type: 'TYPHOON', label: k('Typhoon'), hint: k('Cat. 1–5'), icon: Wind },
 ];
+
+const NO_PREVIEW = {
+  affected: [] as string[],
+  safe: [] as string[],
+  unknown: [] as string[],
+  meetsThreshold: false,
+};
+
+/** 만들기 응답에만 건너뛴 서비스가 있어서, 그 순간의 결과를 알린다 */
+function announce(plans: DisasterPlan[]) {
+  const started = plans.filter((plan) => plan.outcome === 'APPROVED').length;
+  const held = plans.filter((plan) => plan.outcome !== 'APPROVED');
+  if (started > 0) {
+    toast.success(
+      started === 1
+        ? t('1 migration started')
+        : t('{{total}} migrations started', { total: started }),
+    );
+  }
+  for (const plan of held) {
+    toast.warning(
+      plan.outcome === 'SKIPPED'
+        ? t('Migration skipped: {{reason}}', {
+            reason: disasterPlanReasonLabel(plan.reason ?? ''),
+          })
+        : t('Migration waiting: {{reason}}', {
+            reason: disasterPlanReasonLabel(plan.reason ?? ''),
+          }),
+    );
+  }
+}
 
 /** S01-D 재난 시뮬레이션: 지도를 눌러 진원지를 정하면 반경 안의 환경이 위험으로 바뀐다 */
 export function DisasterDialog({
@@ -60,27 +95,37 @@ export function DisasterDialog({
 }) {
   const environments = useEnvironments(orgId);
   const items = environments.data?.items ?? [];
-  const create = useCreateDisaster(orgId, items);
+  const create = useCreateDisaster(orgId);
+  const me = useMe();
+  const selfApproval = me.data?.organizations.find((item) => item.id === orgId)?.allowSelfApproval;
   const defaultPreset = EPICENTER_PRESETS[0];
   const [type, setType] = useState<DisasterType>('EARTHQUAKE');
   const [epicenter, setEpicenter] = useState<LatLng>(
     initialEpicenter ?? defaultPreset?.epicenter ?? { lat: 35.2, lng: 139.4 },
   );
   const [magnitude, setMagnitude] = useState(7.2);
+  const [confirmed, setConfirmed] = useState(false);
 
-  const preview = useMemo(
-    () => previewDisaster(items, { magnitude, epicenter }),
-    [items, magnitude, epicenter],
-  );
+  const previewQuery = useDisasterPreview(orgId, { type, magnitude, epicenter }, open);
+  const preview = previewQuery.data ?? NO_PREVIEW;
+  const radiusKm = radiusForMagnitude(magnitude);
   const affected = new Set(preview.affected);
-  const triggers = meetsEvacuationThreshold({ type, magnitude });
+  const triggers = preview.meetsThreshold;
+  // 재난은 시뮬레이션이어도 이 경우에는 서버가 실제 이전 계획을 만든다
+  const startsMigration = triggers && preview.affected.length > 0;
+  const affectedNames = items
+    .filter((item) => affected.has(item.id))
+    .map((item) => item.name)
+    .join(', ');
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
     create.mutate(
-      { type, magnitude, epicenter, epicenterLabel: nearLabel(epicenter) },
+      { type, magnitude, epicenter },
       {
-        onSuccess: () => {
+        onSuccess: (disaster) => {
+          announce(disaster.plans);
+          setConfirmed(false);
           onOpenChange(false);
           onCreated?.();
         },
@@ -98,7 +143,7 @@ export function DisasterDialog({
             </DialogTitle>
             <DialogDescription>
               {t(
-                'Click the map to set the epicenter. Environments inside the radius turn “At risk”. Nothing real goes down.',
+                'Click the map to set the epicenter. The disaster is simulated, but the migrations it starts are real.',
               )}
             </DialogDescription>
           </DialogHeader>
@@ -138,7 +183,7 @@ export function DisasterDialog({
 
           <DisasterMap
             epicenter={epicenter}
-            radiusKm={preview.radiusKm}
+            radiusKm={radiusKm}
             environments={items}
             affected={affected}
             onPick={setEpicenter}
@@ -168,7 +213,7 @@ export function DisasterDialog({
               </SelectContent>
             </Select>
             <span className="font-mono text-mono text-fg-muted">
-              {t('→ radius {{km}} km', { km: preview.radiusKm })}
+              {t('→ radius {{km}} km', { km: radiusKm })}
             </span>
             <span className="ml-auto text-small text-fg-secondary">
               {t('Epicenter {{place}}', { place: nearLabel(epicenter) })}
@@ -224,9 +269,7 @@ export function DisasterDialog({
             {preview.affected.length > 0 && (
               <span className="text-small text-fg-secondary">
                 {triggers
-                  ? t(
-                      'Above the threshold. EchoPort proposes an evacuation for services on affected environments.',
-                    )
+                  ? t('Above the threshold. EchoPort creates emergency migrations.')
                   : t(
                       'Below M{{magnitude}}. Affected environments are flagged, but no evacuation is proposed.',
                       { magnitude: EVACUATION_MIN_MAGNITUDE.toFixed(1) },
@@ -252,6 +295,27 @@ export function DisasterDialog({
             </ul>
           </div>
 
+          {startsMigration && (
+            <div role="alert" className="flex flex-col gap-2 rounded-lg bg-danger-bg p-3">
+              <p className="text-body-medium text-danger-fg">
+                {t('This moves live traffic off {{names}}.', { names: affectedNames })}
+              </p>
+              <p className="text-small text-danger-fg">
+                {selfApproval
+                  ? t('Self-approval is on, so migrations start as soon as you confirm.')
+                  : t('Each migration waits for another developer to approve it.')}
+              </p>
+              <label className="flex items-center gap-2 text-body">
+                <input
+                  type="checkbox"
+                  checked={confirmed}
+                  onChange={(event) => setConfirmed(event.target.checked)}
+                />
+                {t('I understand real traffic will move')}
+              </label>
+            </div>
+          )}
+
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               {t('Cancel')}
@@ -259,9 +323,15 @@ export function DisasterDialog({
             <Button
               type="submit"
               variant="destructive"
-              disabled={create.isPending || !items.length}
+              disabled={
+                create.isPending ||
+                !items.length ||
+                !previewQuery.data ||
+                previewQuery.isPlaceholderData ||
+                (startsMigration && !confirmed)
+              }
             >
-              {t('Simulate')}
+              {startsMigration ? t('Start disaster and migrate') : t('Simulate')}
             </Button>
           </DialogFooter>
         </form>

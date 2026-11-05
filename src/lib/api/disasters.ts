@@ -1,58 +1,23 @@
-// 시뮬레이션: 재난 API(계약 4-3 🆕)가 서버에 생기기 전까지 브라우저 안에서 흉내 낸다.
-// 모양은 계약 초안과 같고, 모든 재난은 simulated: true 다. 서버가 생기면 DISASTER_API_READY 를 켜고
-// 아래 store 대신 api + unwrap 으로 바꾼다. 영향 판정(반경 안의 환경)은 서버가 할 일이라 그때 서버 값을 쓴다.
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  distanceKm,
-  environmentCoordinates,
-  epicenterKey,
-  epicenterText,
-  type LatLng,
-} from '../geo';
+// 재난 (API 서버 9, echo-was docs/api/disasters.md). 재난은 늘 시뮬레이션이지만, 기준을 넘으면 서버가
+// 피해 서비스의 긴급 이전 계획을 만들고 자기 승인이 켜진 조직에서는 실제 이전이 바로 시작된다
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { type LatLng, nearLabel } from '../geo';
 import { k } from '../i18n';
+import { api, unwrap } from './client';
 import { queryKeys } from './query-keys';
-import type { EnvironmentSummary } from './types';
+import type { DisasterPlan, DisasterType, Disaster as ServerDisaster } from './types';
 
-export const DISASTER_API_READY = false;
+export type { DisasterPlan, DisasterType };
 
-export const DISASTER_TYPES = ['EARTHQUAKE', 'TYPHOON'] as const;
-export type DisasterType = (typeof DISASTER_TYPES)[number];
+/** 진원지 이름은 서버가 주지 않아 좌표로 만든다 */
+export type Disaster = ServerDisaster & { epicenterLabel: string };
 
-/** 재난 정보 출처. 지금은 버튼으로 낸 시뮬레이션뿐이고, 실제 지진 피드는 붙일 자리만 있다 */
-export type DisasterSource = 'SIMULATED' | 'LIVE_FEED';
+export type DisasterInput = { type: DisasterType; magnitude: number; epicenter: LatLng };
 
-export type Disaster = {
-  id: string;
-  type: DisasterType;
-  source: DisasterSource;
-  magnitude: number;
-  epicenter: LatLng;
-  /** 화면 문구용 진원지 이름 (예: near Tokyo). 계약 초안에는 없는 프론트 칸이다. 영어로 저장하고 읽을 때 번역한다 */
-  epicenterLabel: string;
-  radiusKm: number;
-  status: 'ACTIVE' | 'ENDED';
-  affectedEnvironmentIds: string[];
-  safeEnvironmentIds: string[];
-  startedAt: string;
-  endedAt: string | null;
-  simulated: true;
-};
+/** 다른 기기(휴대폰 리모컨)에서 낸 재난도 보이게 다시 부른다. 실시간 채널이 없다 */
+export const DISASTER_POLL_MS = 5_000;
 
-export type DisasterInput = {
-  type: DisasterType;
-  magnitude: number;
-  epicenter: LatLng;
-  /** 저장 값은 좌표로 다시 만든다(화면 언어로 저장하지 않게) */
-  epicenterLabel?: string;
-};
-
-export type DisasterPreview = {
-  radiusKm: number;
-  affected: string[];
-  safe: string[];
-  /** 좌표를 몰라 판정하지 못한 환경 */
-  unknown: string[];
-};
+const ACTIVE_PAGE_SIZE = 50;
 
 // 데모 진원지 (11/2 결정: 경보 문구는 "near Tokyo"). 지도에서 찍는 방식은 S01-D 화면 작업에서 한다
 export const EPICENTER_PRESETS: { label: string; epicenter: LatLng }[] = [
@@ -62,125 +27,96 @@ export const EPICENTER_PRESETS: { label: string; epicenter: LatLng }[] = [
   { label: k('near Seoul'), epicenter: { lat: 37.5, lng: 127.0 } },
 ];
 
-/**
- * 이전을 시작하는 지진 규모 기준. 11/2 2부 회의: 규칙(코드)으로 판단하고 "7 이상 또는 8 이상" 중 정한다.
- * 가칭 7.0. 숫자가 정해지면 이 값만 바꾼다. 태풍 기준은 아직 정하지 않아 기준 없음(항상 대상)으로 둔다
- */
+/** 화면 안내용 지진 규모 기준. 실제 판정은 서버 meetsThreshold 다 */
 export const EVACUATION_MIN_MAGNITUDE = 7;
-
-export function meetsEvacuationThreshold(input: Pick<Disaster, 'type' | 'magnitude'>): boolean {
-  return input.type !== 'EARTHQUAKE' || input.magnitude >= EVACUATION_MIN_MAGNITUDE;
-}
 
 /** 실제 지진 피드 후보 (11/2 2부). 시간이 되면 붙인다 */
 export const LIVE_FEED = { name: 'P2P地震情報', ready: false } as const;
 
-/**
- * 규모 → 영향 반경(km). 가칭: 규모별 반경 숫자와 근거는 아직 정하지 않았다(노션 IA 열린 질문 7).
- * 계약 예시(규모 7.2 → 300km)에 맞춘 지수식이다.
- */
+/** 규모 → 영향 반경(km). 지도 원을 바로 그리려고 둔다. 서버와 같은 식이다(M7.2 → 302km) */
 export function radiusForMagnitude(magnitude: number): number {
   return Math.round(50 * Math.exp(0.9 * (magnitude - 5.2)));
 }
 
-/** 진원지에서 반경 안의 환경은 위험, 밖은 안전. 좌표를 모르는 환경은 따로 둔다 */
-export function previewDisaster(
-  environments: Pick<EnvironmentSummary, 'id' | 'location'>[],
-  input: Pick<DisasterInput, 'magnitude' | 'epicenter'>,
-): DisasterPreview {
-  const radiusKm = radiusForMagnitude(input.magnitude);
-  const preview: DisasterPreview = { radiusKm, affected: [], safe: [], unknown: [] };
-  for (const environment of environments) {
-    const coordinates = environmentCoordinates(environment);
-    if (!coordinates) preview.unknown.push(environment.id);
-    else if (distanceKm(coordinates, input.epicenter) <= radiusKm)
-      preview.affected.push(environment.id);
-    else preview.safe.push(environment.id);
-  }
-  return preview;
+export function withEpicenterLabel(disaster: ServerDisaster): Disaster {
+  return { ...disaster, epicenterLabel: nearLabel(disaster.epicenter) };
 }
 
-// 탭 단위 저장(새로고침해도 유지, 탭을 닫으면 사라짐). 저장소를 못 쓰면 메모리에만 둔다
-const memory = new Map<string, Disaster[]>();
-
-function storageKey(orgId: string) {
-  return `echoport.disasters.${orgId}`;
-}
-
-function load(orgId: string): Disaster[] {
-  try {
-    const raw = window.sessionStorage.getItem(storageKey(orgId));
-    if (raw)
-      return (JSON.parse(raw) as Disaster[]).map((item) => ({
-        ...item,
-        source: item.source ?? 'SIMULATED',
-      }));
-  } catch {
-    // 저장소를 못 읽으면 메모리 값을 쓴다
-  }
-  return memory.get(orgId) ?? [];
-}
-
-function save(orgId: string, disasters: Disaster[]) {
-  memory.set(orgId, disasters);
-  try {
-    window.sessionStorage.setItem(storageKey(orgId), JSON.stringify(disasters));
-  } catch {
-    // 저장하지 못해도 이번 화면에서는 동작한다
-  }
-}
-
+/** 진행 중인 재난. 오래된 것부터 놓아 마지막이 최신이다 */
 export function useActiveDisasters(orgId: string | undefined) {
   return useQuery({
     queryKey: queryKeys.disasters(orgId ?? ''),
-    queryFn: async () => load(orgId ?? '').filter((disaster) => disaster.status === 'ACTIVE'),
-    select: (disasters) =>
-      disasters.map((disaster) => ({
-        ...disaster,
-        epicenterLabel: epicenterText(disaster.epicenterLabel),
-      })),
+    queryFn: () =>
+      unwrap(
+        api.GET('/api/v1/orgs/{org_id}/disasters', {
+          params: {
+            path: { org_id: orgId ?? '' },
+            query: { status: 'ACTIVE', page: 0, size: ACTIVE_PAGE_SIZE },
+          },
+        }),
+      ),
+    select: (page) => [...page.items].reverse().map(withEpicenterLabel),
     enabled: Boolean(orgId),
-    staleTime: Number.POSITIVE_INFINITY,
+    refetchInterval: DISASTER_POLL_MS,
   });
 }
 
-export function useCreateDisaster(orgId: string, environments: EnvironmentSummary[]) {
+/** 저장하지 않는 서버 판정. 진원지를 옮기는 동안 앞 결과를 유지한다 */
+export function useDisasterPreview(orgId: string, input: DisasterInput, enabled: boolean) {
+  return useQuery({
+    queryKey: [...queryKeys.disasters(orgId), 'preview', input],
+    queryFn: () =>
+      unwrap(
+        api.GET('/api/v1/orgs/{org_id}/disasters/preview', {
+          params: {
+            path: { org_id: orgId },
+            query: {
+              type: input.type,
+              lat: input.epicenter.lat,
+              lng: input.epicenter.lng,
+              magnitude: input.magnitude,
+            },
+          },
+        }),
+      ),
+    enabled,
+    placeholderData: keepPreviousData,
+  });
+}
+
+function useInvalidateDisasters(orgId: string) {
   const queryClient = useQueryClient();
+  return () =>
+    Promise.all([
+      queryClient.invalidateQueries({ queryKey: queryKeys.disasters(orgId) }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.migrations(orgId) }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.services(orgId) }),
+    ]);
+}
+
+export function useCreateDisaster(orgId: string) {
+  const invalidate = useInvalidateDisasters(orgId);
   return useMutation({
-    mutationFn: async (input: DisasterInput): Promise<Disaster> => {
-      const preview = previewDisaster(environments, input);
-      const disaster: Disaster = {
-        id: crypto.randomUUID(),
-        source: 'SIMULATED',
-        ...input,
-        epicenterLabel: epicenterKey(input.epicenter),
-        radiusKm: preview.radiusKm,
-        status: 'ACTIVE',
-        affectedEnvironmentIds: preview.affected,
-        safeEnvironmentIds: preview.safe,
-        startedAt: new Date().toISOString(),
-        endedAt: null,
-        simulated: true,
-      };
-      save(orgId, [...load(orgId), disaster]);
-      return disaster;
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.disasters(orgId) }),
+    mutationFn: (input: DisasterInput) =>
+      unwrap(
+        api.POST('/api/v1/orgs/{org_id}/disasters', {
+          params: { path: { org_id: orgId } },
+          body: input,
+        }),
+      ),
+    onSuccess: invalidate,
   });
 }
 
 export function useEndDisaster(orgId: string) {
-  const queryClient = useQueryClient();
+  const invalidate = useInvalidateDisasters(orgId);
   return useMutation({
-    mutationFn: async (disasterId: string) => {
-      const endedAt = new Date().toISOString();
-      save(
-        orgId,
-        load(orgId).map((disaster) =>
-          disaster.id === disasterId ? { ...disaster, status: 'ENDED', endedAt } : disaster,
-        ),
-      );
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.disasters(orgId) }),
+    mutationFn: (disasterId: string) =>
+      unwrap(
+        api.POST('/api/v1/orgs/{org_id}/disasters/{disaster_id}/end', {
+          params: { path: { org_id: orgId, disaster_id: disasterId } },
+        }),
+      ),
+    onSuccess: invalidate,
   });
 }

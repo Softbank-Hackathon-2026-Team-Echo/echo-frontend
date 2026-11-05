@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HttpResponse, http } from 'msw';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -94,6 +94,8 @@ const plan: MigrationPlan = {
   targetServiceEnvironmentId: 'se2',
   status: 'PENDING_APPROVAL',
   result: null,
+  disasterId: null,
+  failback: { allowed: true, reason: null, disasterId: null },
   mode: 'PLANNED',
   currentStep: 0,
   expectedSeconds: 25,
@@ -177,6 +179,39 @@ function serve({
     }),
   );
   return calls;
+}
+
+function serveDisaster(meetsThreshold: boolean) {
+  server.use(
+    http.get(`${API}/orgs/o1/disasters`, () =>
+      ok({
+        items: [
+          {
+            id: 'd1',
+            type: 'EARTHQUAKE',
+            source: 'SIMULATED',
+            simulated: true,
+            magnitude: 7.2,
+            epicenter: { lat: 35.2, lng: 139.4 },
+            radiusKm: 302,
+            meetsThreshold,
+            status: 'ACTIVE',
+            affectedEnvironmentIds: ['e2'],
+            safeEnvironmentIds: ['e1'],
+            unknownEnvironmentIds: [],
+            createdBy: { id: 'u1', login: 'echoport' },
+            endedBy: null,
+            startedAt: AT,
+            endedAt: null,
+            plans: [],
+          },
+        ],
+        total: 1,
+        page: 0,
+        size: 50,
+      }),
+    ),
+  );
 }
 
 function renderPage() {
@@ -284,32 +319,27 @@ describe('PlanPage', () => {
   });
 
   it('도착 환경이 재난 반경 안이면 계획을 만들 수 없다', async () => {
-    window.sessionStorage.setItem(
-      'echoport.disasters.o1',
-      JSON.stringify([
-        {
-          id: 'd1',
-          type: 'EARTHQUAKE',
-          source: 'SIMULATED',
-          magnitude: 7.2,
-          epicenter: { lat: 35.2, lng: 139.4 },
-          epicenterLabel: 'near Tokyo',
-          radiusKm: 302,
-          status: 'ACTIVE',
-          affectedEnvironmentIds: ['e2'],
-          safeEnvironmentIds: ['e1'],
-          startedAt: AT,
-          endedAt: null,
-          simulated: true,
-        },
-      ]),
-    );
     const calls = serve({ allowSelfApproval: false, active: null });
+    serveDisaster(true);
+    renderPage();
+
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Create plan' })).toHaveAttribute(
+        'aria-disabled',
+        'true',
+      ),
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Create plan' }));
+    expect(calls).toEqual([]);
+  });
+
+  it('기준 미달 재난은 계획을 막지 않는다', async () => {
+    serve({ allowSelfApproval: false, active: null });
+    serveDisaster(false);
     renderPage();
 
     const create = await screen.findByRole('button', { name: 'Create plan' });
-    expect(create).toHaveAttribute('aria-disabled', 'true');
-    await userEvent.click(create);
-    expect(calls).toEqual([]);
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(create).not.toHaveAttribute('aria-disabled', 'true');
   });
 });
