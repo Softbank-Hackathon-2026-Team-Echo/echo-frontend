@@ -1,21 +1,23 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { queryOptions, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, unwrap } from './client';
 import { queryKeys } from './query-keys';
 import type { CreateEnvironment, UpdateEnvironment } from './types';
 
 const PAGE_SIZE = 100;
 
-export function useEnvironments(orgId: string | undefined) {
-  return useQuery({
-    queryKey: queryKeys.environments(orgId ?? ''),
+export const environmentsQuery = (orgId: string) =>
+  queryOptions({
+    queryKey: queryKeys.environments(orgId),
     queryFn: () =>
       unwrap(
         api.GET('/api/v1/orgs/{org_id}/environments', {
-          params: { path: { org_id: orgId ?? '' }, query: { page: 0, size: PAGE_SIZE } },
+          params: { path: { org_id: orgId }, query: { page: 0, size: PAGE_SIZE } },
         }),
       ),
-    enabled: Boolean(orgId),
   });
+
+export function useEnvironments(orgId: string | undefined) {
+  return useQuery({ ...environmentsQuery(orgId ?? ''), enabled: Boolean(orgId) });
 }
 
 /** 상세는 부를 때 클러스터 정보를 읽는다. 목록에는 clusterInfo 가 없어서 카드·표의 클러스터 칸이 이것을 쓴다 */

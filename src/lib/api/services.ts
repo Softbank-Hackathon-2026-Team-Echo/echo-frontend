@@ -1,4 +1,5 @@
 import {
+  queryOptions,
   type UseQueryResult,
   useInfiniteQuery,
   useMutation,
@@ -31,29 +32,36 @@ export function isTerminalStatus(status: DeployRequestStatus | undefined): boole
   return status !== undefined && TERMINAL_STATUSES.includes(status);
 }
 
-export function useServices(orgId: string | undefined) {
-  return useQuery({
-    queryKey: queryKeys.services(orgId ?? ''),
+export const servicesQuery = (orgId: string) =>
+  queryOptions({
+    queryKey: queryKeys.services(orgId),
     queryFn: () =>
       unwrap(
         api.GET('/api/v1/orgs/{org_id}/services', {
-          params: { path: { org_id: orgId ?? '' }, query: { page: 0, size: PAGE_SIZE } },
+          params: { path: { org_id: orgId }, query: { page: 0, size: PAGE_SIZE } },
         }),
       ),
-    enabled: Boolean(orgId),
   });
+
+export function useServices(orgId: string | undefined) {
+  return useQuery({ ...servicesQuery(orgId ?? ''), enabled: Boolean(orgId) });
 }
+
+export const serviceQuery = (orgId: string, serviceId: string) =>
+  queryOptions({
+    queryKey: queryKeys.service(orgId, serviceId),
+    queryFn: () =>
+      unwrap(
+        api.GET('/api/v1/orgs/{org_id}/services/{service_id}', {
+          params: { path: { org_id: orgId, service_id: serviceId } },
+        }),
+      ),
+  });
 
 /** 상세에는 환경별 연결(역할·트래픽·버전)이 있다. 배포가 진행 중인 연결이 있으면 2초마다 다시 부른다 */
 export function useService(orgId: string | undefined, serviceId: string | undefined) {
   return useQuery({
-    queryKey: queryKeys.service(orgId ?? '', serviceId ?? ''),
-    queryFn: () =>
-      unwrap(
-        api.GET('/api/v1/orgs/{org_id}/services/{service_id}', {
-          params: { path: { org_id: orgId ?? '', service_id: serviceId ?? '' } },
-        }),
-      ),
+    ...serviceQuery(orgId ?? '', serviceId ?? ''),
     enabled: Boolean(orgId && serviceId),
     refetchInterval: (query) =>
       query.state.data?.environments.some((link) => link.activeRequestId || link.queuedRequestId)
@@ -76,13 +84,7 @@ function combineServiceDetails(results: UseQueryResult<ServiceDetail>[]) {
 export function useServiceDetails(orgId: string | undefined, serviceIds: string[]) {
   return useQueries({
     queries: serviceIds.map((serviceId) => ({
-      queryKey: queryKeys.service(orgId ?? '', serviceId),
-      queryFn: () =>
-        unwrap(
-          api.GET('/api/v1/orgs/{org_id}/services/{service_id}', {
-            params: { path: { org_id: orgId ?? '', service_id: serviceId } },
-          }),
-        ),
+      ...serviceQuery(orgId ?? '', serviceId),
       enabled: Boolean(orgId),
     })),
     combine: combineServiceDetails,

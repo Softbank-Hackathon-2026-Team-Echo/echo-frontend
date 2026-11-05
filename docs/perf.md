@@ -11,6 +11,7 @@ React Compiler · 화면 밖 작업 멈추기 · 화면 미리 받기 같은 최
 | 느린 클릭 원인 | Sentry 긴 애니메이션 프레임(`enableLongAnimationFrame`) | 같은 화면의 span 목록 |
 | 다시 불러오기 1번에 다시 그리는 칸 | `src/pages/dashboard/DashboardPage.renders.test.tsx` (React `Profiler` + 칸별 호출 수) | `pnpm exec vitest run src/pages/dashboard/DashboardPage.renders.test.tsx --silent=false` 출력 |
 | 이전 실행 중 다시 그리는 횟수 | `src/pages/migrations/MigrationPage.renders.test.tsx` (실행 중 계획 3초, 같은 응답) | `pnpm exec vitest run src/pages/migrations/MigrationPage.renders.test.tsx --silent=false` 출력 |
+| 첫 화면 전후 비교 | 빌드 두 개를 headless Chrome 으로 번갈아 연다. 빈 캐시 · 네트워크 고정 · API 응답 150ms 고정 · 1440×900 · 조건마다 3~5번, 중앙값 | 운영은 API 응답 차이가 커서 전후 비교가 안 된다. 같은 빌드끼리 재면 차이가 10ms 안쪽이다. 도구는 커밋하지 않았다 |
 | 번들 크기(gzip) | `node scripts/check-bundle.mjs` (CI 예산) | CI 로그 · 로컬 빌드 뒤 |
 
 - 렌더 측정은 jsdom 에서 데모 구성(환경 3 · 서비스 2, 같은 응답)으로 조직 쿼리를 전부 다시 불러온다. 대시보드는 실시간 채널 전까지 폴링으로 갱신되므로 "같은 응답인데 다시 그리는 칸"이 줄어야 한다. 렌더 ms 는 jsdom 값이라 비교용으로만 쓴다.
@@ -76,6 +77,15 @@ React Compiler · 화면 밖 작업 멈추기 · 화면 미리 받기 같은 최
 
 LCP 글자는 데이터가 온 뒤 그려지는 칸이라 LCP 는 API 3단계를 기다린다. 이때 브라우저의 FCP · LCP 값(6,080ms)은 창이 앞에 없던 측정이라 쓰지 않았다.
 
+### 대시보드 첫 화면 전후 (11/5, 로컬 같은 조건, 빈 캐시)
+
+| 네트워크 | 전 LCP | HTML 에서 미리 받기만 | + 데이터 미리 부르기 |
+|---|---|---|---|
+| 10Mbps · 40ms | 896ms | 852ms | **580ms** (-35%) |
+| 1.6Mbps · 150ms | 3,020ms | 2,884ms | **2,456ms** (-19%) |
+
+로컬 서버는 HTTP/1.1 이고 API 지연은 고정 값이라 운영 숫자와 같지 않다. 전후 비교로만 쓴다.
+
 ## 3. 변경 기록
 
 | 날짜 | 변경 | PR | 결과 |
@@ -88,3 +98,5 @@ LCP 글자는 데이터가 온 뒤 그려지는 칸이라 LCP 는 API 3단계를
 | 11/5 | 대시보드가 넘기는 값의 참조를 유지하고 칸을 `memo` 로 감쌈, `useQueries` 합치기 함수를 모듈로 옮김 (#45) | #80 | 같은 응답으로 다시 불러올 때 Topology · KpiTiles · LiveEvents · StatusPill 1 → 0, EnvironmentsPanel 2 → 0. 테스트로 고정했다. 대시보드 청크 65.3KB |
 | 11/5 | 토폴로지 흐름 · 카드 효과는 CSS 애니메이션이고 화면 밖이면 멈춤 (#79) | #81 | 미리보기: 화면 안 애니메이션 진행, 화면 밖 `paused`. 새 라이브러리 없음 |
 | 11/5 | `/me` 를 언어 파일과 동시에 출발 · API 주소 미리 연결 (#45) | 이 PR | 로컬: `/me` 가 언어 파일 요청과 같은 시각에 출발하고 한 번만 부른다. `/login` 은 부르지 않는다. 운영 LCP 변화는 표본이 쌓이면 적는다 |
+| 11/5 | #83 운영 확인 | #83 | HTML 첫 응답 기준 `/me` 출발 154ms → 23~28ms, 1번만 부른다. 전체 시간은 `/me` 가 86~828ms 로 달라 비교하지 못했다 |
+| 11/5 | 대시보드 주소면 HTML 이 `/me` · 화면 코드를 먼저 받고, `main.tsx` 가 첫 화면 데이터를 미리 부른다 (#84) | 이 PR | 위 표. `/login` · 다른 화면은 대시보드 코드를 받지 않는다. 최근 활동은 화면에서 한 번 더 부른다(항상 최신을 보이는 설정). 첫 화면 +1.2KB |
