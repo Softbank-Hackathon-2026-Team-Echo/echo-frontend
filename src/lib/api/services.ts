@@ -1,4 +1,5 @@
 import {
+  type UseQueryResult,
   useInfiniteQuery,
   useMutation,
   useQueries,
@@ -61,6 +62,16 @@ export function useService(orgId: string | undefined, serviceId: string | undefi
   });
 }
 
+// 모듈 함수라 참조가 그대로여서 TanStack Query 가 결과가 바뀔 때만 다시 합친다
+function combineServiceDetails(results: UseQueryResult<ServiceDetail>[]) {
+  return {
+    data: results
+      .map((result) => result.data)
+      .filter((data): data is ServiceDetail => Boolean(data)),
+    isPending: results.some((result) => result.isPending),
+  };
+}
+
 /** 여러 서비스의 상세를 한 번에. 대시보드 환경 카드가 환경별 연결(역할·트래픽·버전)을 모을 때 쓴다 */
 export function useServiceDetails(orgId: string | undefined, serviceIds: string[]) {
   return useQueries({
@@ -74,12 +85,7 @@ export function useServiceDetails(orgId: string | undefined, serviceIds: string[
         ),
       enabled: Boolean(orgId),
     })),
-    combine: (results) => ({
-      data: results
-        .map((result) => result.data)
-        .filter((data): data is ServiceDetail => Boolean(data)),
-      isPending: results.some((result) => result.isPending),
-    }),
+    combine: combineServiceDetails,
   });
 }
 

@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import type { Disaster } from '@/lib/api/disasters';
 import { t } from '@/lib/i18n';
 
@@ -6,12 +7,12 @@ function clock(iso: string) {
 }
 
 /** 대시보드 제목 옆 상태 알약: 이전 중 > 재난 > 정상 (Figma 시연 장면 1~3) */
-export function StatusPill({
+export const StatusPill = memo(function StatusPill({
   migrating,
   disaster,
   names,
 }: {
-  migrating: { target: string; weight: number } | undefined;
+  migrating: { name: string; weight: number } | undefined;
   disaster: Disaster | undefined;
   names: Map<string, string>;
 }) {
@@ -20,7 +21,7 @@ export function StatusPill({
       <span className="inline-flex items-center gap-1.5 rounded-full bg-migrating-bg px-2.5 py-0.5 text-label text-migrating-fg">
         <span aria-hidden className="size-1.5 rounded-full bg-migrating-solid" />
         {t('Evacuating to {{target}} · {{weight}}%', {
-          target: migrating.target,
+          target: migrating.name,
           weight: migrating.weight,
         })}
       </span>
@@ -51,4 +52,4 @@ export function StatusPill({
       {t('All systems normal')}
     </span>
   );
-}
+});

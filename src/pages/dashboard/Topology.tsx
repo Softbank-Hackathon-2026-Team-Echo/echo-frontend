@@ -19,7 +19,7 @@ import {
 } from '@xyflow/react';
 import ELK from 'elkjs/lib/elk-api.js';
 import { TriangleAlert } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { ProviderLabel } from '@/components/ProviderLabel';
 import { StatusBadge } from '@/components/StatusBadge';
 import { useInViewOnce } from '@/hooks/useInViewOnce';
@@ -441,7 +441,7 @@ function TopologyCanvas({ environments, byEnvironment, atRisk, edgeUrl }: Topolo
  * S01 토폴로지 캔버스 (ADR 11/2: React Flow + elkjs).
  * 지역별로 묶은 환경 노드 + 앞단 프록시, 트래픽 선 굵기 = 비율, 서비스 중 → 예비 복제 점선
  */
-export function Topology(props: TopologyProps) {
+export const Topology = memo(function Topology(props: TopologyProps) {
   const ref = useRef<HTMLDivElement>(null);
   // 화면에 들어올 때 캔버스를 만들고 배치(elk 워커)를 계산한다. 그전에는 같은 크기 자리만 둔다
   const inView = useInViewOnce(ref);
@@ -454,4 +454,4 @@ export function Topology(props: TopologyProps) {
       ) : null}
     </div>
   );
-}
+});
