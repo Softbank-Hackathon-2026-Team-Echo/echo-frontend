@@ -82,11 +82,15 @@ describe('서버 칸', () => {
     checkedAt: AT,
     expiresAt: AT,
     serviceId: null,
+    gateStatus: 'PASS' as const,
+    exception: null,
   });
   const cell: SecurityMatrixCell = {
     result: 'WARN',
     findingCount: 3,
     hasException: false,
+    gateStatus: 'PASS',
+    exception: null,
     mode: 'REAL',
     checkedAt: AT,
     expiresAt: AT,

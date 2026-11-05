@@ -85,6 +85,7 @@
 | 초대 `status` | `PENDING` → 대기(목록에 보임) / `ACCEPTED` · `EXPIRED` · `REVOKED` → 목록에서 뺀다 |
 | 에이전트 토큰 | `revokedAt` 있음 → Revoked · 중립 / `expiresAt` 지남 → Expired · 중립 / 그 밖 → Active · success |
 | 감사 `result` | `SUCCEEDED` → Succeeded · success / `DENIED` → Denied · danger / `FAILED` → Failed · danger |
+| 패치 `status` | `PROPOSED` → 버튼(승인 · 거절) / `BLOCKED` · danger / `REJECTED` → Rejected · 중립 / `APPROVED` → Approved · waiting to apply · success / `APPLIED` · success / `APPLY_FAILED` · danger |
 | 사전 점검 `status` | `QUEUED` → Waiting for a runner · 중립 / `CLAIMED` · `RUNNING` → Running · ai / `SUCCEEDED` · success / `FAILED` · `TIMED_OUT` → danger / `CANCELLED` · 중립 |
 | AI 관련 전부 | ai 색 |
 

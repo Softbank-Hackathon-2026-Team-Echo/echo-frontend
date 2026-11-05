@@ -49,6 +49,7 @@ const detail = (extra: Partial<PrecheckDetail> = {}): PrecheckDetail => ({
     { name: 'CONFIG_DIFF', firstAt: AT, lastAt: AT, level: 'INFO' },
   ],
   model: null,
+  processing: null,
   configDiff: [
     {
       key: 'region',
@@ -88,6 +89,14 @@ function serve({
   const environment = (id: string, name: string) => ({ id, name, kind: 'aws' });
   server.use(
     http.get(`${API}/me`, () => ok(me(role))),
+    http.post(
+      `${API}/orgs/o1/prechecks/:run/patches/:patch/approve`,
+      async ({ params, request }) => {
+        const body = (await request.json()) as { patchHash: string };
+        calls.push(`approve ${params.patch} ${body.patchHash}`);
+        return ok({});
+      },
+    ),
     http.get(`${API}/orgs/o1/environments`, () =>
       ok({
         items: [environment('e1', 'aws-tokyo'), environment('e2', 'gcp-seoul')],
@@ -199,7 +208,7 @@ describe('PrecheckPage', () => {
     expect(screen.getByRole('button', { name: 'Run again' })).toBeInTheDocument();
   });
 
-  it('막힌 패치는 이유를 보이고 제안된 패치는 승인을 막아 둔다', async () => {
+  it('막힌 패치는 이유를 보이고 제안된 패치는 해시를 실어 승인한다', async () => {
     const patch = {
       id: 'p',
       patchHash: 'h',
@@ -208,8 +217,11 @@ describe('PrecheckPage', () => {
       reason: 'scale',
       touchesProtectedFiles: false,
       checks: [],
+      origin: 'AI' as const,
+      approval: null,
+      apply: null,
     };
-    serve({
+    const calls = serve({
       run: detail({
         patches: [
           {
@@ -226,9 +238,9 @@ describe('PrecheckPage', () => {
 
     await userEvent.click(await screen.findByRole('tab', { name: 'Patches (2)' }));
     expect(await screen.findByText('A verification check did not pass')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Approve patch' })).toHaveAttribute(
-      'aria-disabled',
-      'true',
-    );
+    expect(screen.getAllByRole('button', { name: 'Approve patch' })).toHaveLength(1);
+
+    await userEvent.click(screen.getByRole('button', { name: 'Approve patch' }));
+    await waitFor(() => expect(calls).toContain('approve p2 h'));
   });
 });

@@ -65,6 +65,10 @@ const CONFLICT_MESSAGES: Record<string, string> = {
   DISASTER_ACTIVE: k('The target is inside an active disaster. End the disaster first.'),
   DISASTER_NOT_ACTIVE: k('This disaster has already ended.'),
   RUN_NOT_ACTIVE: k('This pre-check has already finished.'),
+  RUN_NOT_SUCCEEDED: k('Only a finished pre-check can have its patches decided.'),
+  PATCH_STALE: k('This patch changed. Refresh and try again.'),
+  PATCH_ALREADY_DECIDED: k('Someone already decided this patch.'),
+  PATCH_BLOCKED: k('This patch is blocked and cannot be approved.'),
   SECRET_STORE_NOT_CONFIGURED: k('The secret store is not set up, so the value was not saved.'),
 };
 
@@ -74,6 +78,9 @@ export function describeApiError(error: unknown): string {
   if (error.status === 403) return t(PERMISSION_MESSAGE);
   if (error.status === 502 || error.status === 503) return t(UNAVAILABLE_MESSAGE);
   if (error.status === 0) return t('Cannot reach the server. Check your connection.');
+  if (error.code === 'PATCH_STALE' && error.details[0]?.reason === 'PRECHECK_EXPIRED') {
+    return t('This pre-check expired. Run it again.');
+  }
   const conflict = CONFLICT_MESSAGES[error.code];
   if (conflict) return t(conflict);
   // error.message 는 오류 추적에도 나가서 영어로 두고, 화면 문구만 여기서 바꾼다

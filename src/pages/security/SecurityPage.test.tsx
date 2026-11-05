@@ -51,6 +51,8 @@ const emptyCell: SecurityMatrixCell = {
   result: 'UNKNOWN',
   findingCount: 0,
   hasException: false,
+  gateStatus: 'PASS',
+  exception: null,
   mode: null,
   checkedAt: null,
   expiresAt: null,
@@ -66,14 +68,38 @@ const emptyCell: SecurityMatrixCell = {
       checkedAt: null,
       expiresAt: null,
       serviceId: null,
+      gateStatus: 'PASS',
+      exception: null,
     },
   ],
+};
+
+const exception = {
+  id: 'x1',
+  controlId: 'C-IAM-1' as const,
+  reason: 'demo scope',
+  expiresAt: '2026-11-12T00:00:00Z',
+  approvedBy: { id: 'u2', login: 'jimin' },
+};
+
+const waivedCell: SecurityMatrixCell = {
+  ...emptyCell,
+  hasException: true,
+  gateStatus: 'WAIVED',
+  exception,
+  controls: emptyCell.controls.map((control) => ({
+    ...control,
+    gateStatus: 'WAIVED',
+    exception,
+  })),
 };
 
 const warnCell: SecurityMatrixCell = {
   result: 'WARN',
   findingCount: 2,
   hasException: false,
+  gateStatus: 'PASS',
+  exception: null,
   mode: 'REAL',
   checkedAt: AT,
   expiresAt: AT,
@@ -89,6 +115,8 @@ const warnCell: SecurityMatrixCell = {
       checkedAt: AT,
       expiresAt: AT,
       serviceId: 's1',
+      gateStatus: 'PASS',
+      exception: null,
     },
     {
       controlId: 'C-IMG-2',
@@ -101,6 +129,8 @@ const warnCell: SecurityMatrixCell = {
       checkedAt: AT,
       expiresAt: AT,
       serviceId: 's1',
+      gateStatus: 'PASS',
+      exception: null,
     },
   ],
 };
@@ -142,7 +172,11 @@ const finding: SecurityFinding = {
   totalItems: 3,
 };
 
-function serve(items: EnvironmentSummary[], findings: SecurityFinding[] = [finding]) {
+function serve(
+  items: EnvironmentSummary[],
+  findings: SecurityFinding[] = [finding],
+  firstCell: SecurityMatrixCell = warnCell,
+) {
   const findingQueries: string[] = [];
   server.use(
     http.get(`${API}/me`, () => ok(me)),
@@ -155,7 +189,7 @@ function serve(items: EnvironmentSummary[], findings: SecurityFinding[] = [findi
         phase: 'PREPARATION',
         checkedAt: AT,
         rows: items.map((item, index) =>
-          row(item.id, item.name, index === 0 ? warnCell : emptyCell),
+          row(item.id, item.name, index === 0 ? firstCell : emptyCell),
         ),
       }),
     ),
@@ -245,6 +279,17 @@ describe('SecurityPage', () => {
     expect(within(sheet).queryByText('CVE-2026-5')).not.toBeInTheDocument();
     await userEvent.click(within(sheet).getByRole('button', { name: 'Show all 7 items' }));
     expect(within(sheet).getByText('CVE-2026-6')).toBeInTheDocument();
+  });
+
+  it('기한부 예외로 통과하는 칸은 색을 두고 예외를 밝힌다', async () => {
+    serve([environment('e1', 'aws-tokyo', 'aws')], [], waivedCell);
+    renderPage();
+
+    await userEvent.click(
+      (await screen.findAllByRole('button', { name: /aws-tokyo.*Exception/ }))[0] as HTMLElement,
+    );
+    expect(await screen.findByText(/Exception: demo scope/)).toBeInTheDocument();
+    expect(screen.getAllByText(/approved by jimin/).length).toBeGreaterThan(0);
   });
 
   it('미수집 칸은 증거가 없다는 이유를 보인다', async () => {

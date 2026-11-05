@@ -62,7 +62,7 @@
 | S01 대시보드 | 환경 목록 · 서비스 상세 · 지표(4-2) · 진행 중 재난(4-3) · 최근 이벤트·활동(4-8) | ✅ / 🆕 |
 | S01-D 재난 시뮬레이션 · S01-R 휴대폰 리모컨 | 재난 만들기·미리보기(4-3) | ✅ |
 | E01-1 대피처 고르기 | 대피 후보·점수(4-4) | 🆕 |
-| E01-2 AI 사전 점검 | 실행·단계·로그·패치(4-5) ✅ · 패치 승인 🆕 | 일부 🆕 |
+| E01-2 AI 사전 점검 | 실행·단계·로그·패치·패치 승인(4-5) ✅ | ✅ |
 | E01-3 계획 승인 | 이전 계획·승인(4-6) · 보안 비교(4-7) | 🆕 |
 | M01 이전 목록 · M02 이전 실행 (계획·긴급·복귀, Live·Result) | 이전 실행·단계·트래픽·쓰기 전환·측정 결과(4-6) | 🆕 |
 | SEC 보안 (Matrix · Compare · 근거 드로어) | 매트릭스·finding ✅ · 비교 🆕 (4-7) | 일부 🆕 |
@@ -168,7 +168,12 @@ KPI 타일 5개(성공률·p95·복제 지연·트래픽 비율·에러 버짓)�
 - 목록 API 가 없다. 화면은 주소의 `run` 으로 점검을 찾고, 끝낸 점검에서 계획으로 갈 때 `precheck` 를 넘긴다.
 - `simulated` 는 결과 값을 지어냈는지(러너 가짜 모드), `aiReviewed` 는 모델을 썼는지다. 따로 보인다.
 - 끝나지 않은 동안 2초마다 다시 부른다.
-- 패치 승인·거절은 아직 없다(2차). `blockedAttempts` 는 "에이전트가 운영을 바꾸려다 막힌 기록"(F16)이고 늘 `confirmed: false` 다.
+- 패치 승인·거절은 `POST …/prechecks/{id}/patches/{patchId}/approve`·`reject` 본문 `{patchHash, reason?}` 이다(echo-was #79). 서버 반영 스위치가 꺼져 있으면 승인해도 반영 대기다. `blockedAttempts` 는 "에이전트가 운영을 바꾸려다 막힌 기록"(F16)이고 늘 `confirmed: false` 다.
+
+### 4-5-2. 클라우드 비용 · AI 데이터 레지던시 ✅
+
+- 비용: `GET /orgs/{orgId}/costs`(echo-was `docs/api/costs.md`). `environments[]`·`shared[]` 는 목록가 추정, `billing[]` 은 어제까지 청구다. AWS 청구는 계정 전체라 환경 값으로 쓰지 않는다
+- 레지던시: 사전 점검 상세 `processing` 과 `GET /orgs/{orgId}/ai/residency?days=7`(echo-was `docs/api/ai-residency.md`). `processing: null` 은 "기록 없음"이고 밖으로 안 나갔다는 뜻이 아니다
 
 ### 4-5-1. 앱 환경 변수 (F1)
 

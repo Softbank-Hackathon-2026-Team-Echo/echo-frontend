@@ -251,5 +251,11 @@
   "Too few requests to judge, so stages passed on health checks.": "판정할 요청이 없어 헬스 체크로 단계를 통과했습니다.",
   "Show less": "접기",
   "Show all {{total}} items": "{{total}}개 모두 보기",
-  "Plan the failback": "복귀 계획 만들기"
+  "Plan the failback": "복귀 계획 만들기",
+  "DB writer cutover": "DB 쓰기 전환",
+  "missing and duplicate rows must be 0": "누락·중복 행 0건이어야 통과",
+  "DB writer cutover failed": "DB 쓰기 전환 실패",
+  "DB writer cutover timed out": "DB 쓰기 전환 시간 초과",
+  "DB writer cutover stopped halfway": "DB 쓰기 전환이 중간에 멈춤",
+  "Rows are missing or duplicated after the cutover": "전환 뒤 누락·중복 행이 있음"
 }

@@ -22,7 +22,7 @@ import {
   writePauseCaption,
   writePauseText,
 } from '@/lib/migration-metrics';
-import { duration } from '@/lib/migration-stages';
+import { duration, isDbCutover } from '@/lib/migration-stages';
 import { migrationFailureLabel, planFailureLabel } from '@/lib/status';
 import { Kpi } from './Kpi';
 
@@ -46,6 +46,7 @@ function statusWord(status: string) {
 function stepName(step: MigrationStep) {
   if (step.kind === 'PREFLIGHT') return t('Pre-check');
   if (step.kind === 'DATA_SYNC_CHECK') return t('Data sync check');
+  if (isDbCutover(step)) return t('DB writer cutover');
   return t('Shift traffic → {{weight}}%', { weight: step.targetWeight ?? '—' });
 }
 

@@ -1,10 +1,10 @@
 import { CircleCheck, CircleX } from 'lucide-react';
 import { RoleButton } from '@/components/RoleButton';
 import { StatusBadge } from '@/components/StatusBadge';
-import { parseDiff } from '@/lib/api/prechecks';
+import { parseDiff, usePatchDecision } from '@/lib/api/prechecks';
 import type { PrecheckPatch } from '@/lib/api/types';
 import { t } from '@/lib/i18n';
-import { patchBlockReasonLabel } from '@/lib/status';
+import { patchBlockReasonLabel, patchStatusView } from '@/lib/status';
 import { cn } from '@/lib/utils';
 
 const DIFF_CLASS = {
@@ -21,20 +21,33 @@ const SIGN_CLASS = {
   removed: 'text-danger-fg',
 } as const;
 
-/** AI 가 낸 수정안 하나. 승인 API 가 생기기 전까지 보여 주기만 한다(F15) */
-export function PatchReview({ patch, number }: { patch: PrecheckPatch; number: number }) {
+type PatchReviewProps = {
+  orgId: string;
+  precheckId: string;
+  patch: PrecheckPatch;
+  number: number;
+};
+
+/** 러너가 낸 수정안 하나. 사람이 승인 · 거절한다(F15). 막힌 패치는 승인 버튼이 없다 */
+export function PatchReview({ orgId, precheckId, patch, number }: PatchReviewProps) {
+  const decide = usePatchDecision(orgId, precheckId);
   const { passed, total } = patch.verification;
   const failed = passed < total;
+  const status = patchStatusView(patch.status);
   return (
     <article className="flex flex-col overflow-hidden rounded-xl border border-line bg-surface shadow-xs">
       <header className="flex flex-col gap-1.5 px-4 py-3">
         <span className="flex flex-wrap items-center gap-2">
-          <StatusBadge label="AI" tone="ai" />
+          {patch.origin === 'RULE' ? (
+            <StatusBadge label={t('Rule')} tone="neutral" />
+          ) : (
+            <StatusBadge label="AI" tone="ai" />
+          )}
           <h3 className="text-title">
             {t('Patch #{{n}}', { n: number })} ·{' '}
             <span className="font-mono">{patch.files.join(', ')}</span>
           </h3>
-          {patch.status === 'BLOCKED' && <StatusBadge label={t('Blocked')} tone="danger" />}
+          {status && <StatusBadge {...status} />}
         </span>
         <p className="text-small text-fg-secondary">{patch.reason}</p>
         {patch.blockReason && (
@@ -70,13 +83,25 @@ export function PatchReview({ patch, number }: { patch: PrecheckPatch; number: n
             : t('Sandbox verification passed ({{passed}}/{{total}})', { passed, total })}
         </span>
         {patch.status === 'PROPOSED' && (
-          <RoleButton
-            requires="DEVELOPER"
-            size="sm"
-            disabledReason={t('Patch approval is not available yet')}
-          >
-            {t('Approve patch')}
-          </RoleButton>
+          <span className="flex items-center gap-2">
+            <RoleButton
+              requires="DEVELOPER"
+              size="sm"
+              variant="outline"
+              disabled={decide.isPending}
+              onClick={() => decide.mutate({ patch, decision: 'reject' })}
+            >
+              {t('Reject patch')}
+            </RoleButton>
+            <RoleButton
+              requires="DEVELOPER"
+              size="sm"
+              disabled={decide.isPending}
+              onClick={() => decide.mutate({ patch, decision: 'approve' })}
+            >
+              {t('Approve patch')}
+            </RoleButton>
+          </span>
         )}
       </footer>
     </article>

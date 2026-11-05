@@ -64,6 +64,11 @@ const RESULT_STATE: Record<string, StageState> = {
 const metaLine = (...parts: (string | null | undefined | false)[]) =>
   parts.filter(Boolean).join(' · ');
 
+/** 서버가 DB 쓰기 전환을 켜면 생기는 단계(echo-was #75). 타입에 들어오기 전이라 글자로 비교한다 */
+export function isDbCutover(step: { kind: string }): boolean {
+  return step.kind === 'DB_CUTOVER';
+}
+
 export function planStages(
   steps: StepLike[],
   conditions: Pick<MigrationPlan['rollbackConditions'], 'maxReplicationLagSeconds'>,
@@ -95,6 +100,14 @@ export function planStages(
           t('replication lag ≤ {{seconds}}s', { seconds: conditions.maxReplicationLagSeconds }),
           failure,
         ),
+        state,
+      };
+    }
+    if (isDbCutover(step)) {
+      return {
+        key: String(step.index),
+        title: t('DB writer cutover'),
+        meta: metaLine(seconds, t('missing and duplicate rows must be 0'), failure),
         state,
       };
     }

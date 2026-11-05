@@ -15,6 +15,8 @@ import { t } from '@/lib/i18n';
 import { currentWeights } from '@/lib/migration-metrics';
 import { onboardingProgress } from '@/lib/onboarding';
 import { ActiveDisasterCard } from './ActiveDisasterCard';
+import { AiResidencyPanel } from './AiResidencyPanel';
+import { CloudCostPanel } from './CloudCostPanel';
 import { CompletionCard, recentCompletion } from './CompletionCard';
 import { EnvironmentsPanel } from './EnvironmentsPanel';
 import { KpiTiles } from './KpiTiles';
@@ -207,6 +209,8 @@ export default function DashboardPage() {
           orgSlug={organization.slug}
           className="col-span-4 max-wide:hidden"
         />
+        <CloudCostPanel orgId={organization.id} className="col-span-6 max-wide:hidden" />
+        <AiResidencyPanel orgId={organization.id} className="col-span-6 max-wide:hidden" />
       </div>
       {completed && (
         <CompletionCard

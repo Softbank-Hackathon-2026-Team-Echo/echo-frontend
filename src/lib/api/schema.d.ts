@@ -720,6 +720,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/orgs/{org_id}/costs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Cloud Costs */
+        get: operations["get_cloud_costs_api_v1_orgs__org_id__costs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/orgs/{org_id}/security/exceptions": {
         parameters: {
             query?: never;
@@ -857,6 +874,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/orgs/{org_id}/prechecks/{precheck_id}/patches/{patch_id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Approve Precheck Patch */
+        post: operations["approve_precheck_patch_api_v1_orgs__org_id__prechecks__precheck_id__patches__patch_id__approve_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/orgs/{org_id}/prechecks/{precheck_id}/patches/{patch_id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reject Precheck Patch */
+        post: operations["reject_precheck_patch_api_v1_orgs__org_id__prechecks__precheck_id__patches__patch_id__reject_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/orgs/{org_id}/ai/residency": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Ai Residency Summary */
+        get: operations["get_ai_residency_summary_api_v1_orgs__org_id__ai_residency_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/runner/runs:claim": {
         parameters: {
             query?: never;
@@ -987,11 +1055,26 @@ export interface components {
          */
         ActorType: "USER" | "AGENT" | "SYSTEM";
         /**
-         * AgentPatchStatus
-         * @description AI 수정안 상태. 러너 값을 믿지 않고 WAS 가 검사 결과로 다시 계산한다.
+         * AgentPatchDecision
+         * @description AI 패치에 대한 사람의 결정. BLOCKED 패치는 승인할 수 없다(API 가 막는다).
          * @enum {string}
          */
-        AgentPatchStatus: "PROPOSED" | "BLOCKED";
+        AgentPatchDecision: "APPROVED" | "REJECTED";
+        /**
+         * AgentPatchStatus
+         * @description AI 수정안 상태. 러너 값을 믿지 않고 WAS 가 계산한다.
+         *
+         *     결과 JSON 에는 검사 결과로 다시 계산한 PROPOSED·BLOCKED 만 저장한다. 나머지는 결정 행과 반영
+         *     실행을 더해 응답 때 계산한다(compute_patch_status).
+         * @enum {string}
+         */
+        AgentPatchStatus: "PROPOSED" | "BLOCKED" | "REJECTED" | "APPROVED" | "APPLIED" | "APPLY_FAILED";
+        /**
+         * AgentRunDataClass
+         * @description 모델에 넘긴 자료 종류. 변수 이름·digest·규칙 결과는 CONFIG 에 넣는다. 저장은 이 순서다.
+         * @enum {string}
+         */
+        AgentRunDataClass: "CONFIG" | "FINDINGS" | "SOURCE_CODE" | "LOGS" | "SECRETS";
         /**
          * AgentRunKind
          * @description AI 실행 종류. CHANGE_PROPOSAL 은 P1.
@@ -999,11 +1082,35 @@ export interface components {
          */
         AgentRunKind: "PRECHECK" | "APPLY_PATCH" | "CHANGE_PROPOSAL";
         /**
+         * AgentRunModelProvider
+         * @description 러너가 밝힌 모델 제공자. NONE 은 모델을 부르지 않았다는 뜻이다.
+         * @enum {string}
+         */
+        AgentRunModelProvider: "NONE" | "LOCAL" | "GOOGLE_VERTEX" | "AWS_BEDROCK" | "OPENAI" | "ANTHROPIC";
+        /**
          * AgentRunOrigin
          * @description 러너 결과 한 줄의 출처. RULE 은 고정 규칙 비교, AI 는 모델 판단이다.
          * @enum {string}
          */
         AgentRunOrigin: "RULE" | "AI";
+        /** AgentRunProcessingResponse */
+        AgentRunProcessingResponse: {
+            /** Location */
+            location: string;
+            /** Sandbox */
+            sandbox: boolean;
+            modelProvider: components["schemas"]["AgentRunModelProvider"];
+            /** Model */
+            model: string | null;
+            /** Modelregion */
+            modelRegion: string | null;
+            /** Dataclasses */
+            dataClasses: components["schemas"]["AgentRunDataClass"][];
+            /** Externaltransfer */
+            externalTransfer: boolean;
+            /** Externaltransferbytes */
+            externalTransferBytes: number | null;
+        };
         /**
          * AgentRunSeverity
          * @description 설정 차이·기능 차이의 심각도.
@@ -1062,6 +1169,148 @@ export interface components {
          * @enum {string}
          */
         AiFindingConfirmation: "UNCONFIRMED" | "ESCALATED" | "DISMISSED";
+        /** AiResidencyBucketResponse */
+        AiResidencyBucketResponse: {
+            /** Key */
+            key: string | null;
+            /** Runs */
+            runs: number;
+        };
+        /** AiResidencyPolicyResponse */
+        AiResidencyPolicyResponse: {
+            source: components["schemas"]["AiResidencyPolicySource"];
+            /** Allowedmodelregions */
+            allowedModelRegions: string[];
+            /** Forbidexternalforclasses */
+            forbidExternalForClasses: components["schemas"]["AgentRunDataClass"][];
+        };
+        /**
+         * AiResidencyPolicySource
+         * @description 요약 판정에 쓴 정책의 출처. 지금은 서버 코드 상수뿐이다.
+         * @enum {string}
+         */
+        AiResidencyPolicySource: "DEFAULT";
+        /** AiResidencyRecentRunResponse */
+        AiResidencyRecentRunResponse: {
+            /**
+             * Runid
+             * Format: uuid
+             */
+            runId: string;
+            /**
+             * Serviceid
+             * Format: uuid
+             */
+            serviceId: string;
+            kind: components["schemas"]["AgentRunKind"];
+            status: components["schemas"]["AgentRunStatus"];
+            /**
+             * Finishedat
+             * Format: date-time
+             */
+            finishedAt: string;
+            /** Simulated */
+            simulated: boolean;
+            /** Aireviewed */
+            aiReviewed: boolean;
+            processing: components["schemas"]["AgentRunProcessingResponse"] | null;
+            /** Violations */
+            violations: components["schemas"]["AiResidencyViolationReason"][];
+        };
+        /** AiResidencyRunCountsResponse */
+        AiResidencyRunCountsResponse: {
+            /** Total */
+            total: number;
+            /** Recorded */
+            recorded: number;
+            /** Unrecorded */
+            unrecorded: number;
+            /** Sandboxed */
+            sandboxed: number;
+            /** Externaltransfer */
+            externalTransfer: number;
+            /** Truncated */
+            truncated: boolean;
+        };
+        /** AiResidencySummaryResponse */
+        AiResidencySummaryResponse: {
+            /**
+             * From
+             * Format: date-time
+             */
+            from: string;
+            /**
+             * To
+             * Format: date-time
+             */
+            to: string;
+            policy: components["schemas"]["AiResidencyPolicyResponse"];
+            runs: components["schemas"]["AiResidencyRunCountsResponse"];
+            /** Byprovider */
+            byProvider: components["schemas"]["AiResidencyBucketResponse"][];
+            /** Bymodel */
+            byModel: components["schemas"]["AiResidencyBucketResponse"][];
+            /** Bylocation */
+            byLocation: components["schemas"]["AiResidencyBucketResponse"][];
+            /** Bymodelregion */
+            byModelRegion: components["schemas"]["AiResidencyBucketResponse"][];
+            /** Bydataclass */
+            byDataClass: components["schemas"]["AiResidencyBucketResponse"][];
+            /** Externaltransferbytes */
+            externalTransferBytes: number;
+            sensitiveExternalTransfer: components["schemas"]["SensitiveExternalTransferResponse"];
+            /** Violations */
+            violations: components["schemas"]["AiResidencyViolationResponse"][];
+            /** Recentruns */
+            recentRuns: components["schemas"]["AiResidencyRecentRunResponse"][];
+        };
+        /**
+         * AiResidencyVerdict
+         * @description 민감 등급 외부 전송 판정. 기록이 없는 실행이 있으면 0건이라고 단정하지 않는다.
+         * @enum {string}
+         */
+        AiResidencyVerdict: "ZERO" | "ZERO_WITH_UNRECORDED" | "DETECTED";
+        /**
+         * AiResidencyViolationReason
+         * @description 기본 정책 위반 이유. 한 실행에 여러 개가 붙을 수 있다.
+         * @enum {string}
+         */
+        AiResidencyViolationReason: "MODEL_REGION_NOT_ALLOWED" | "FORBIDDEN_CLASS_SENT_EXTERNALLY";
+        /** AiResidencyViolationResponse */
+        AiResidencyViolationResponse: {
+            /**
+             * Runid
+             * Format: uuid
+             */
+            runId: string;
+            /**
+             * Serviceid
+             * Format: uuid
+             */
+            serviceId: string;
+            /**
+             * Finishedat
+             * Format: date-time
+             */
+            finishedAt: string;
+            /** Reasons */
+            reasons: components["schemas"]["AiResidencyViolationReason"][];
+        };
+        /** ApiResponse[AiResidencySummaryResponse] */
+        ApiResponse_AiResidencySummaryResponse_: {
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Code */
+            code?: string | null;
+            /** Message */
+            message?: string | null;
+            data?: components["schemas"]["AiResidencySummaryResponse"] | null;
+            /** Details */
+            details?: components["schemas"]["ErrorDetail"][] | null;
+        };
         /** ApiResponse[ClaimRunResponse] */
         ApiResponse_ClaimRunResponse_: {
             /**
@@ -1074,6 +1323,21 @@ export interface components {
             /** Message */
             message?: string | null;
             data?: components["schemas"]["ClaimRunResponse"] | null;
+            /** Details */
+            details?: components["schemas"]["ErrorDetail"][] | null;
+        };
+        /** ApiResponse[CloudCostsResponse] */
+        ApiResponse_CloudCostsResponse_: {
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Code */
+            code?: string | null;
+            /** Message */
+            message?: string | null;
+            data?: components["schemas"]["CloudCostsResponse"] | null;
             /** Details */
             details?: components["schemas"]["ErrorDetail"][] | null;
         };
@@ -1482,6 +1746,21 @@ export interface components {
             /** Details */
             details?: components["schemas"]["ErrorDetail"][] | null;
         };
+        /** ApiResponse[PrecheckPatchResponse] */
+        ApiResponse_PrecheckPatchResponse_: {
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Code */
+            code?: string | null;
+            /** Message */
+            message?: string | null;
+            data?: components["schemas"]["PrecheckPatchResponse"] | null;
+            /** Details */
+            details?: components["schemas"]["ErrorDetail"][] | null;
+        };
         /** ApiResponse[SavedServiceVariableResponse] */
         ApiResponse_SavedServiceVariableResponse_: {
             /**
@@ -1665,6 +1944,45 @@ export interface components {
             /** Label */
             label: string | null;
         };
+        /** BillingDayResponse */
+        BillingDayResponse: {
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Usageusd */
+            usageUsd: number;
+            /** Creditsusd */
+            creditsUsd: number;
+            /** Netusd */
+            netUsd: number;
+            /** Estimated */
+            estimated: boolean;
+        };
+        /** BillingResponse */
+        BillingResponse: {
+            /** Provider */
+            provider: string;
+            /**
+             * Source
+             * @default BILLING
+             * @constant
+             */
+            source: "BILLING";
+            /** Available */
+            available: boolean;
+            /** Scope */
+            scope: string;
+            /** Label */
+            label: string;
+            /** Fetchedat */
+            fetchedAt: string | null;
+            /** Note */
+            note: string | null;
+            /** Days */
+            days: components["schemas"]["BillingDayResponse"][];
+        };
         /**
          * BuildRefResponse
          * @description reused=true 면 이 요청이 새로 만든 빌드가 아니다(같은 커밋 빌드 재사용·예비 따라가기).
@@ -1742,6 +2060,28 @@ export interface components {
             /** Leaseuntil */
             leaseUntil: string | null;
         };
+        /** CloudCostsResponse */
+        CloudCostsResponse: {
+            /**
+             * Asof
+             * Format: date-time
+             */
+            asOf: string;
+            /** Currency */
+            currency: string;
+            /** Totalhourlyusd */
+            totalHourlyUsd: number;
+            /** Totaldailyusd */
+            totalDailyUsd: number;
+            /** Environments */
+            environments: components["schemas"]["EnvironmentCostResponse"][];
+            /** Shared */
+            shared: components["schemas"]["SharedCostResponse"][];
+            /** Excluded */
+            excluded: components["schemas"]["ExcludedEnvironmentResponse"][];
+            /** Billing */
+            billing: components["schemas"]["BillingResponse"][];
+        };
         /**
          * ClusterInfoResponse
          * @description 클러스터 정보. simulated=true 면 가짜 어댑터가 만든 값이다(실제 클러스터에 붙지 않음).
@@ -1769,6 +2109,38 @@ export interface components {
             lat: number;
             /** Lng */
             lng: number;
+        };
+        /**
+         * CostComponentKind
+         * @description 비용 자원 항목의 묶음(운영 1).
+         * @enum {string}
+         */
+        CostComponentKind: "COMPUTE" | "DATABASE" | "NETWORK" | "STORAGE" | "OTHER";
+        /** CostComponentResponse */
+        CostComponentResponse: {
+            /** Name */
+            name: string;
+            kind: components["schemas"]["CostComponentKind"];
+            /** Quantity */
+            quantity: number;
+            /** Unit */
+            unit: string;
+            /** Unitpriceusd */
+            unitPriceUsd: number;
+            priceUnit: components["schemas"]["PriceUnit"];
+            /** Hourlyusd */
+            hourlyUsd: number;
+            /** Priceverified */
+            priceVerified: boolean;
+            /** Pricesource */
+            priceSource: string;
+            /**
+             * Pricecheckedat
+             * Format: date
+             */
+            priceCheckedAt: string;
+            /** Note */
+            note: string | null;
         };
         /**
          * CreateAgentTokenRequest
@@ -1945,6 +2317,16 @@ export interface components {
          * @enum {string}
          */
         CutoverKind: "CUTOVER" | "ROLLBACK";
+        /**
+         * DecidePrecheckPatchRequest
+         * @description 승인·거절 본문. patchHash 는 화면이 본 패치의 해시다.
+         */
+        DecidePrecheckPatchRequest: {
+            /** Patchhash */
+            patchHash: string;
+            /** Reason */
+            reason?: string | null;
+        };
         /**
          * DeployRequestCancelReason
          * @enum {string}
@@ -2164,6 +2546,39 @@ export interface components {
          * @enum {string}
          */
         EnvironmentConnectionStatus: "UNCHECKED" | "CONNECTED" | "FAILED";
+        /** EnvironmentCostResponse */
+        EnvironmentCostResponse: {
+            /**
+             * Environmentid
+             * Format: uuid
+             */
+            environmentId: string;
+            /** Environmentname */
+            environmentName: string;
+            /** Provider */
+            provider: string;
+            /** Region */
+            region: string | null;
+            /**
+             * Source
+             * @default ESTIMATE
+             * @constant
+             */
+            source: "ESTIMATE";
+            /** Hourlyusd */
+            hourlyUsd: number | null;
+            /** Dailyusd */
+            dailyUsd: number | null;
+            /**
+             * Asof
+             * Format: date-time
+             */
+            asOf: string;
+            /** Note */
+            note: string;
+            /** Components */
+            components: components["schemas"]["CostComponentResponse"][];
+        };
         /**
          * EnvironmentDetailResponse
          * @description 환경 한 건 + 그 자리에서 읽은 클러스터 정보.
@@ -2295,6 +2710,20 @@ export interface components {
             reason: string;
             /** Value */
             value?: string | null;
+        };
+        /** ExcludedEnvironmentResponse */
+        ExcludedEnvironmentResponse: {
+            /**
+             * Environmentid
+             * Format: uuid
+             */
+            environmentId: string;
+            /** Environmentname */
+            environmentName: string;
+            /** Kind */
+            kind: string;
+            /** Note */
+            note: string;
         };
         /**
          * FindingItemResponse
@@ -3074,6 +3503,7 @@ export interface components {
             /** Steps */
             steps: components["schemas"]["PrecheckStepResponse"][];
             model: components["schemas"]["PrecheckModelResponse"] | null;
+            processing: components["schemas"]["AgentRunProcessingResponse"] | null;
             /** Configdiff */
             configDiff: components["schemas"]["PrecheckConfigDiffResponse"][];
             /** Featuregaps */
@@ -3158,6 +3588,35 @@ export interface components {
              */
             refusal: boolean;
         };
+        /** PrecheckPatchApplyResponse */
+        PrecheckPatchApplyResponse: {
+            /**
+             * Runid
+             * Format: uuid
+             */
+            runId: string;
+            status: components["schemas"]["AgentRunStatus"];
+            /** Failurecode */
+            failureCode: string | null;
+            /** Finishedat */
+            finishedAt: string | null;
+        };
+        /** PrecheckPatchApprovalResponse */
+        PrecheckPatchApprovalResponse: {
+            decision: components["schemas"]["AgentPatchDecision"];
+            /**
+             * Decidedbyuserid
+             * Format: uuid
+             */
+            decidedByUserId: string;
+            /**
+             * Decidedat
+             * Format: date-time
+             */
+            decidedAt: string;
+            /** Reason */
+            reason: string | null;
+        };
         /** PrecheckPatchCheckResponse */
         PrecheckPatchCheckResponse: {
             /** Name */
@@ -3171,7 +3630,10 @@ export interface components {
             /** Summary */
             summary?: string | null;
         };
-        /** PrecheckPatchResponse */
+        /**
+         * PrecheckPatchResponse
+         * @description 상세의 patches[] 원소이자 승인·거절 응답. 화면은 원소를 그대로 바꿔 끼운다.
+         */
         PrecheckPatchResponse: {
             /** Id */
             id: string;
@@ -3187,10 +3649,13 @@ export interface components {
             touchesProtectedFiles: boolean;
             /** Checks */
             checks: components["schemas"]["PrecheckPatchCheckResponse"][];
+            origin: components["schemas"]["AgentRunOrigin"];
             status: components["schemas"]["AgentPatchStatus"];
             /** Blockreason */
             blockReason?: string | null;
             verification: components["schemas"]["PrecheckPatchVerificationResponse"];
+            approval?: components["schemas"]["PrecheckPatchApprovalResponse"] | null;
+            apply?: components["schemas"]["PrecheckPatchApplyResponse"] | null;
         };
         /** PrecheckPatchVerificationResponse */
         PrecheckPatchVerificationResponse: {
@@ -3214,6 +3679,8 @@ export interface components {
             lastAt: string;
             level: components["schemas"]["LogLevel"];
         };
+        /** @enum {string} */
+        PriceUnit: "hour" | "GiB-month";
         /**
          * PutServiceVariableRequest
          * @description 값을 넣거나 바꾼다. 범위 검사(1~16,384바이트)는 서비스가 고정 코드로 거절한다.
@@ -3336,6 +3803,8 @@ export interface components {
             expiresAt: string | null;
             /** Controls */
             controls: components["schemas"]["SecurityControlResponse"][];
+            gateStatus: components["schemas"]["SecurityGateStatus"];
+            exception: components["schemas"]["SecurityMatrixExceptionResponse"] | null;
         };
         /**
          * SecurityCheckPhase
@@ -3371,6 +3840,8 @@ export interface components {
             expiresAt: string | null;
             /** Serviceid */
             serviceId: string | null;
+            gateStatus: components["schemas"]["SecurityGateStatus"];
+            exception: components["schemas"]["SecurityMatrixExceptionResponse"] | null;
         };
         /** SecurityExceptionResponse */
         SecurityExceptionResponse: {
@@ -3481,12 +3952,38 @@ export interface components {
          * @enum {string}
          */
         SecurityFindingSource: "TRIVY_IMAGE" | "TRIVY_CONFIG" | "TRIVY_SECRET" | "GITLEAKS" | "TLS_PROBE" | "MANUAL_REVIEW" | "WAS_TEST" | "WAS_STATE" | "AUDIT_LOG" | "PRECHECK" | "ENTRYPOINT" | "DATA_ENGINE" | "CLOUD_API" | "KUBERNETES_API" | "GITHUB_API" | "AI_REVIEW";
+        /**
+         * SecurityGateStatus
+         * @description 매트릭스의 게이트 관점(저장 안 함): 게이트가 이 통제·칸을 막는가.
+         * @enum {string}
+         */
+        SecurityGateStatus: "PASS" | "BLOCKED" | "WAIVED";
         /** SecurityMatrixCellsResponse */
         SecurityMatrixCellsResponse: {
             iam: components["schemas"]["SecurityCellResponse"];
             encryption: components["schemas"]["SecurityCellResponse"];
             auditLog: components["schemas"]["SecurityCellResponse"];
             policy: components["schemas"]["SecurityCellResponse"];
+        };
+        /**
+         * SecurityMatrixExceptionResponse
+         * @description 칸·통제에 적용된 기한부 예외 요약. 범위·요청자는 예외 API 에서 본다.
+         */
+        SecurityMatrixExceptionResponse: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            controlId: components["schemas"]["SecurityControlId"];
+            /** Reason */
+            reason: string;
+            /**
+             * Expiresat
+             * Format: date-time
+             */
+            expiresAt: string;
+            approvedBy: components["schemas"]["UserRefResponse"] | null;
         };
         /** SecurityMatrixResponse */
         SecurityMatrixResponse: {
@@ -3540,6 +4037,14 @@ export interface components {
          * @enum {string}
          */
         SecurityResult: "PASS" | "WARN" | "FAIL" | "UNKNOWN" | "NA";
+        /** SensitiveExternalTransferResponse */
+        SensitiveExternalTransferResponse: {
+            /** Classes */
+            classes: components["schemas"]["AgentRunDataClass"][];
+            /** Runs */
+            runs: number;
+            verdict: components["schemas"]["AiResidencyVerdict"];
+        };
         /**
          * ServiceDetailResponse
          * @description 서비스 한 건 + 올라간 환경들(만든 순서) + 끝나지 않은 이전 계획 id(없으면 null).
@@ -3704,6 +4209,36 @@ export interface components {
             id: string;
             /** Githublogin */
             githubLogin: string;
+        };
+        /** SharedCostResponse */
+        SharedCostResponse: {
+            /** Key */
+            key: string;
+            /** Name */
+            name: string;
+            /** Provider */
+            provider: string;
+            /** Region */
+            region: string;
+            /**
+             * Source
+             * @default ESTIMATE
+             * @constant
+             */
+            source: "ESTIMATE";
+            /** Hourlyusd */
+            hourlyUsd: number;
+            /** Dailyusd */
+            dailyUsd: number;
+            /**
+             * Asof
+             * Format: date-time
+             */
+            asOf: string;
+            /** Note */
+            note: string;
+            /** Components */
+            components: components["schemas"]["CostComponentResponse"][];
         };
         /**
          * SimulateRequest
@@ -5686,6 +6221,38 @@ export interface operations {
             };
         };
     };
+    get_cloud_costs_api_v1_orgs__org_id__costs_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 조직 id(uuid) */
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_CloudCostsResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     search_security_exceptions_api_v1_orgs__org_id__security_exceptions_get: {
         parameters: {
             query?: {
@@ -5998,6 +6565,116 @@ export interface operations {
             };
         };
     };
+    approve_precheck_patch_api_v1_orgs__org_id__prechecks__precheck_id__patches__patch_id__approve_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                precheck_id: string;
+                patch_id: string;
+                /** @description 조직 id(uuid) */
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DecidePrecheckPatchRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_PrecheckPatchResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reject_precheck_patch_api_v1_orgs__org_id__prechecks__precheck_id__patches__patch_id__reject_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                precheck_id: string;
+                patch_id: string;
+                /** @description 조직 id(uuid) */
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DecidePrecheckPatchRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_PrecheckPatchResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_ai_residency_summary_api_v1_orgs__org_id__ai_residency_get: {
+        parameters: {
+            query?: {
+                days?: number;
+            };
+            header?: never;
+            path: {
+                /** @description 조직 id(uuid) */
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_AiResidencySummaryResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     claim_run_api_v1_runner_runs_claim_post: {
         parameters: {
             query?: never;
@@ -6178,6 +6855,28 @@ export interface operations {
                          */
                         refusal?: boolean;
                     } | null;
+                    processing?: {
+                        /** Location */
+                        location: string;
+                        /** Sandbox */
+                        sandbox: boolean;
+                        /**
+                         * AgentRunModelProvider
+                         * @description 러너가 밝힌 모델 제공자. NONE 은 모델을 부르지 않았다는 뜻이다.
+                         * @enum {string}
+                         */
+                        modelProvider: "NONE" | "LOCAL" | "GOOGLE_VERTEX" | "AWS_BEDROCK" | "OPENAI" | "ANTHROPIC";
+                        /** Model */
+                        model?: string | null;
+                        /** Modelregion */
+                        modelRegion?: string | null;
+                        /** Dataclasses */
+                        dataClasses: ("CONFIG" | "FINDINGS" | "SOURCE_CODE" | "LOGS" | "SECRETS")[];
+                        /** Externaltransfer */
+                        externalTransfer: boolean;
+                        /** Externaltransferbytes */
+                        externalTransferBytes?: number | null;
+                    } | null;
                     /**
                      * Configdiff
                      * @default []
@@ -6285,6 +6984,12 @@ export interface operations {
                             /** Summary */
                             summary?: string | null;
                         }[];
+                        /**
+                         * AgentRunOrigin
+                         * @description 러너 결과 한 줄의 출처. RULE 은 고정 규칙 비교, AI 는 모델 판단이다.
+                         * @enum {string}
+                         */
+                        origin?: "RULE" | "AI";
                     }[];
                     /**
                      * Blockedattempts
