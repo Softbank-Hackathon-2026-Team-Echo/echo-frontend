@@ -23,6 +23,9 @@ export const queryKeys = {
   agentTokens: (orgId: string) => ['org', orgId, 'agent-tokens'] as const,
   evacuation: (orgId: string) => ['org', orgId, 'evacuation'] as const,
   prechecks: (orgId: string) => ['org', orgId, 'prechecks'] as const,
+  precheck: (orgId: string, precheckId: string) => ['org', orgId, 'prechecks', precheckId] as const,
+  precheckLogs: (orgId: string, precheckId: string) =>
+    ['org', orgId, 'prechecks', precheckId, 'logs'] as const,
   migrations: (orgId: string) => ['org', orgId, 'migrations'] as const,
   migrationPlans: (orgId: string, serviceId: string) =>
     ['org', orgId, 'migrations', 'service', serviceId] as const,

@@ -186,6 +186,58 @@ export function securityReasonLabel(reason: string): string {
   return labelOf(SECURITY_REASONS, reason);
 }
 
+// AI 사전 점검
+const PRECHECK_STATUSES: Record<string, StatusView> = {
+  QUEUED: { label: k('Waiting for a runner'), tone: 'neutral' },
+  CLAIMED: { label: k('Running'), tone: 'ai' },
+  RUNNING: { label: k('Running'), tone: 'ai' },
+  SUCCEEDED: { label: k('Succeeded'), tone: 'success' },
+  FAILED: { label: k('Failed'), tone: 'danger' },
+  TIMED_OUT: { label: k('Timed out'), tone: 'danger' },
+  CANCELLED: { label: k('Cancelled'), tone: 'neutral' },
+};
+
+export function precheckStatusView(status: string): StatusView {
+  return viewOf(PRECHECK_STATUSES, status);
+}
+
+const PRECHECK_STEPS: Record<string, string> = {
+  SANDBOX_CREATE: k('Sandbox created'),
+  INPUT_LOAD: k('Input loaded'),
+  CONFIG_DIFF: k('Config diff'),
+  ANALYZE: k('Analysis'),
+  PATCH_PROPOSE: k('Patch proposed'),
+  PATCH_VERIFY: k('Patch verified'),
+  SANDBOX_DELETE: k('Sandbox deleted'),
+};
+
+export function precheckStepLabel(step: string): string {
+  return labelOf(PRECHECK_STEPS, step);
+}
+
+const PRECHECK_FAILURES: Record<string, string> = {
+  RUNNER_ERROR: k('The runner hit an error.'),
+  DEADLINE: k('The runner ran out of time.'),
+  DEADLINE_EXCEEDED: k('No result arrived before the 15 minute deadline.'),
+  LEASE_EXPIRED: k('The runner stopped responding.'),
+  INPUT_INVALID: k('The runner could not read the input.'),
+  KIND_UNSUPPORTED: k('The runner does not support this check.'),
+};
+
+export function precheckFailureLabel(code: string): string {
+  return labelOf(PRECHECK_FAILURES, code);
+}
+
+const PATCH_BLOCK_REASONS: Record<string, string> = {
+  PROTECTED_FILES_TOUCHED: k('Touches protected files'),
+  CHECKS_MISSING: k('No verification checks ran'),
+  CHECK_NOT_PASSED: k('A verification check did not pass'),
+};
+
+export function patchBlockReasonLabel(reason: string): string {
+  return labelOf(PATCH_BLOCK_REASONS, reason);
+}
+
 /** 비교 표 판정 칸 */
 export function securityCompareNote(row: {
   source: { result: string };
