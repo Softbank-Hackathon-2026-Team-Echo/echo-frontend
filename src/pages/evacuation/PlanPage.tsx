@@ -19,7 +19,6 @@ import {
   useMigrationPlan,
   usePlanAction,
 } from '@/lib/api/migrations';
-import { usePrecheck } from '@/lib/api/prechecks';
 import { useSecurityCompare } from '@/lib/api/security';
 import { useService } from '@/lib/api/services';
 import type { MigrationPlan } from '@/lib/api/types';
@@ -93,8 +92,8 @@ export default function PlanPage() {
   const reject = usePlanAction(orgId ?? '', serviceId ?? '', 'reject');
   const cancel = usePlanAction(orgId ?? '', serviceId ?? '', 'cancel');
   const disasters = useActiveDisasters(orgId);
-  const precheck = usePrecheck(orgId, serviceId, targetId);
-  const precheckSkipped = precheck.data === null;
+  // 끝낸 점검에서 왔을 때만 주소에 id 가 있다. 그 밖은 점검을 건너뛴 것이다
+  const precheckSkipped = !searchParams.has('precheck');
   const security = useSecurityCompare(
     orgId,
     plan.data?.sourceEnvironmentId,

@@ -42,7 +42,7 @@
 | 가짜 값 | simulated | `simulated: true` | 회색 소문자 배지 `simulated` |
 | 재난 🆕 | Disaster | `Disaster` (`EARTHQUAKE` · `TYPHOON`) | 화면 표기 Earthquake · Typhoon. 시뮬레이션이므로 항상 `simulated` |
 | 대피 후보 🆕 | Evacuation | `EvacuationCandidate` | 메뉴 이름 Evacuation |
-| AI 사전 점검 🆕 | AI pre-check | `Precheck` | 패치 = Patch, 막힌 시도 = Blocked attempt |
+| AI 사전 점검 | AI pre-check | `PrecheckDetail` | 패치 = Patch, 막힌 시도 = Blocked attempt |
 | 이전 | Migration | `MigrationPlan.mode` (`PLANNED` · `EMERGENCY` · `FAILBACK`) | 화면 표기 Planned · Emergency · Failback. 서버가 판정한다 |
 | 쓰기 전환 🆕 | Writer cutover | `writerCutover` | 단계 Pause writes · Fence · Confirm LSN · Promote |
 | 보안 매트릭스 🆕 | Security | `SecurityMatrixRow`, `SecurityFinding` | 결과 PASS · WARN · FAIL · N/A · Unknown |
@@ -84,7 +84,8 @@
 | 초대 `status` | `PENDING` → 대기(목록에 보임) / `ACCEPTED` · `EXPIRED` · `REVOKED` → 목록에서 뺀다 |
 | 에이전트 토큰 | `revokedAt` 있음 → Revoked · 중립 / `expiresAt` 지남 → Expired · 중립 / 그 밖 → Active · success |
 | 감사 `result` | `SUCCEEDED` → Succeeded · success / `DENIED` → Denied · danger / `FAILED` → Failed · danger |
-| AI 관련 전부 🆕 | ai 색 |
+| 사전 점검 `status` | `QUEUED` → Waiting for a runner · 중립 / `CLAIMED` · `RUNNING` → Running · ai / `SUCCEEDED` · success / `FAILED` · `TIMED_OUT` → danger / `CANCELLED` · 중립 |
+| AI 관련 전부 | ai 색 |
 
 ## 5. 혼동 주의
 

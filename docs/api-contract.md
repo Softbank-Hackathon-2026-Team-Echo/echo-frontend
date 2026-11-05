@@ -62,7 +62,7 @@
 | S01 대시보드 | 환경 목록 · 서비스 상세 · 지표(4-2) · 진행 중 재난(4-3) · 최근 이벤트·활동(4-8) | ✅ / 🆕 |
 | S01-D 재난 시뮬레이션 · S01-R 휴대폰 리모컨 | 재난 만들기·미리보기(4-3) | 🆕 |
 | E01-1 대피처 고르기 | 대피 후보·점수(4-4) | 🆕 |
-| E01-2 AI 사전 점검 | 샌드박스 실행·단계·로그·패치·승인(4-5) | 🆕 |
+| E01-2 AI 사전 점검 | 실행·단계·로그·패치(4-5) ✅ · 패치 승인 🆕 | 일부 🆕 |
 | E01-3 계획 승인 | 이전 계획·승인(4-6) · 보안 비교(4-7) | 🆕 |
 | M01 이전 목록 · M02 이전 실행 (계획·긴급·복귀, Live·Result) | 이전 실행·단계·트래픽·쓰기 전환·측정 결과(4-6) | 🆕 |
 | SEC 보안 (Matrix · Compare · 근거 드로어) | 매트릭스·finding ✅ · 비교 🆕 (4-7) | 일부 🆕 |
@@ -161,14 +161,19 @@ KPI 타일 5개(성공률·p95·복제 지연·트래픽 비율·에러 버짓)�
 
 ### 4-5. AI 사전 점검 (F11·F14~F16)
 
-| 동작 | 제안 |
-|---|---|
-| 점검 시작 | `POST /orgs/{orgId}/prechecks` `{serviceId, targetEnvironmentId}` → `Precheck` |
-| 점검 상세 | `GET /orgs/{orgId}/prechecks/{id}` → `{status, sandboxId, steps[{name, status, startedAt, finishedAt}], featureGaps[{source, target, gap, action}], configDiff[], patches[{id, file, diff, reason, verification: {passed, total}, status}], blockedAttempts[{action, target, at}]}` |
-| 로그 | `GET …/prechecks/{id}/logs?after=` |
-| 패치 승인·거절 | `POST …/prechecks/{id}/patches/{patchId}/approve` · `…/reject` (개발자 이상, 사람만) |
+✅ 운영에 열렸다(echo-was #69, 원본은 echo-was `docs/api/prechecks.md`). 결과는 러너(echo-ai-agent)가 돌아야 생긴다.
 
-`blockedAttempts`는 "에이전트가 운영을 바꾸려다 막힌 기록"(F16 데모 장면)이다.
+| 동작 | 경로 |
+|---|---|
+| 점검 시작 | `POST /orgs/{orgId}/prechecks` `{serviceId, targetEnvironmentId}` → 201 `PrecheckDetail`(`QUEUED`). 열린 실행이 있으면 409 `PRECHECK_IN_PROGRESS` + `details[{field: "runId", value}]` 라 그 id 로 이어서 본다 |
+| 점검 상세 | `GET …/prechecks/{id}` → `{status, failureCode, simulated, aiReviewed, sandboxId, steps[{name, firstAt, lastAt, level}], model, configDiff[], featureGaps[], findings[], patches[], blockedAttempts[]}` |
+| 로그 | `GET …/prechecks/{id}/logs?after&size` → `{items[{seq, at, step, level, message}], nextAfter}` |
+| 취소 | `POST …/prechecks/{id}/cancel` |
+
+- 목록 API 가 없다. 화면은 주소의 `run` 으로 점검을 찾고, 끝낸 점검에서 계획으로 갈 때 `precheck` 를 넘긴다.
+- `simulated` 는 결과 값을 지어냈는지(러너 가짜 모드), `aiReviewed` 는 모델을 썼는지다. 따로 보인다.
+- 끝나지 않은 동안 2초마다 다시 부른다.
+- 패치 승인·거절은 아직 없다(2차). `blockedAttempts` 는 "에이전트가 운영을 바꾸려다 막힌 기록"(F16)이고 늘 `confirmed: false` 다.
 
 ### 4-6. 이전 계획·실행·결과·복귀 (F6~F10, F17)
 
