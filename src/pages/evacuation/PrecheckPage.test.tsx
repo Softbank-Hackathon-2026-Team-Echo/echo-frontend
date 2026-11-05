@@ -135,6 +135,7 @@ describe('PrecheckPage', () => {
     expect(screen.getByText('No AI review · rule comparison only')).toBeInTheDocument();
     expect(screen.getByText('Input loaded')).toBeInTheDocument();
     expect(screen.queryByText('simulated')).not.toBeInTheDocument();
+    expect(document.querySelector('[aria-current="step"]')).toBeNull();
   });
 
   it('러너의 가짜 모드면 simulated 를 단다', async () => {
@@ -185,6 +186,7 @@ describe('PrecheckPage', () => {
     renderPage();
 
     expect((await screen.findAllByText('Waiting for a runner')).length).toBeGreaterThan(0);
+    expect(screen.getByText('AI pre-check').closest('[aria-current="step"]')).not.toBeNull();
     await userEvent.click(screen.getByRole('button', { name: 'Stop' }));
     await waitFor(() => expect(calls).toEqual(['cancel']));
   });

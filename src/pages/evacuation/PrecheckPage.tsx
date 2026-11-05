@@ -187,7 +187,7 @@ export default function PrecheckPage() {
           </>
         }
       />
-      <WizardSteps current={1} />
+      <WizardSteps current={1} precheckDone={succeeded} />
 
       <div className="flex flex-wrap items-center gap-2">
         <StatusBadge {...precheckStatusView(current.status)} />

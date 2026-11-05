@@ -73,9 +73,9 @@ export function ExceptionsTable({
             {exceptions.map((exception) => (
               <TableRow key={exception.id}>
                 <TableCell>
-                  {controlTitles.get(exception.controlId)}
-                  <span className="ml-2 font-mono text-mono text-fg-muted first:ml-0">
-                    {exception.controlId}
+                  <span className="flex flex-wrap items-baseline gap-2">
+                    {controlTitles.get(exception.controlId)}
+                    <span className="font-mono text-mono text-fg-muted">{exception.controlId}</span>
                   </span>
                 </TableCell>
                 <TableCell>{scopeText(exception, names, serviceNames)}</TableCell>
