@@ -255,6 +255,14 @@ const PRECHECK_FAILURES: Record<string, string> = {
   LEASE_EXPIRED: k('The runner stopped responding.'),
   INPUT_INVALID: k('The runner could not read the input.'),
   KIND_UNSUPPORTED: k('The runner does not support this check.'),
+  PATCH_HASH_MISMATCH: k('The patch changed after approval, so it was not applied.'),
+  PATCH_TARGET_FORBIDDEN: k('The patch targets a file it may not change.'),
+  PATCH_APPLY_FAILED: k('The patch did not apply to the sandbox copy.'),
+  VERIFY_UNAVAILABLE: k('The sandbox tools were unavailable, so nothing was verified.'),
+  SOURCE_UNAVAILABLE: k('The sandbox could not fetch the source.'),
+  IMAGE_BUILD_FAILED: k('The image build failed in the sandbox.'),
+  IMAGE_SCAN_FAILED: k('The image scan found problems in the sandbox.'),
+  HEALTHZ_FAILED: k('The app failed its health check in the sandbox.'),
 };
 
 export function precheckFailureLabel(code: string): string {

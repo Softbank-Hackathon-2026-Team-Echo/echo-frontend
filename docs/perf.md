@@ -9,7 +9,7 @@ React Compiler · 화면 밖 작업 멈추기 · 화면 미리 받기 같은 최
 |---|---|---|
 | LCP · INP · CLS (실사용자) | Sentry 브라우저 추적, 표본 20%. 화면 이름은 경로 패턴(`/o/:slug/migrations/:id`)으로 묶는다(`lib/route-pattern.ts`) | Sentry → Insights → Frontend, 화면(transaction)별. 값은 pageload 가 아니라 따로 보낸 span 에 있다: `span.op:ui.webvital.lcp` · `ui.webvital.cls` · `ui.interaction.click`(INP) |
 | 느린 클릭 원인 | Sentry 긴 애니메이션 프레임(`enableLongAnimationFrame`) | 같은 화면의 span 목록 |
-| 다시 불러오기 1번에 다시 그리는 칸 | `src/pages/dashboard/DashboardPage.renders.test.tsx` (React `Profiler` + 칸별 호출 수) | `pnpm exec vitest run src/pages/dashboard/DashboardPage.renders.test.tsx --silent=false` 출력 |
+| 다시 불러오기 1번에 다시 그리는 칸 | `src/pages/dashboard/ServiceDashboard.renders.test.tsx` (React `Profiler` + 칸별 호출 수) | `pnpm exec vitest run src/pages/dashboard/ServiceDashboard.renders.test.tsx --silent=false` 출력 |
 | 이전 실행 중 다시 그리는 횟수 | `src/pages/migrations/MigrationPage.renders.test.tsx` (실행 중 계획 3초, 같은 응답) | `pnpm exec vitest run src/pages/migrations/MigrationPage.renders.test.tsx --silent=false` 출력 |
 | 첫 화면 전후 비교 | 빌드 두 개를 headless Chrome 으로 번갈아 연다. 빈 캐시 · 네트워크 고정 · API 응답 150ms 고정 · 1440×900 · 조건마다 3~5번, 중앙값 | 운영은 API 응답 차이가 커서 전후 비교가 안 된다. 같은 빌드끼리 재면 차이가 10ms 안쪽이다. 도구는 커밋하지 않았다 |
 | 번들 크기(gzip) | `node scripts/check-bundle.mjs` (CI 예산) | CI 로그 · 로컬 빌드 뒤 |

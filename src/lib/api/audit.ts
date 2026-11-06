@@ -7,7 +7,7 @@ import type { AuditActorType } from './types';
 const PAGE_SIZE = 50;
 const RECENT_SIZE = 3;
 
-export type AuditFilters = { actorType?: AuditActorType; q?: string };
+export type AuditFilters = { actorType?: AuditActorType; q?: string; includeReads?: boolean };
 
 export function useAuditLogs(orgId: string | undefined, filters: AuditFilters) {
   return useInfiniteQuery({

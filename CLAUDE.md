@@ -47,7 +47,7 @@ src/
 │  ├─ disaster/          # 재난 시뮬레이션 다이얼로그(S01-D) · 지도(DisasterMap, d3-geo + world-atlas 50m 지연 로드)
 │  └─ *.tsx              # 두 화면 이상에서 쓰는 앱 컴포넌트 (Panel, RoleButton, StatusBadge, SimulatedBadge, ProviderLabel, FormField, ConfirmDeleteDialog, ExternalLink, EmptyState, ErrorState, ScreenErrorBoundary, Logo, OrthoGlobe, 등록·배포 다이얼로그(EnvironmentFormDialog · RegisterServiceDialog · DeployDialog) …)
 ├─ layouts/AppShell.tsx  # 사이드바(워드마크 · Operate/Resilience/Govern 묶음 · 사용자 메뉴=테마·로그아웃) + 상단 바(브레드크럼 · Org 선택 · Simulate disaster · 알림)
-├─ pages/                # 화면 단위 폴더 (login/, root/, landing/(L01 소개), onboarding/(O01~O03), dashboard/, services/, evacuation/, migrations/, security/, audit/, remote/(S01-R 휴대폰 리모컨), settings/, dev/). 한 화면에서만 쓰는 컴포넌트는 그 폴더 안에
+├─ pages/                # 화면 단위 폴더 (login/, root/, landing/(L01 소개), onboarding/(O01~O03), dashboard/(조직 개요 · 서비스 Overview 칸), services/(목록 · 서비스 작업 공간 탭), evacuation/, migrations/, security/, audit/, remote/(S01-R 휴대폰 리모컨), settings/, dev/). 한 화면에서만 쓰는 컴포넌트는 그 폴더 안에
 ├─ hooks/                # useTheme(테마 3개, localStorage), useRole(현재 조직 역할), useNow(경과 시간), usePrefersReducedMotion, useInViewOnce(처음 화면에 들어오면 true)
 ├─ lib/
 │  ├─ api/               # client(api = openapi-fetch + unwrap, 스키마 밖 경로는 apiFetch) · errors · notify · form-errors(422 → 칸 오류)
@@ -58,6 +58,8 @@ src/
 │  ├─ audit.ts           # 감사 행동 이름 · 행위자 · 결과 → 화면 문구
 │  ├─ status.ts          # 서버 상태 값 → 화면 문구·색 (StatusBadge 와 짝), 오류 코드 → 문구
 │  ├─ migration-*.ts     # 이전 단계 시간(stages) · 결과 숫자(metrics). 두 화면 이상에서 쓴다
+│  ├─ deploy-stages.ts   # 배포 단계 상태 · 시간
+│  ├─ env-file.ts        # 붙여 넣은 .env 를 키 · 값으로 나눈다
 │  ├─ route-prefetch.ts  # 메뉴 의도(마우스 올림 · 포커스) 때 화면 청크 미리 받기 · route-pattern.ts(Sentry 화면 이름)
 │  ├─ geo.ts             # 리전·도시 → 좌표(계약 4-1 🆕 전까지), 거리 계산
 │  ├─ i18n.ts            # 번역 t · k, 언어 감지 · 저장. 영어 문구가 키다
@@ -73,7 +75,7 @@ scripts/                # gen-api.mjs(API 타입) · trim-atlas.mjs(지도 데�
 .github/workflows/ci.yml # PR · main 에서 lint · typecheck · test · build · 번들 예산
 public/_headers          # Cloudflare Pages 응답 헤더(클릭재킹 방지 · 권한 끔 · /assets 1년 캐시)
 specs/                   # 태스크 명세
-docs/                    # api-contract.md, perf.md(성능 측정 방법 · 기준선), i18n-glossary.md(번역 용어표), demo-script.md(시연 대본), PR.md(커밋 안 함)
+docs/                    # api-contract.md, perf.md(성능 측정 방법 · 기준선), i18n-glossary.md(번역 용어표), demo-script.md(시연 대본), manual-test.md(손으로 돌리는 전체 흐름), PR.md(커밋 안 함)
 .claude/launch.json      # 브라우저 미리보기용 개발 서버 설정
 ```
 
@@ -237,3 +239,18 @@ docs/                    # api-contract.md, perf.md(성능 측정 방법 · 기�
 | 11/6 | KPI 4칸과 평소 요청 그래프는 운영 지표 API 를 10초마다 부른다. 값이 없으면 `—` 와 이유만 적는다. 이전 중에는 A·B 비율선을 그대로 쓴다. 그래프 색은 환경 종류 토큰이다 | echo-was #81. 비율선은 서버가 적용한 값이라 시연의 교차 장면이 흔들리지 않는다. 대기 환경은 평소 점이 없는 게 정상이다 |
 | 11/6 | Compare · E01-3 비교는 운영 API 를 부르고 시뮬레이션을 지운다. E01-3 은 `serviceId` 를 넣고 `blocksMigration` 이면 승인을 잠근다. 비교를 못 불러오면 잠그지 않는다 | echo-was #84. 서버 게이트와 같은 판정이다. 막는 최종 판단은 승인 때 서버 게이트가 한다 |
 | 11/6 | 리전 없는 Anthropic 호출이 비밀값을 안 넘기면 위반 대신 "해외 모델 사용 · 비밀값은 안 보냄" 을 ai 색으로 보인다. 사전 점검 칸에는 정책 응답이 없어 제공자 · 리전 · 데이터 등급으로 판단한다 | echo-was #80 조건부 허용(AD-12). 금지 등급이 SECRETS 뿐이라 같은 뜻이다. 금지 등급이 늘면 서버 값으로 바꾼다 |
+| 11/6 | 재난 없는 이전은 M01 "Plan a migration" 다이얼로그에서 서비스와 도착 환경을 골라 시작한다. 도착에 같은 버전이 없으면 먼저 배포로 보낸다. 다음 화면은 AI 사전 점검이고 계획으로 건너뛸 수 있다 | 도현님 시험에서 재난 없이는 이전 입구를 찾지 못했다. 준비 판단은 서버의 계획 만들기 규칙과 같고, 사전 점검은 누른 사람이 시작한다(화면을 여는 것만으로 운영 점검을 만들지 않는다) |
+| 11/6 | 서비스가 둘 이상이면 이전 다이얼로그와 E01-3 에 "모든 서비스가 같이 이동합니다" 를 보인다 | 진입점 가중치와 DB 쓰기 담당이 조직 전체에 한 벌이다. 서비스별로 나뉘는 건 시연 뒤로 제안됐다 |
+| ~~11/6~~ | ~~서비스 목록의 이름은 상세로 가고, 행을 누르면 오른쪽 패널을 연다~~ → 11/6 번복 | |
+| 11/6 | 서비스가 작업의 중심이다. `/o/:slug/services/:id` 는 Overview · Deployments · Variables · Migration · Settings 탭이고 탭은 주소 `tab` 에 남긴다. 목록 행은 상세로 가고 오른쪽 패널은 지웠다 | 지민님 · 도현님 피드백과 Railway 시험. 서비스가 둘 이상이면 처음 찾은 서비스의 지표만 보이던 대시보드가 맞지 않다 |
+| 11/6 | `/o/:slug` 는 조직 개요(서비스 카드 · 환경 · 활동 · 비용 · 레지던시)다. KPI · 토폴로지 · 이전 진행은 서비스 Overview(`ServiceDashboard`)로 옮기고 지연 로드한다. 시연 시작 주소도 옮겼다 | 지표 API 가 이미 서비스별이다. 토폴로지 코드를 다른 탭에서 받지 않게 한다 |
+| 11/6 | 변수는 키 × 환경 표로 보이고 `.env` 붙여넣기 · 한 줄 입력으로 여러 환경에 넣는다. 일부 실패는 그 줄만 다시 보낸다. 값은 다이얼로그 state 에만 둔다 | Railway RAW Editor · 인라인 입력을 가져오고, 멀티 클라우드라 환경 비교(C-SEC-1 이 막는 키)를 표로 보인다 |
+| 11/6 | 적용 막대는 서버 `pendingRedeploy` 로 만든다. 서버가 저장 즉시 새 버전을 만들어 스테이징 · 값 비교 · 항목 취소는 없다. 적용은 환경마다 현재 커밋, 없으면 그 환경의 최근 시도 커밋으로 다시 배포한다 | Railway Staged Changes 의 "무엇이 재배포되는지 미리 안다" 만 가져온다. 값을 읽을 수 없고 브랜치를 다시 묻지 않게 한다 |
+| 11/6 | 서비스 활동 서랍은 감사 로그를 서비스 이름으로 검색하고, 배포 · 이전 줄은 그 화면으로 잇는다 | 서비스별 활동 API 가 없다. 이름표가 같은 다른 대상이 섞일 수 있다 |
+| 11/6 | 등록은 저장소 주소를 먼저 받아 이름을 제안하고, 고급 설정을 접고, 끝나면 배포 창을 연다 | Railway 는 입력 하나로 배포까지 간다. 온보딩은 `onRegistered` 로 지금 흐름을 유지한다 |
+| 11/7 | 서비스 상세는 지민 노션 「Railway 화면 참고」를 따른다: 맨 위 변경 대기 띠, 탭(개요 · 배포 · 변수 · 지표 · 이전 · 설정, `?tab`), 배포 탭은 환경별 지금 배포 카드(실패해도 카드는 지금 버전, 실패는 한 줄)와 이력, 활동은 상단 버튼의 서랍. 환경 고르기는 배포 탭의 `?env` | 두 세션의 구현(feat/railway-ux · feat/deploy-migrate-ux)을 합쳤다. 개요는 시연 장면이라 카드보다 먼저 두고, 활동은 넓은 토폴로지를 가리지 않게 서랍으로 뒀다 |
+| 11/7 | 배포 실패 AI 진단은 진단 API(echo-ai-agent #22) 전까지 규칙 분류 + `simulated` 배지다. 근거 줄은 서버 `failure.logTail`(echo-was #97)에서만 고르고 지어내지 않는다. 고치기 버튼은 실제 화면 동작(변수 탭 · 설정 · 빌드 로그 · 롤백 · 다시 배포)이다 | 시연 '배포 실패 → AI 진단' 화면을 먼저 둔다. `failure` 칸은 운영 OpenAPI 에 아직 없어 `deployFailure()` 로 있을 때만 읽는다 |
+| 11/7 | 롤백은 범위(이미지 + 고정 변수 버전, 새 배포 생성)를 보이는 확인 창을 거친다. 복제 수는 API 에 없어 `—` 다 | Railway #5. 시연 중 잘못 눌러도 바로 실행되지 않게 |
+| 11/7 | 서비스 지표 탭과 개요 KPI 는 `GET …/services/{id}/metrics`(10초 폴링)를 쓴다. 그래프에 배포 끝 · 이전 시작/끝을 점선으로 단다. 상단 바에 월 추정 비용(시간당 × 730)과 단가표 | 지표 API(운영 2)가 열렸다. 추정은 청구가 아니라고 문구에 적는다 |
+| 11/7 | 변수 표는 연결 전 환경을 서버가 답할 때만 칸으로 보인다. 404 면(echo-was #96 배포 전) 표 아래에 "먼저 배포" 안내 | 첫 배포 전에 DATABASE_URL 을 넣어야 첫 배포가 성공한다(도현 shap-api). #96 이 배포되면 코드를 바꾸지 않아도 칸이 생긴다 |
+| 11/7 | 게이트가 C-AI-1 로 승인을 막으면 그 줄에 도착 환경 사전 점검 링크를 둔다 | 11/6 전체 테스트에서 복귀가 도쿄 사전 점검 기록이 없어 막혔다 |

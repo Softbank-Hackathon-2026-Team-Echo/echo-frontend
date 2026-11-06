@@ -1,11 +1,12 @@
 import { ArrowRightLeft, CircleCheck, Gauge, ShieldCheck } from 'lucide-react';
+import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorState } from '@/components/ErrorState';
 import { PageHeader } from '@/components/PageHeader';
+import { RoleButton } from '@/components/RoleButton';
 import { SimulatedBadge } from '@/components/SimulatedBadge';
 import { StatusBadge } from '@/components/StatusBadge';
-import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,
@@ -22,6 +23,7 @@ import { useServices } from '@/lib/api/services';
 import { t } from '@/lib/i18n';
 import { duration } from '@/lib/migration-stages';
 import { migrationErrorLabel, migrationModeLabel, migrationPlanStatusView } from '@/lib/status';
+import { PlanMigrationDialog } from './PlanMigrationDialog';
 
 function ModeBadge({ mode }: { mode: string }) {
   return (
@@ -64,6 +66,7 @@ export default function MigrationsPage() {
   const orgId = organization?.id;
   const services = useServices(orgId);
   const environments = useEnvironments(orgId);
+  const [planOpen, setPlanOpen] = useState(false);
   const serviceItems = services.data?.items ?? [];
   const plans = useOrgMigrationPlans(
     orgId,
@@ -90,9 +93,9 @@ export default function MigrationsPage() {
         title={t('Migrations')}
         description={t('Every evacuation and failback with its measured result.')}
         actions={
-          <Button asChild>
-            <Link to={`/o/${slug}/evacuation`}>{t('Plan a migration')}</Link>
-          </Button>
+          <RoleButton requires="DEVELOPER" onClick={() => setPlanOpen(true)}>
+            {t('Plan a migration')}
+          </RoleButton>
         }
       />
       {!organization || services.isPending || plans.isPending ? (
@@ -102,7 +105,7 @@ export default function MigrationsPage() {
           icon={ArrowRightLeft}
           title={t('No migrations yet')}
           description={t(
-            'Plan one from Evacuation. Approved plans and their results show up here.',
+            'Choose a service and a target with Plan a migration. Approved plans and their results show up here.',
           )}
         />
       ) : (
@@ -192,6 +195,14 @@ export default function MigrationsPage() {
             </Table>
           </div>
         </>
+      )}
+      {organization && planOpen && (
+        <PlanMigrationDialog
+          onClose={() => setPlanOpen(false)}
+          orgId={organization.id}
+          orgSlug={organization.slug}
+          serviceIds={serviceItems.map((service) => service.id)}
+        />
       )}
     </>
   );

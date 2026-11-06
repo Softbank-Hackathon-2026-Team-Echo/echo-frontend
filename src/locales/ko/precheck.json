@@ -48,5 +48,15 @@
   "No processing record": "처리 기록 없음",
   "No external transfer": "외부 전송 없음",
   "External transfer": "외부 전송",
-  "sandbox": "샌드박스"
+  "sandbox": "샌드박스",
+  "The patch changed after approval, so it was not applied.": "승인 뒤 패치가 바뀌어 반영하지 않았습니다.",
+  "The patch targets a file it may not change.": "수정할 수 없는 파일을 건드리는 패치입니다.",
+  "The patch did not apply to the sandbox copy.": "샌드박스 사본에 패치를 적용하지 못했습니다.",
+  "The sandbox tools were unavailable, so nothing was verified.": "샌드박스 도구를 쓸 수 없어 검증하지 못했습니다.",
+  "The sandbox could not fetch the source.": "샌드박스가 소스를 받지 못했습니다.",
+  "The image build failed in the sandbox.": "샌드박스에서 이미지 빌드에 실패했습니다.",
+  "The image scan found problems in the sandbox.": "샌드박스 이미지 스캔에서 문제를 찾았습니다.",
+  "The app failed its health check in the sandbox.": "샌드박스에서 앱 헬스 체크에 실패했습니다.",
+  "Finished {{time}}": "{{time}} 완료",
+  "Applying in the sandbox…": "샌드박스에 반영하는 중…"
 }

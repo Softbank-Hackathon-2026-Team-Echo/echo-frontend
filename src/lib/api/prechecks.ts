@@ -25,8 +25,12 @@ export function usePrecheck(orgId: string | undefined, precheckId: string | unde
         }),
       ),
     enabled: Boolean(orgId && precheckId),
-    refetchInterval: (query) =>
-      isActivePrecheck(query.state.data?.status) ? PRECHECK_POLL_MS : false,
+    // 승인 뒤 반영 실행은 부모 점검이 끝난 다음에 돈다. 마감(15분)이 있어 끝없이 돌지 않는다
+    refetchInterval: (query) => {
+      const precheck = query.state.data;
+      const applying = precheck?.patches.some((patch) => patch.apply && !patch.apply.finishedAt);
+      return isActivePrecheck(precheck?.status) || applying ? PRECHECK_POLL_MS : false;
+    },
   });
 }
 

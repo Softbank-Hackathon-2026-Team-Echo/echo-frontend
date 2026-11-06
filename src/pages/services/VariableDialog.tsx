@@ -22,8 +22,10 @@ type VariableDialogProps = {
   serviceId: string;
   environmentId: string;
   environmentName: string;
-  /** 있으면 그 키의 값을 바꾼다. 없으면 새 키를 넣는다 */
+  /** 그 키의 값을 넣는다 */
   fixedKey?: string;
+  /** 이 환경에 아직 없는 키를 넣는다 */
+  isNew?: boolean;
 };
 
 function keyProblemText(key: string) {
@@ -43,6 +45,7 @@ export function VariableDialog({
   environmentId,
   environmentName,
   fixedKey,
+  isNew = false,
 }: VariableDialogProps) {
   const save = useSaveVariable({ orgId, serviceId, environmentId });
   const [key, setKey] = useState('');
@@ -71,9 +74,12 @@ export function VariableDialog({
         <form onSubmit={handleSubmit} autoComplete="off" className="flex flex-col gap-4">
           <DialogHeader>
             <DialogTitle>
-              {fixedKey
+              {fixedKey && !isNew
                 ? t('Replace {{key}}', { key: fixedKey })
-                : t('Add variable to {{name}}', { name: environmentName })}
+                : t('Add {{key}} to {{name}}', {
+                    key: fixedKey ?? t('variable'),
+                    name: environmentName,
+                  })}
             </DialogTitle>
             <DialogDescription>
               {t(

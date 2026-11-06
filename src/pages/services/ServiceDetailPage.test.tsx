@@ -107,7 +107,7 @@ function serve(role: MemberRole, onRollback?: (id: string) => void) {
 function renderPage() {
   return renderRoute(<ServiceDetailPage />, {
     path: '/o/:slug/services/:serviceId',
-    url: '/o/echo-demo/services/s1',
+    url: '/o/echo-demo/services/s1?tab=deployments',
   });
 }
 
@@ -132,6 +132,10 @@ describe('ServiceDetailPage 배포 이력', () => {
     renderPage();
 
     await userEvent.click(await screen.findByRole('button', { name: /roll back/i }));
+    // 되돌리는 범위(이미지 · 변수 버전)를 보이는 확인 창을 거친다
+    const dialog = await screen.findByRole('dialog');
+    expect(called).toEqual([]);
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Roll back' }));
 
     await expect.poll(() => called).toEqual(['r1']);
   });
@@ -144,6 +148,22 @@ describe('ServiceDetailPage 배포 이력', () => {
       'aria-disabled',
       'true',
     );
+  });
+});
+
+describe('ServiceDetailPage 탭', () => {
+  it('탭을 고르면 주소에 남고 변수 탭으로 갈 수 있다', async () => {
+    serve('VIEWER');
+    server.use(
+      http.get(`${API}/orgs/o1/environments`, () =>
+        ok({ items: [], total: 0, page: 0, size: 100 }),
+      ),
+    );
+    renderPage();
+
+    await userEvent.click(await screen.findByRole('tab', { name: 'Variables' }));
+
+    expect(await screen.findByText('Deploy first')).toBeInTheDocument();
   });
 });
 

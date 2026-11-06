@@ -375,6 +375,10 @@ describe('PlanPage', () => {
     ).toBeGreaterThan(0);
     expect(screen.getByText('C-AI-1')).toBeInTheDocument();
     expect(screen.getByText(/AI pre-check has not run/)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Run AI pre-check on/ })).toHaveAttribute(
+      'href',
+      expect.stringContaining('/evacuation/pre-check?service='),
+    );
   });
 
   it('도착 환경이 재난 반경 안이면 계획을 만들 수 없다', async () => {

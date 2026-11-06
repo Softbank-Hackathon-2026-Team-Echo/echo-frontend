@@ -286,6 +286,18 @@ export default function PlanPage() {
           {gateBlocks.map((block) => (
             <li key={`${block.field}-${block.reason}`} className="text-small text-fg-secondary">
               <span className="font-mono">{block.field}</span> · {securityReasonLabel(block.reason)}
+              {/* 복귀는 도착이 바뀌어 사전 점검이 없기 쉽다(11/6 리허설). 그 자리에서 풀게 한다 */}
+              {block.field === 'C-AI-1' && (
+                <>
+                  {' '}
+                  <Link
+                    to={`/o/${organization.slug}/evacuation/pre-check?service=${serviceId}&target=${targetId}`}
+                    className="text-brand hover:underline"
+                  >
+                    {t('Run AI pre-check on {{name}}', { name: targetName })}
+                  </Link>
+                </>
+              )}
             </li>
           ))}
         </ul>

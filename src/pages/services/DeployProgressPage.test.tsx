@@ -5,7 +5,12 @@ import { describe, expect, it } from 'vitest';
 import type { DeployRequestDetail, DeployRequestSummary, Me } from '@/lib/api/types';
 import { server } from '@/test/msw-server';
 import { renderRoute } from '@/test/render';
-import DeployProgressPage, { stageDuration, stageStates, standbyStep } from './DeployProgressPage';
+import DeployProgressPage, {
+  hadPreviousVersion,
+  stageDuration,
+  stageStates,
+  standbyStep,
+} from './DeployProgressPage';
 
 const times = {
   queuedAt: '2026-11-02T00:00:00Z',
@@ -286,5 +291,41 @@ describe('DeployProgressPage 화면', () => {
 
     expect(await screen.findByText('build step')).toBeInTheDocument();
     expect(screen.queryByText(buildNotice)).not.toBeInTheDocument();
+  });
+});
+
+describe('hadPreviousVersion', () => {
+  const at = (iso: string) => ({ queuedAt: iso }) as DeployRequestSummary['stageTimes'];
+  const request = { id: 'r2', serviceEnvironmentId: 'se1', stageTimes: at('2026-11-06T10:00:00Z') };
+
+  it('이력을 아직 못 받았으면 모른다(null)', () => {
+    expect(hadPreviousVersion(request, undefined)).toBeNull();
+  });
+
+  it('같은 연결에 먼저 성공한 배포가 없으면 첫 배포다', () => {
+    expect(
+      hadPreviousVersion(request, [
+        { id: 'r2', serviceEnvironmentId: 'se1', status: 'FAILED', stageTimes: request.stageTimes },
+        {
+          id: 'r0',
+          serviceEnvironmentId: 'se2',
+          status: 'SUCCEEDED',
+          stageTimes: at('2026-11-06T09:00:00Z'),
+        },
+      ]),
+    ).toBe(false);
+  });
+
+  it('같은 연결에 먼저 성공한 배포가 있으면 이전 버전이 돈다', () => {
+    expect(
+      hadPreviousVersion(request, [
+        {
+          id: 'r1',
+          serviceEnvironmentId: 'se1',
+          status: 'SUCCEEDED',
+          stageTimes: at('2026-11-06T09:00:00Z'),
+        },
+      ]),
+    ).toBe(true);
   });
 });

@@ -48,5 +48,15 @@
   "No processing record": "処理記録なし",
   "No external transfer": "外部送信なし",
   "External transfer": "外部送信",
-  "sandbox": "サンドボックス"
+  "sandbox": "サンドボックス",
+  "The patch changed after approval, so it was not applied.": "承認後にパッチが変わったため、適用しませんでした。",
+  "The patch targets a file it may not change.": "変更できないファイルを対象にしたパッチです。",
+  "The patch did not apply to the sandbox copy.": "サンドボックスのコピーにパッチを適用できませんでした。",
+  "The sandbox tools were unavailable, so nothing was verified.": "サンドボックスのツールが使えず、検証できませんでした。",
+  "The sandbox could not fetch the source.": "サンドボックスがソースを取得できませんでした。",
+  "The image build failed in the sandbox.": "サンドボックスでイメージのビルドに失敗しました。",
+  "The image scan found problems in the sandbox.": "サンドボックスのイメージスキャンで問題が見つかりました。",
+  "The app failed its health check in the sandbox.": "サンドボックスでアプリのヘルスチェックに失敗しました。",
+  "Finished {{time}}": "{{time}} 完了",
+  "Applying in the sandbox…": "サンドボックスに適用中…"
 }

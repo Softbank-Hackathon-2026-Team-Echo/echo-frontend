@@ -1,4 +1,5 @@
 import { Bot, Cpu, User } from 'lucide-react';
+import { Link } from 'react-router';
 import type { AuditLog } from '@/lib/api/types';
 import { auditActionLabel, auditActorName, auditResultView } from '@/lib/audit';
 import { dateTime } from '@/lib/format';
@@ -13,7 +14,16 @@ const AVATARS = {
 };
 
 /** 감사 기록 한 줄. AUD 화면과 대시보드 최근 활동이 같이 쓴다 */
-export function AuditRow({ log }: { log: AuditLog }) {
+export function AuditRow({
+  log,
+  to,
+  onNavigate,
+}: {
+  log: AuditLog;
+  /** 있으면 줄을 눌러 그 일이 일어난 곳으로 간다 */
+  to?: string;
+  onNavigate?: () => void;
+}) {
   const avatar = AVATARS[log.actor.type] ?? AVATARS.SYSTEM;
   const Icon = avatar.icon;
   const action = auditActionLabel(log.action);
@@ -24,8 +34,8 @@ export function AuditRow({ log }: { log: AuditLog }) {
     log.requestId && `req ${log.requestId.slice(0, 8)}`,
   ].filter(Boolean);
 
-  return (
-    <li className="flex items-start gap-2.5 py-2.5">
+  const content = (
+    <>
       <span
         className={cn(
           'flex size-7 shrink-0 items-center justify-center rounded-full',
@@ -51,6 +61,20 @@ export function AuditRow({ log }: { log: AuditLog }) {
         {log.details.simulated === true && <SimulatedBadge />}
         <StatusBadge {...auditResultView(log.result)} />
       </span>
+    </>
+  );
+
+  return to ? (
+    <li>
+      <Link
+        to={to}
+        onClick={onNavigate}
+        className="flex items-start gap-2.5 rounded-md py-2.5 hover:bg-subtle"
+      >
+        {content}
+      </Link>
     </li>
+  ) : (
+    <li className="flex items-start gap-2.5 py-2.5">{content}</li>
   );
 }

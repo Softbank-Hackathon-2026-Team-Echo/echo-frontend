@@ -28,6 +28,8 @@ const me = (role: 'VIEWER' | 'DEVELOPER'): Me => ({
 
 const detail = (extra: Partial<PrecheckDetail> = {}): PrecheckDetail => ({
   id: 'run1',
+  kind: 'PRECHECK',
+  apply: null,
   serviceId: 's1',
   sourceEnvironmentId: 'e1',
   targetEnvironmentId: 'e2',
@@ -242,5 +244,60 @@ describe('PrecheckPage', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Approve patch' }));
     await waitFor(() => expect(calls).toContain('approve p2 h'));
+  });
+
+  it('반영 결과의 실패 코드 · 브랜치 · 커밋을 보이고 다시 승인할 수 없다', async () => {
+    const patch = {
+      id: 'p1',
+      patchHash: 'h',
+      files: ['k8s/hpa.yaml'],
+      diff: '-a\n+b\n',
+      reason: 'scale',
+      touchesProtectedFiles: false,
+      checks: [],
+      origin: 'RULE' as const,
+      approval: null,
+      blockReason: null,
+      verification: { passed: 12, total: 12 },
+    };
+    const apply = {
+      runId: 'a1',
+      status: 'FAILED' as const,
+      failureCode: 'IMAGE_BUILD_FAILED',
+      finishedAt: '2026-11-06T07:49:00Z',
+      appliedCommitSha: null,
+      branch: null,
+      simulated: false,
+    };
+    serve({
+      run: detail({
+        patches: [
+          { ...patch, status: 'APPLY_FAILED', apply },
+          {
+            ...patch,
+            id: 'p2',
+            status: 'APPLIED',
+            apply: {
+              ...apply,
+              runId: 'a2',
+              status: 'SUCCEEDED',
+              failureCode: null,
+              appliedCommitSha: 'c'.repeat(40),
+              branch: 'applied/a2',
+              simulated: true,
+            },
+          },
+        ],
+      }),
+    });
+    renderPage();
+
+    await userEvent.click(await screen.findByRole('tab', { name: 'Patches (2)' }));
+    expect(await screen.findByText('IMAGE_BUILD_FAILED')).toBeInTheDocument();
+    expect(screen.getByText(/The image build failed in the sandbox/)).toBeInTheDocument();
+    expect(screen.getByText('applied/a2')).toBeInTheDocument();
+    expect(screen.getByText('ccccccc')).toBeInTheDocument();
+    expect(screen.getByText('simulated')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Approve patch' })).not.toBeInTheDocument();
   });
 });

@@ -1,3 +1,4 @@
+import { ChevronRight } from 'lucide-react';
 import { type FormEvent, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { FormError, FormField } from '@/components/FormField';
@@ -28,6 +29,21 @@ function installUrl(error: unknown): string | undefined {
   return error.details.find((detail) => detail.field === 'installUrl')?.value ?? undefined;
 }
 
+/** 저장소 주소에서 서비스 이름을 제안한다. 서버 규칙은 소문자 · 숫자 · - 다 */
+function nameFromRepo(repoUrl: string): string {
+  const last =
+    repoUrl
+      .trim()
+      .replace(/\.git$/, '')
+      .replace(/\/+$/, '')
+      .split('/')
+      .pop() ?? '';
+  return last
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
 export function RegisterServiceDialog({
   open,
   onOpenChange,
@@ -47,8 +63,13 @@ export function RegisterServiceDialog({
   const [form, setForm] = useState({ name: '', repoUrl: '', description: '', ...DEFAULTS });
   const errors = fieldErrors(create.error);
   const install = installUrl(create.error);
+  const [nameEdited, setNameEdited] = useState(false);
   const set = (key: keyof typeof form) => (event: { target: { value: string } }) =>
     setForm((prev) => ({ ...prev, [key]: event.target.value }));
+  const setRepo = (event: { target: { value: string } }) => {
+    const repoUrl = event.target.value;
+    setForm((prev) => ({ ...prev, repoUrl, name: nameEdited ? prev.name : nameFromRepo(repoUrl) }));
+  };
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -65,7 +86,7 @@ export function RegisterServiceDialog({
         onSuccess: (service) => {
           onOpenChange(false);
           if (onRegistered) onRegistered(service);
-          else navigate(`/o/${orgSlug}/services?service=${service.id}`);
+          else navigate(`/o/${orgSlug}/services/${service.id}?deploy=1`);
         },
       },
     );
@@ -84,7 +105,7 @@ export function RegisterServiceDialog({
           <DialogHeader>
             <DialogTitle>{t('Register service')}</DialogTitle>
             <DialogDescription>
-              {t('Connect a GitHub repository. You choose where to deploy it on the next step.')}
+              {t('Paste a GitHub repository. You choose where to deploy it on the next step.')}
             </DialogDescription>
           </DialogHeader>
 
@@ -104,6 +125,16 @@ export function RegisterServiceDialog({
             <FormError message={errors._form} />
           )}
 
+          <FormField id="svc-repo" label={t('GitHub repository')} error={errors.repoUrl}>
+            <Input
+              id="svc-repo"
+              value={form.repoUrl}
+              onChange={setRepo}
+              placeholder="https://github.com/team-echo/shop-api"
+              aria-invalid={Boolean(errors.repoUrl)}
+              required
+            />
+          </FormField>
           <FormField
             id="svc-name"
             label={t('Name')}
@@ -115,66 +146,87 @@ export function RegisterServiceDialog({
             <Input
               id="svc-name"
               value={form.name}
-              onChange={set('name')}
+              onChange={(event) => {
+                setNameEdited(true);
+                set('name')(event);
+              }}
               placeholder="shop-api"
               aria-invalid={Boolean(errors.name)}
               required
             />
           </FormField>
-          <FormField id="svc-repo" label={t('GitHub repository')} error={errors.repoUrl}>
-            <Input
-              id="svc-repo"
-              value={form.repoUrl}
-              onChange={set('repoUrl')}
-              placeholder="https://github.com/team-echo/shop-api"
-              aria-invalid={Boolean(errors.repoUrl)}
-              required
-            />
-          </FormField>
-          <FormField
-            id="svc-description"
-            label={t('Description (optional)')}
-            error={errors.description}
-          >
-            <Input id="svc-description" value={form.description} onChange={set('description')} />
-          </FormField>
-          <div className="grid grid-cols-3 gap-3">
-            <FormField
-              id="svc-health"
-              label={t('Health check path')}
-              error={errors.healthCheckPath}
-            >
-              <Input
-                id="svc-health"
-                className="font-mono text-mono"
-                value={form.healthCheckPath}
-                onChange={set('healthCheckPath')}
+          <details className="group flex flex-col gap-3">
+            <summary className="flex cursor-pointer list-none items-center gap-1 text-small text-fg-secondary">
+              <ChevronRight
+                aria-hidden
+                className="size-4 transition-transform group-open:rotate-90"
               />
-            </FormField>
-            <FormField id="svc-port" label={t('Container port')} error={errors.containerPort}>
-              <Input
-                id="svc-port"
-                type="number"
-                min={1}
-                max={65535}
-                value={form.containerPort}
-                onChange={set('containerPort')}
-              />
-            </FormField>
-            <FormField
-              id="svc-timeout"
-              label={t('Health timeout (s)')}
-              error={errors.healthCheckTimeoutSeconds}
-            >
-              <Input
-                id="svc-timeout"
-                type="number"
-                min={10}
-                max={1800}
-                value={form.healthCheckTimeoutSeconds}
-                onChange={set('healthCheckTimeoutSeconds')}
-              />
-            </FormField>
+              {t('Advanced settings')}
+            </summary>
+            <div className="flex flex-col gap-4 pt-3">
+              <FormField
+                id="svc-description"
+                label={t('Description (optional)')}
+                error={errors.description}
+              >
+                <Input
+                  id="svc-description"
+                  value={form.description}
+                  onChange={set('description')}
+                />
+              </FormField>
+              <div className="grid grid-cols-3 gap-3">
+                <FormField
+                  id="svc-health"
+                  label={t('Health check path')}
+                  error={errors.healthCheckPath}
+                >
+                  <Input
+                    id="svc-health"
+                    className="font-mono text-mono"
+                    value={form.healthCheckPath}
+                    onChange={set('healthCheckPath')}
+                  />
+                </FormField>
+                <FormField id="svc-port" label={t('Container port')} error={errors.containerPort}>
+                  <Input
+                    id="svc-port"
+                    type="number"
+                    min={1}
+                    max={65535}
+                    value={form.containerPort}
+                    onChange={set('containerPort')}
+                  />
+                </FormField>
+                <FormField
+                  id="svc-timeout"
+                  label={t('Health timeout (s)')}
+                  error={errors.healthCheckTimeoutSeconds}
+                >
+                  <Input
+                    id="svc-timeout"
+                    type="number"
+                    min={10}
+                    max={1800}
+                    value={form.healthCheckTimeoutSeconds}
+                    onChange={set('healthCheckTimeoutSeconds')}
+                  />
+                </FormField>
+              </div>
+            </div>
+          </details>
+          <div className="rounded-md bg-subtle px-3 py-2 text-small text-fg-secondary">
+            <p className="text-body-medium text-fg">{t('Before you deploy')}</p>
+            <ul className="list-disc pl-4">
+              <li>{t('A Dockerfile in the repository root')}</li>
+              <li>
+                {t('The app answers {{path}} on port {{port}}', {
+                  path: form.healthCheckPath,
+                  port: form.containerPort,
+                })}
+              </li>
+              <li>{t('Add required variables like DATABASE_URL after the first deploy starts')}</li>
+            </ul>
           </div>
 
           <DialogFooter>
