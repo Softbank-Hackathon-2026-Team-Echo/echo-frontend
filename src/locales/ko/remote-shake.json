@@ -1,0 +1,23 @@
+{
+  "A disaster is active: M{{magnitude}} {{place}}": "진행 중인 재난: M{{magnitude}} {{place}}",
+  "A phone lying still reads about 9.8. Locked for 10 seconds after each send.": "가만히 놓인 휴대폰은 약 9.8입니다. 한 번 보내면 10초 동안 잠급니다.",
+  "Affected environment": "영향 환경",
+  "Allow motion and start watching": "센서 권한 허용하고 감지 시작",
+  "Current acceleration": "현재 가속도",
+  "Disaster ID": "재난 ID",
+  "Drop trigger": "충격 트리거",
+  "Emergency migration plan created. Open it": "긴급 이전 계획이 만들어졌습니다. 열기",
+  "End it before the next drop.": "다음에 떨어뜨리기 전에 종료하세요.",
+  "Locked for {{seconds}}s": "{{seconds}}초 동안 잠김",
+  "Motion permission was denied. Allow motion access in Safari settings and reload.": "동작 센서 권한이 거부되었습니다. Safari 설정에서 동작 및 방향 접근을 허용한 뒤 새로고침하세요.",
+  "No emergency migration plan was created.": "긴급 이전 계획이 만들어지지 않았습니다.",
+  "Peak {{value}}": "최고 {{value}}",
+  "Shake or drop the phone to declare a disaster (simulated drill disaster).": "휴대폰을 흔들거나 떨어뜨리면 재난을 선언합니다(시연용 모의 재난)",
+  "Simulate an impact": "충격 흉내내기",
+  "Simulated drill disaster. Not a real earthquake.": "시연용 모의 재난입니다. 실제 지진이 아닙니다.",
+  "Start watching for a drop": "충격 감지 시작",
+  "The epicenter is placed on this environment.": "진원지를 이 환경 위치에 둡니다.",
+  "This browser has no motion sensor. Use the simulate button.": "이 브라우저에는 동작 센서가 없습니다. 충격 흉내내기 버튼을 쓰세요.",
+  "Threshold {{value}} m/s²": "임계 {{value}} m/s²",
+  "Watching for a drop. Tap to stop": "충격 감지 중 · 누르면 멈춤"
+}
