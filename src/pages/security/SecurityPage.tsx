@@ -97,7 +97,8 @@ export default function SecurityPage() {
     if (!selected) return '';
     return `${selectedRow?.environmentName ?? ''} · ${securityControlLabel(selected.control)}`;
   })();
-  const hasSimulated = tab === 'compare' || cells.some((cell) => cell.mode === 'SIMULATED');
+  // 비교 탭은 응답의 simulated 를 자기 칸에 단다
+  const hasSimulated = tab !== 'compare' && cells.some((cell) => cell.mode === 'SIMULATED');
   const findingsTable = findings.isError ? (
     <ErrorState error={findings.error} onRetry={() => findings.refetch()} />
   ) : findings.isPending ? (

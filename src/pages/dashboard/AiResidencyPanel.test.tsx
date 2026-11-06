@@ -14,7 +14,12 @@ const summary = (
 ): AiResidencySummary => ({
   from: AT,
   to: AT,
-  policy: { source: 'DEFAULT', allowedModelRegions: [], forbidExternalForClasses: [] },
+  policy: {
+    source: 'DEFAULT',
+    allowedModelRegions: [],
+    forbidExternalForClasses: [],
+    allowedRegionlessProviders: [],
+  },
   runs: {
     total: 5,
     recorded: 2,

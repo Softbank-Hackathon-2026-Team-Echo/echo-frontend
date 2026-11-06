@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { type Disaster, useActiveDisasters } from '@/lib/api/disasters';
 import { useEnvironments } from '@/lib/api/environments';
 import { useCurrentOrg } from '@/lib/api/me';
+import { useServiceMetrics } from '@/lib/api/metrics';
 import { isActivePlan, useMigrationPlan, useOrgMigrationPlans } from '@/lib/api/migrations';
 import { useServiceDetails, useServices } from '@/lib/api/services';
 import type { EnvironmentSummary, ServiceDetail } from '@/lib/api/types';
@@ -77,6 +78,8 @@ export default function DashboardPage() {
     () => linksByEnvironment(details.data),
     [details.data],
   );
+  const metrics = useServiceMetrics(orgId, serving?.service.id);
+  const metricsStatus = metrics.isError ? 'UNAVAILABLE' : metrics.data?.metricsStatus;
   const targetWeight = runningPlan.data ? currentWeights(runningPlan.data).target : undefined;
   const targetName = runningPlan.data
     ? (names.get(runningPlan.data.targetEnvironmentId) ?? t('target'))
@@ -141,7 +144,13 @@ export default function DashboardPage() {
 
       {!details.isPending && <SetupBanner orgSlug={organization.slug} progress={setup} />}
 
-      <KpiTiles serving={serving} target={migrating} />
+      <KpiTiles
+        serving={serving}
+        target={migrating}
+        summary={metrics.data?.summary}
+        status={metricsStatus}
+        simulated={metrics.data?.simulated}
+      />
 
       <div className="grid grid-cols-12 gap-4">
         <Panel title={t('Topology')} className="col-span-8 max-wide:col-span-12">
@@ -196,6 +205,9 @@ export default function DashboardPage() {
           orgSlug={organization.slug}
           planId={running?.id}
           names={names}
+          series={metrics.data?.series}
+          metricsStatus={metricsStatus}
+          simulated={metrics.data?.simulated}
           className="col-span-4 max-wide:hidden"
         />
         <EnvironmentsPanel

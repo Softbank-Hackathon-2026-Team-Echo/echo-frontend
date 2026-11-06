@@ -34,7 +34,6 @@
   "Environments": "환경",
   "At risk": "위험",
   "Idle": "미사용",
-  "Metrics API pending": "지표 API 준비 중",
   "Success rate": "성공률",
   "p95 latency": "p95 지연 시간",
   "Replication lag": "복제 지연",
@@ -140,5 +139,16 @@
   "Last 7 days: {{total}} runs · {{recorded}} recorded · {{external}} sent outside": "최근 7일: 실행 {{total}}건 · 기록 {{recorded}}건 · 외부 전송 {{external}}건",
   "Model region is not on the allowed list": "허용 목록에 없는 모델 리전입니다",
   "A forbidden data class was sent outside": "금지된 데이터 종류가 밖으로 나갔습니다",
-  "{{label}} · billed on {{date}}: {{amount}}": "{{label}} · {{date}} 청구: {{amount}}"
+  "{{label}} · billed on {{date}}: {{amount}}": "{{label}} · {{date}} 청구: {{amount}}",
+  "Metrics unavailable": "지표를 불러올 수 없음",
+  "Metrics not configured": "지표 설정 없음",
+  "No requests yet": "아직 요청 없음",
+  "No replication data": "복제 값 없음",
+  "Latest check": "최근 확인 값",
+  "SLO {{target}}": "SLO {{target}}",
+  "No requests in the last 15 minutes": "최근 15분 동안 요청 없음",
+  "Requests per second": "초당 요청 수",
+  "Requests per second by environment, last 15 minutes": "최근 15분 환경별 초당 요청 수",
+  "Recent runs on an overseas model, no secrets sent: {{count}}": "해외 모델 사용 · 비밀값은 안 보낸 최근 실행: {{count}}건",
+  "Allowed without a region if no forbidden data is sent: {{providers}}": "금지 데이터를 보내지 않으면 리전 없이 허용: {{providers}}"
 }

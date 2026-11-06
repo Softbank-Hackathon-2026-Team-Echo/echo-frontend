@@ -34,7 +34,6 @@
   "Environments": "環境",
   "At risk": "リスクあり",
   "Idle": "アイドル",
-  "Metrics API pending": "メトリクスAPI待ち",
   "Success rate": "成功率",
   "p95 latency": "p95レイテンシ",
   "Replication lag": "レプリケーション遅延",
@@ -140,5 +139,16 @@
   "Last 7 days: {{total}} runs · {{recorded}} recorded · {{external}} sent outside": "直近7日: 実行{{total}}件 · 記録{{recorded}}件 · 外部送信{{external}}件",
   "Model region is not on the allowed list": "許可リストにないモデルリージョンです",
   "A forbidden data class was sent outside": "禁止されたデータ種別が外部に送信されました",
-  "{{label}} · billed on {{date}}: {{amount}}": "{{label}} · {{date}}の請求: {{amount}}"
+  "{{label}} · billed on {{date}}: {{amount}}": "{{label}} · {{date}}の請求: {{amount}}",
+  "Metrics unavailable": "メトリクスを取得できません",
+  "Metrics not configured": "メトリクス未設定",
+  "No requests yet": "リクエストなし",
+  "No replication data": "レプリケーション値なし",
+  "Latest check": "最新の確認値",
+  "SLO {{target}}": "SLO {{target}}",
+  "No requests in the last 15 minutes": "直近15分間のリクエストなし",
+  "Requests per second": "毎秒リクエスト数",
+  "Requests per second by environment, last 15 minutes": "直近15分の環境別毎秒リクエスト数",
+  "Recent runs on an overseas model, no secrets sent: {{count}}": "海外モデルを使用し、シークレットは送信していない最近の実行: {{count}}件",
+  "Allowed without a region if no forbidden data is sent: {{providers}}": "禁止データを送信しない場合はリージョンなしで許可: {{providers}}"
 }

@@ -98,6 +98,7 @@ export default function PlanPage() {
     orgId,
     plan.data?.sourceEnvironmentId,
     plan.data?.targetEnvironmentId,
+    serviceId,
   );
   const logs = useMigrationLogs(orgId, plan.data?.status === 'STALE' ? planId : undefined, false);
 
@@ -176,8 +177,7 @@ export default function PlanPage() {
   const pending = current.status === 'PENDING_APPROVAL';
   const mine = current.createdBy.id === me.user.id;
   const selfBlocked = mine && !organization.allowSelfApproval;
-  const securityRows = security.data ?? [];
-  const mismatches = securityRows.filter((row) => row.blocksMigration);
+  const mismatches = security.data?.rows.filter((row) => row.blocksMigration) ?? [];
   const approveReason = riskReason
     ? riskReason
     : selfBlocked
@@ -345,7 +345,12 @@ export default function PlanPage() {
         </div>
 
         <div className="flex w-110 shrink-0 flex-col gap-3 max-wide:w-full">
-          <SecurityComparison rows={securityRows} sourceName={sourceName} targetName={targetName} />
+          <SecurityComparison
+            compare={security.data}
+            isError={security.isError}
+            sourceName={sourceName}
+            targetName={targetName}
+          />
           <section className="flex flex-col gap-2 rounded-xl border border-line bg-surface p-4">
             <h2 className="text-title">{t('Approval')}</h2>
             <dl className="flex flex-col gap-1.5">

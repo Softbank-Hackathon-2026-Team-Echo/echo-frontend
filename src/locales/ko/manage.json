@@ -232,7 +232,6 @@
   "Policy {{version}} · checked {{time}}": "정책 {{version}} · {{time}} 점검",
   "Preparation checks only. The migration gate adds execution checks.": "준비 단계 점검만 보입니다. 실행 직전 점검은 이전 게이트가 합니다.",
   "Scans run with each deploy": "검사는 배포할 때마다 돕니다",
-  "Simulated until the server comparison is ready, so it can differ from the matrix.": "서버 비교 API가 나올 때까지 시뮬레이션 값이라 매트릭스와 다를 수 있습니다.",
   "Whole organization": "조직 전체",
   "No exceptions": "예외 없음",
   "Every control is judged as it is.": "모든 통제를 그대로 판정합니다.",
@@ -243,5 +242,11 @@
   "The security gate blocked this migration.": "보안 게이트가 이 이전을 막았습니다.",
   "Security exceptions": "보안 예외",
   "A control can stop blocking for up to 7 days, with a reason and an approval.": "사유와 승인이 있으면 통제의 차단을 최대 7일까지 멈출 수 있습니다.",
-  "Exceptions": "예외"
+  "Exceptions": "예외",
+  "Choose two different environments.": "서로 다른 환경 두 개를 고르세요.",
+  "{{blocking}} blocking · {{worse}} worse on target · checked {{time}}": "막힘 {{blocking}}건 · 도착 쪽이 나쁨 {{worse}}건 · {{time}} 확인",
+  "The security comparison is not available right now.": "지금은 보안 비교를 불러올 수 없습니다.",
+  "worse on target": "도착 쪽이 나쁨",
+  "better on target": "도착 쪽이 나음",
+  "Overseas model · no secrets sent": "해외 모델 사용 · 비밀값은 안 보냄"
 }

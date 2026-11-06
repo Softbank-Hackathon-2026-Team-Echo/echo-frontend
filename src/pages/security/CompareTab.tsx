@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import { ErrorState } from '@/components/ErrorState';
 import { SecurityCompareTable } from '@/components/SecurityCompareTable';
+import { SimulatedBadge } from '@/components/SimulatedBadge';
 import {
   Select,
   SelectContent,
@@ -7,8 +9,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useSecurityCompare } from '@/lib/api/security';
 import type { EnvironmentSummary } from '@/lib/api/types';
+import { dateTime } from '@/lib/format';
 import { t } from '@/lib/i18n';
 
 type CompareTabProps = { orgId: string; environments: EnvironmentSummary[] };
@@ -45,7 +49,8 @@ export function CompareTab({ orgId, environments }: CompareTabProps) {
   const [picked, setPicked] = useState<{ source?: string; target?: string }>({});
   const source = picked.source ?? environments[0]?.id;
   const target = picked.target ?? environments[1]?.id ?? environments[0]?.id;
-  const { data: rows = [] } = useSecurityCompare(orgId, source, target);
+  const compare = useSecurityCompare(orgId, source, target);
+  const data = compare.data;
   const nameOf = (id: string | undefined) =>
     environments.find((item) => item.id === id)?.name ?? '—';
 
@@ -66,17 +71,32 @@ export function CompareTab({ orgId, environments }: CompareTabProps) {
           environments={environments}
         />
       </div>
-      <p className="text-small text-fg-secondary">
-        {t('Simulated until the server comparison is ready, so it can differ from the matrix.')}
-      </p>
-      <div className="overflow-x-auto rounded-2xl border border-line bg-surface p-4">
-        <SecurityCompareTable
-          rows={rows}
-          sourceName={nameOf(source)}
-          targetName={nameOf(target)}
-          showResult
-        />
-      </div>
+      {source === target ? (
+        <p className="text-small text-fg-secondary">{t('Choose two different environments.')}</p>
+      ) : compare.isError ? (
+        <ErrorState error={compare.error} onRetry={() => compare.refetch()} />
+      ) : !data ? (
+        <Skeleton className="h-56 rounded-2xl" />
+      ) : (
+        <>
+          <p className="flex flex-wrap items-center gap-2 text-small text-fg-secondary">
+            {t('{{blocking}} blocking · {{worse}} worse on target · checked {{time}}', {
+              blocking: data.summary.blocking,
+              worse: data.summary.worseOnTarget,
+              time: dateTime(data.checkedAt),
+            })}
+            {data.simulated && <SimulatedBadge />}
+          </p>
+          <div className="overflow-x-auto rounded-2xl border border-line bg-surface p-4">
+            <SecurityCompareTable
+              rows={data.rows}
+              sourceName={nameOf(source)}
+              targetName={nameOf(target)}
+              showResult
+            />
+          </div>
+        </>
+      )}
     </div>
   );
 }

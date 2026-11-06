@@ -1,4 +1,5 @@
-import type { SecurityCompareRow } from '@/lib/api/security';
+import { cellIssueCount } from '@/lib/api/security';
+import type { SecurityCompareRow, SecurityMatrixCell } from '@/lib/api/types';
 import { t } from '@/lib/i18n';
 import { securityCompareNote, securityControlLabel } from '@/lib/status';
 import { cn } from '@/lib/utils';
@@ -11,6 +12,15 @@ type SecurityCompareTableProps = {
   /** 좁은 패널에서는 판정 칸을 빼고 막힌 이유를 위쪽 알림으로 보여 준다 */
   showResult?: boolean;
 };
+
+function CompareCell({ cell }: { cell: SecurityMatrixCell }) {
+  return (
+    <SecurityCheckCell
+      cell={{ result: cell.result, findingCount: cellIssueCount(cell) }}
+      waived={cell.gateStatus === 'WAIVED'}
+    />
+  );
+}
 
 /** 이전 전후 보안 비교 표. SEC Compare 탭과 E01-3 패널이 같이 쓴다 */
 export function SecurityCompareTable({
@@ -33,8 +43,8 @@ export function SecurityCompareTable({
       {rows.map((row) => (
         <div key={row.control} className="contents">
           <span className="text-body-medium">{securityControlLabel(row.control)}</span>
-          <SecurityCheckCell cell={row.source} />
-          <SecurityCheckCell cell={row.target} />
+          <CompareCell cell={row.source} />
+          <CompareCell cell={row.target} />
           {showResult && (
             <span
               className={cn(

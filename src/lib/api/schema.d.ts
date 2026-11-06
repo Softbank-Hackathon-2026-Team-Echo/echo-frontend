@@ -376,6 +376,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/orgs/{org_id}/services/{service_id}/metrics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Service Metrics */
+        get: operations["get_service_metrics_api_v1_orgs__org_id__services__service_id__metrics_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/orgs/{org_id}/services/{service_id}/environments/{environment_id}/variables": {
         parameters: {
             query?: never;
@@ -703,6 +720,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/orgs/{org_id}/security/compare": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Compare Security
+         * @description 이전 전후 보안 비교(보안 5-2). 칸 값은 매트릭스와 같고 blocksMigration 은 게이트 규칙이다.
+         */
+        get: operations["compare_security_api_v1_orgs__org_id__security_compare_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/orgs/{org_id}/security/findings": {
         parameters: {
             query?: never;
@@ -985,7 +1022,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Submit Run Result */
+        /**
+         * Submit Run Result
+         * @description 본문 모양은 실행 종류로 고른다: APPLY_PATCH 면 ApplyPatchResult, 그 밖은 RunResult(PD-9).
+         */
         post: operations["submit_run_result_api_v1_runner_runs__run_id__result_post"];
         delete?: never;
         options?: never;
@@ -1183,6 +1223,8 @@ export interface components {
             allowedModelRegions: string[];
             /** Forbidexternalforclasses */
             forbidExternalForClasses: components["schemas"]["AgentRunDataClass"][];
+            /** Allowedregionlessproviders */
+            allowedRegionlessProviders: components["schemas"]["AiResidencyRegionlessProviderResponse"][];
         };
         /**
          * AiResidencyPolicySource
@@ -1216,6 +1258,28 @@ export interface components {
             processing: components["schemas"]["AgentRunProcessingResponse"] | null;
             /** Violations */
             violations: components["schemas"]["AiResidencyViolationReason"][];
+            /**
+             * Regionlessallowed
+             * @description 리전 없이(modelRegion null) 조건부 허용 항목으로 리전 규칙을 통과했는가(AD-12)
+             */
+            regionlessAllowed: boolean;
+        };
+        /**
+         * AiResidencyRegionlessCondition
+         * @description 리전 없이(modelRegion null) 허용하는 제공자의 조건(AD-12).
+         *
+         *     NO_FORBIDDEN_CLASSES: dataClasses 가 정책 금지 등급(forbidExternalForClasses)과
+         *     겹치지 않을 때만.
+         * @enum {string}
+         */
+        AiResidencyRegionlessCondition: "NO_FORBIDDEN_CLASSES";
+        /**
+         * AiResidencyRegionlessProviderResponse
+         * @description 리전 없이 조건부로 허용하는 제공자(AD-12).
+         */
+        AiResidencyRegionlessProviderResponse: {
+            provider: components["schemas"]["AgentRunModelProvider"];
+            condition: components["schemas"]["AiResidencyRegionlessCondition"];
         };
         /** AiResidencyRunCountsResponse */
         AiResidencyRunCountsResponse: {
@@ -1776,6 +1840,21 @@ export interface components {
             /** Details */
             details?: components["schemas"]["ErrorDetail"][] | null;
         };
+        /** ApiResponse[SecurityCompareResponse] */
+        ApiResponse_SecurityCompareResponse_: {
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Code */
+            code?: string | null;
+            /** Message */
+            message?: string | null;
+            data?: components["schemas"]["SecurityCompareResponse"] | null;
+            /** Details */
+            details?: components["schemas"]["ErrorDetail"][] | null;
+        };
         /** ApiResponse[SecurityExceptionResponse] */
         ApiResponse_SecurityExceptionResponse_: {
             /**
@@ -1818,6 +1897,21 @@ export interface components {
             /** Message */
             message?: string | null;
             data?: components["schemas"]["ServiceDetailResponse"] | null;
+            /** Details */
+            details?: components["schemas"]["ErrorDetail"][] | null;
+        };
+        /** ApiResponse[ServiceMetricsResponse] */
+        ApiResponse_ServiceMetricsResponse_: {
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Code */
+            code?: string | null;
+            /** Message */
+            message?: string | null;
+            data?: components["schemas"]["ServiceMetricsResponse"] | null;
             /** Details */
             details?: components["schemas"]["ErrorDetail"][] | null;
         };
@@ -2636,6 +2730,20 @@ export interface components {
                 [key: string]: unknown;
             };
         };
+        /** EnvironmentMetricsSeriesResponse */
+        EnvironmentMetricsSeriesResponse: {
+            /**
+             * Environmentid
+             * Format: uuid
+             */
+            environmentId: string;
+            /** Environmentname */
+            environmentName: string;
+            /** Cloudprovider */
+            cloudProvider: string;
+            /** Points */
+            points: components["schemas"]["MetricsPointResponse"][];
+        };
         /** EnvironmentRefResponse */
         EnvironmentRefResponse: {
             /**
@@ -2900,6 +3008,20 @@ export interface components {
              * Format: date-time
              */
             joinedAt: string;
+        };
+        /** MetricsPointResponse */
+        MetricsPointResponse: {
+            /**
+             * T
+             * Format: date-time
+             */
+            t: string;
+            /** Rps */
+            rps: number;
+            /** Successrate */
+            successRate: number | null;
+            /** P95Ms */
+            p95Ms: number | null;
         };
         /**
          * MigrationErrorCode
@@ -3588,7 +3710,12 @@ export interface components {
              */
             refusal: boolean;
         };
-        /** PrecheckPatchApplyResponse */
+        /**
+         * PrecheckPatchApplyResponse
+         * @description 반영 실행. 결과(appliedCommitSha·branch)는 러너가 결과를 낸 뒤에만 찬다(SPEC api-10-2).
+         *
+         *     simulated 는 반영 실행 표의 값이다(결과 전에는 false). 가짜 모드 결과면 화면이 배지를 단다.
+         */
         PrecheckPatchApplyResponse: {
             /**
              * Runid
@@ -3600,6 +3727,12 @@ export interface components {
             failureCode: string | null;
             /** Finishedat */
             finishedAt: string | null;
+            /** Appliedcommitsha */
+            appliedCommitSha: string | null;
+            /** Branch */
+            branch: string | null;
+            /** Simulated */
+            simulated: boolean;
         };
         /** PrecheckPatchApprovalResponse */
         PrecheckPatchApprovalResponse: {
@@ -3812,6 +3945,81 @@ export interface components {
          * @enum {string}
          */
         SecurityCheckPhase: "PREPARATION" | "EXECUTION" | "POST_SWITCH";
+        /**
+         * SecurityCompareChange
+         * @description 이전 전후 비교에서 도착 칸이 출발 칸보다 어떤가(저장 안 함, 보안 5-2).
+         *
+         *     비교 열쇠는 결과 심각도(NA < PASS < WARN < UNKNOWN < FAIL)이고, 같으면 게이트 관점
+         *     (PASS < WAIVED < BLOCKED)으로 가른다.
+         * @enum {string}
+         */
+        SecurityCompareChange: "WORSE" | "SAME" | "BETTER";
+        /**
+         * SecurityCompareEnvironmentResponse
+         * @description 비교한 환경 머리. `services` 는 그 비교에 센 서비스(지금 도는 이미지).
+         */
+        SecurityCompareEnvironmentResponse: {
+            /**
+             * Environmentid
+             * Format: uuid
+             */
+            environmentId: string;
+            /** Environmentname */
+            environmentName: string;
+            /** Environmentkind */
+            environmentKind: string;
+            /** Services */
+            services: components["schemas"]["SecurityMatrixServiceResponse"][];
+        };
+        /** SecurityCompareResponse */
+        SecurityCompareResponse: {
+            /** Policyversion */
+            policyVersion: string;
+            phase: components["schemas"]["SecurityCheckPhase"];
+            /**
+             * Checkedat
+             * Format: date-time
+             */
+            checkedAt: string;
+            /** Simulated */
+            simulated: boolean;
+            /** Serviceid */
+            serviceId: string | null;
+            source: components["schemas"]["SecurityCompareEnvironmentResponse"];
+            target: components["schemas"]["SecurityCompareEnvironmentResponse"];
+            summary: components["schemas"]["SecurityCompareSummaryResponse"];
+            /** Rows */
+            rows: components["schemas"]["SecurityCompareRowResponse"][];
+        };
+        /**
+         * SecurityCompareRowResponse
+         * @description 칸 하나의 비교. source·target 은 매트릭스 칸 응답 그대로다.
+         */
+        SecurityCompareRowResponse: {
+            /**
+             * Control
+             * @enum {string}
+             */
+            control: "iam" | "encryption" | "auditLog" | "policy";
+            source: components["schemas"]["SecurityCellResponse"];
+            target: components["schemas"]["SecurityCellResponse"];
+            /** Blocksmigration */
+            blocksMigration: boolean;
+            /** Blockingcontrolids */
+            blockingControlIds: components["schemas"]["SecurityControlId"][];
+            change: components["schemas"]["SecurityCompareChange"];
+        };
+        /** SecurityCompareSummaryResponse */
+        SecurityCompareSummaryResponse: {
+            /** Blocking */
+            blocking: number;
+            /** Worseontarget */
+            worseOnTarget: number;
+            /** Same */
+            same: number;
+            /** Better */
+            better: number;
+        };
         /**
          * SecurityControlId
          * @description 보안 통제 ID(보안·거버넌스 1 SPEC §5.1). 문서·화면과 같은 표기로 저장한다.
@@ -4127,6 +4335,48 @@ export interface components {
          * @enum {string}
          */
         ServiceEnvironmentRole: "SERVING" | "STANDBY" | "NONE";
+        /** ServiceMetricsResponse */
+        ServiceMetricsResponse: {
+            /** Range */
+            range: string;
+            /** Step */
+            step: string;
+            /**
+             * Asof
+             * Format: date-time
+             */
+            asOf: string;
+            metricsStatus: components["schemas"]["ServiceMetricsStatus"];
+            /** Metricserrorcode */
+            metricsErrorCode: string | null;
+            /** Series */
+            series: components["schemas"]["EnvironmentMetricsSeriesResponse"][];
+            summary: components["schemas"]["ServiceMetricsSummaryResponse"];
+            /** Simulated */
+            simulated: boolean;
+        };
+        /**
+         * ServiceMetricsStatus
+         * @description 서비스 대시보드 지표를 Prometheus 에서 읽었는가(운영 2).
+         *
+         *     OK = 읽음(데이터가 없으면 points 가 빔), UNAVAILABLE = 읽지 못함(미응답·인증·형식),
+         *     NOT_CONFIGURED = Prometheus 주소 설정이 없음(외부 호출 없음).
+         * @enum {string}
+         */
+        ServiceMetricsStatus: "OK" | "UNAVAILABLE" | "NOT_CONFIGURED";
+        /** ServiceMetricsSummaryResponse */
+        ServiceMetricsSummaryResponse: {
+            /** Successrate */
+            successRate: number | null;
+            /** P95Ms */
+            p95Ms: number | null;
+            /** Replicationlagms */
+            replicationLagMs: number | null;
+            /** Errorbudgetleft */
+            errorBudgetLeft: number | null;
+            /** Slotarget */
+            sloTarget: number;
+        };
         /**
          * ServiceStatus
          * @description 서비스 상태. 삭제를 받으면 DELETING, 모든 연결을 내리면 소프트 삭제된다.
@@ -5442,6 +5692,42 @@ export interface operations {
             };
         };
     };
+    get_service_metrics_api_v1_orgs__org_id__services__service_id__metrics_get: {
+        parameters: {
+            query?: {
+                range?: string;
+                step?: string;
+            };
+            header?: never;
+            path: {
+                service_id: string;
+                /** @description 조직 id(uuid) */
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_ServiceMetricsResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     search_service_variables_api_v1_orgs__org_id__services__service_id__environments__environment_id__variables_get: {
         parameters: {
             query?: never;
@@ -6168,6 +6454,44 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiResponse_SecurityMatrixResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    compare_security_api_v1_orgs__org_id__security_compare_get: {
+        parameters: {
+            query: {
+                /** @description 출발 환경 id */
+                source: string;
+                /** @description 도착 환경 id */
+                target: string;
+                serviceId?: string | null;
+            };
+            header?: never;
+            path: {
+                /** @description 조직 id(uuid) */
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_SecurityCompareResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -7008,6 +7332,20 @@ export interface operations {
                         /** Reason */
                         reason: string;
                     }[];
+                } | {
+                    /**
+                     * Status
+                     * @enum {string}
+                     */
+                    status: "SUCCEEDED" | "FAILED";
+                    /** Failurecode */
+                    failureCode?: string | null;
+                    /** Simulated */
+                    simulated: boolean;
+                    /** Appliedcommitsha */
+                    appliedCommitSha?: string | null;
+                    /** Branch */
+                    branch?: string | null;
                 };
             };
         };

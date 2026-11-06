@@ -1,4 +1,6 @@
 import { memo } from 'react';
+import { SimulatedBadge } from '@/components/SimulatedBadge';
+import type { ServiceMetricsStatus, ServiceMetricsSummary } from '@/lib/api/types';
 import { t } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 import type { ServiceOnEnvironment } from './types';
@@ -25,42 +27,95 @@ function Tile({
   );
 }
 
-/** 지표 API(계약 4-2 🆕)가 생기기 전까지는 값을 지어내지 않고 비워 둔다 */
-function Pending() {
+function metricNote(status: ServiceMetricsStatus | undefined, empty: string) {
+  if (status === 'UNAVAILABLE') return t('Metrics unavailable');
+  if (status === 'NOT_CONFIGURED') return t('Metrics not configured');
+  return status === 'OK' ? empty : t('Last 15 min');
+}
+
+/** 값이 없으면 지어내지 않고 — 와 이유를 보인다 */
+function Metric({
+  value,
+  caption,
+  empty,
+  status,
+  simulated,
+}: {
+  value: string | null;
+  caption: string;
+  empty: string;
+  status: ServiceMetricsStatus | undefined;
+  simulated: boolean;
+}) {
   return (
     <>
-      <span className="text-metric-xl text-fg-muted">—</span>
-      <span className="text-caption text-fg-muted">{t('Metrics API pending')}</span>
+      <span className="flex flex-wrap items-baseline gap-2">
+        <span className={cn('text-metric-xl tabular-nums', !value && 'text-fg-muted')}>
+          {value ?? '—'}
+        </span>
+        {value && simulated && <SimulatedBadge />}
+      </span>
+      <span className="text-caption text-fg-muted">
+        {value ? caption : metricNote(status, empty)}
+      </span>
     </>
   );
 }
+
+const percent = (ratio: number | null | undefined, digits: number) =>
+  ratio == null ? null : `${(ratio * 100).toFixed(digits)}%`;
+const milliseconds = (value: number | null | undefined) =>
+  value == null ? null : `${Math.round(value)} ms`;
 
 /** 이전 중이면 트래픽 칸이 도착 환경 비율을 보인다 */
 export type TargetTraffic = { name: string; weight: number };
 
 /**
- * S01 KPI 타일 5개(반분할 960 은 4개, 에러 버짓을 뺀다). 트래픽 비율만 지금 API(서비스 연결 · 이전 단계)로 채운다
+ * S01 KPI 타일 5개(반분할 960 은 4개, 에러 버짓을 뺀다). 트래픽 비율은 서비스 연결 · 이전 단계, 나머지는 지표 API 값이다
  */
 export const KpiTiles = memo(function KpiTiles({
   serving,
   target,
+  summary,
+  status,
+  simulated = false,
 }: {
   serving: ServiceOnEnvironment | undefined;
   target?: TargetTraffic;
+  summary?: ServiceMetricsSummary;
+  status?: ServiceMetricsStatus;
+  simulated?: boolean;
 }) {
   const weight = target?.weight ?? serving?.link.trafficWeight ?? 0;
   const envName = target?.name ?? serving?.link.environment.name;
   const hasValue = Boolean(target || serving);
+  const noRequests = t('No requests yet');
+  const shared = { status, simulated };
   return (
     <div className="grid grid-cols-5 gap-4 max-wide:grid-cols-4 max-wide:gap-3 max-sm:grid-cols-2">
       <Tile label={t('Success rate')}>
-        <Pending />
+        <Metric
+          value={percent(summary?.successRate, 2)}
+          caption={t('Last 15 min')}
+          empty={noRequests}
+          {...shared}
+        />
       </Tile>
       <Tile label={t('p95 latency')}>
-        <Pending />
+        <Metric
+          value={milliseconds(summary?.p95Ms)}
+          caption={t('Last 15 min')}
+          empty={noRequests}
+          {...shared}
+        />
       </Tile>
       <Tile label={t('Replication lag')}>
-        <Pending />
+        <Metric
+          value={milliseconds(summary?.replicationLagMs)}
+          caption={t('Latest check')}
+          empty={t('No replication data')}
+          {...shared}
+        />
       </Tile>
       <Tile label={target ? t('Traffic on target') : t('Traffic on primary')}>
         <span className="flex flex-wrap items-baseline gap-2">
@@ -76,7 +131,12 @@ export const KpiTiles = memo(function KpiTiles({
         </span>
       </Tile>
       <Tile label={t('Error budget left')} className="max-wide:hidden">
-        <Pending />
+        <Metric
+          value={percent(summary?.errorBudgetLeft, 0)}
+          caption={t('SLO {{target}}', { target: percent(summary?.sloTarget, 1) ?? '—' })}
+          empty={noRequests}
+          {...shared}
+        />
       </Tile>
     </div>
   );

@@ -45,7 +45,7 @@
 | AI 사전 점검 | AI pre-check | `PrecheckDetail` | 패치 = Patch, 막힌 시도 = Blocked attempt |
 | 이전 | Migration | `MigrationPlan.mode` (`PLANNED` · `EMERGENCY` · `FAILBACK`) | 화면 표기 Planned · Emergency · Failback. 서버가 판정한다 |
 | 쓰기 전환 🆕 | Writer cutover | `writerCutover` | 단계 Pause writes · Fence · Confirm LSN · Promote |
-| 보안 매트릭스 🆕 | Security | `SecurityMatrixRow`, `SecurityFinding` | 결과 PASS · WARN · FAIL · N/A · Unknown |
+| 보안 매트릭스 | Security | `SecurityMatrixRow`, `SecurityFinding` | 결과 PASS · WARN · FAIL · N/A · Unknown |
 | 감사 로그 | Audit log | `AuditLog` | 행위자 User · Agent · System |
 | 에이전트 토큰 | Agent token | `AgentToken` | |
 
@@ -80,7 +80,7 @@
 | 배포 요청 `status` | `QUEUED` → Queued · 중립 / `BUILDING` → Building · migrating / `DEPLOYING` → Deploying · migrating / `VERIFYING` → Verifying · migrating / `SUCCEEDED` → Succeeded · success / `FAILED` → Failed · danger / `CANCELLED` → Cancelled · 중립 |
 | `versionStatus` | `IN_SYNC` → In sync · success / `OUT_OF_SYNC` → Out of sync · warning |
 | `role`(연결) | `SERVING` → Serving · success / `STANDBY` → Standby · 중립 / `NONE` → — |
-| 보안 `result` 🆕 | `PASS` · success / `WARN` · warning / `FAIL` · danger / `NA` → N/A · 중립 / `UNKNOWN` → Unknown · 중립 (미수집) |
+| 보안 `result` | `PASS` · success / `WARN` · warning / `FAIL` · danger / `NA` → N/A · 중립 / `UNKNOWN` → Unknown · 중립 (미수집) |
 | 이전 계획 `status` | `PENDING_APPROVAL` → Waiting for approval · warning / `APPROVED` → Approved · migrating / `RUNNING` → Migrating · migrating / `ROLLING_BACK` → Rolling back · warning / `SUCCEEDED` · success / `ROLLED_BACK` → Rolled back · warning / `FAILED` · danger / `REJECTED` · `CANCELLED` · `EXPIRED` · `STALE` → 중립 |
 | 초대 `status` | `PENDING` → 대기(목록에 보임) / `ACCEPTED` · `EXPIRED` · `REVOKED` → 목록에서 뺀다 |
 | 에이전트 토큰 | `revokedAt` 있음 → Revoked · 중립 / `expiresAt` 지남 → Expired · 중립 / 그 밖 → Active · success |

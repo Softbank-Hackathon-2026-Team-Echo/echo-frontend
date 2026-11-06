@@ -154,6 +154,24 @@ function serve() {
     http.get(`${API}/orgs/o1/services/:id`, ({ params }) =>
       ok(services.find((item) => item.id === params.id)),
     ),
+    http.get(`${API}/orgs/o1/services/:id/metrics`, () =>
+      ok({
+        range: '15m',
+        step: '10s',
+        asOf: '2026-11-05T00:00:00Z',
+        metricsStatus: 'OK',
+        metricsErrorCode: null,
+        series: [],
+        summary: {
+          successRate: 0.9997,
+          p95Ms: 182,
+          replicationLagMs: 120,
+          errorBudgetLeft: 0.72,
+          sloTarget: 0.999,
+        },
+        simulated: false,
+      }),
+    ),
     http.get(`${API}/orgs/o1/services/:id/migration-plans`, () =>
       ok({ items: [], total: 0, page: 0, size: 20 }),
     ),
@@ -185,6 +203,7 @@ describe('DashboardPage 다시 그리기', () => {
       { path: '/o/:slug', url: '/o/echo-demo', queryClient: client },
     );
     await screen.findAllByText('Environments');
+    await screen.findByText('99.97%');
     await waitFor(() => expect(client.isFetching()).toBe(0));
 
     // 폴링 한 번과 같다: 조직 쿼리를 전부 다시 불러오고, 응답은 그대로다
