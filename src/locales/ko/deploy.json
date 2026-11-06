@@ -1,4 +1,8 @@
 {
   "no standby followed": "따라간 예비 없음",
-  "{{failed}} of {{total}} standby failed": "예비 {{total}}곳 중 {{failed}}곳 실패"
+  "{{failed}} of {{total}} standby failed": "예비 {{total}}곳 중 {{failed}}곳 실패",
+  "No version is running on {{name}} yet.": "{{name}}에서 실행 중인 버전이 아직 없습니다.",
+  "Missing environment variables are a common cause.": "환경 변수가 빠진 경우가 많습니다.",
+  "Check environment variables": "환경 변수 확인",
+  "Service details": "서비스 상세"
 }

@@ -108,8 +108,8 @@ describe('ServiceVariables', () => {
     expect(screen.getByText('v3')).toBeInTheDocument();
     expect(screen.getByText('Redeploy to apply')).toBeInTheDocument();
 
-    await clickWhenAllowed('Deploy');
-    expect(onDeploy).toHaveBeenCalledOnce();
+    await clickWhenAllowed('Redeploy now');
+    expect(onDeploy).toHaveBeenCalledWith('e1');
   });
 
   it('새 키를 넣으면 PUT 으로 보내고 닫으면 값이 남지 않는다', async () => {

@@ -147,6 +147,19 @@ describe('ServiceDetailPage 배포 이력', () => {
   });
 });
 
+describe('ServiceDetailPage 길 찾기', () => {
+  it('상단에 환경 변수 바로가기가 있고 그 칸으로 간다', async () => {
+    serve('VIEWER');
+    renderPage();
+
+    expect(await screen.findByRole('link', { name: 'Environment variables' })).toHaveAttribute(
+      'href',
+      '#variables',
+    );
+    expect(document.getElementById('variables')).toHaveTextContent('Environment variables');
+  });
+});
+
 describe('ServiceDetailPage 이전 입구', () => {
   const standby = {
     serviceEnvironmentId: 'se2',

@@ -257,5 +257,15 @@
   "DB writer cutover failed": "DB書き込み切り替えに失敗",
   "DB writer cutover timed out": "DB書き込み切り替えがタイムアウト",
   "DB writer cutover stopped halfway": "DB書き込み切り替えが途中で停止",
-  "Rows are missing or duplicated after the cutover": "切り替え後に欠落・重複行あり"
+  "Rows are missing or duplicated after the cutover": "切り替え後に欠落・重複行あり",
+  "Services share traffic weights and the database writer today, so every service moves together.": "現在はサービス間でトラフィック比率と DB の書き込み先を共有しているため、すべてのサービスが一緒に移動します。",
+  "Choose a service and a target with Plan a migration. Approved plans and their results show up here.": "移行を計画からサービスと移行先を選んでください。承認した計画と結果がここに表示されます。",
+  "Ready": "準備完了",
+  "Connection failed": "接続失敗",
+  "Move a service to another environment without a disaster.": "災害がなくてもサービスを別の環境へ移行します。",
+  "Choose a service": "サービスを選択",
+  "Not serving traffic": "トラフィックを受けていません",
+  "{{name}} needs the same version running before it can take traffic.": "トラフィックを受けるには {{name}} で同じバージョンが動いている必要があります。",
+  "Skip to plan": "計画へスキップ",
+  "Deploy to {{name}} first": "先に {{name}} へデプロイ"
 }

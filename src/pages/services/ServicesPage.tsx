@@ -1,6 +1,6 @@
 import { Activity, ArrowLeftRight, Boxes, Globe, ShieldCheck } from 'lucide-react';
 import { useState } from 'react';
-import { useParams, useSearchParams } from 'react-router';
+import { Link, useParams, useSearchParams } from 'react-router';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorState } from '@/components/ErrorState';
 import { PageHeader } from '@/components/PageHeader';
@@ -158,15 +158,13 @@ export default function ServicesPage() {
                         onClick={() => setSearchParams({ service: summary.id }, { replace: true })}
                       >
                         <TableCell>
-                          <button
-                            type="button"
+                          <Link
+                            to={`/o/${organization.slug}/services/${summary.id}`}
                             className="text-body-medium hover:underline"
-                            onClick={() =>
-                              setSearchParams({ service: summary.id }, { replace: true })
-                            }
+                            onClick={(event) => event.stopPropagation()}
                           >
                             {summary.name}
-                          </button>
+                          </Link>
                           {summary.status === 'DELETING' && (
                             <span className="ml-2 text-caption text-warning-fg">
                               {t('deleting')}

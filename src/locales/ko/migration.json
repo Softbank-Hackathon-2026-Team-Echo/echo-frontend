@@ -257,5 +257,15 @@
   "DB writer cutover failed": "DB 쓰기 전환 실패",
   "DB writer cutover timed out": "DB 쓰기 전환 시간 초과",
   "DB writer cutover stopped halfway": "DB 쓰기 전환이 중간에 멈춤",
-  "Rows are missing or duplicated after the cutover": "전환 뒤 누락·중복 행이 있음"
+  "Rows are missing or duplicated after the cutover": "전환 뒤 누락·중복 행이 있음",
+  "Services share traffic weights and the database writer today, so every service moves together.": "지금은 서비스들이 트래픽 비율과 DB 쓰기 담당을 함께 써서 모든 서비스가 같이 이동합니다.",
+  "Choose a service and a target with Plan a migration. Approved plans and their results show up here.": "이전 계획에서 서비스와 도착 환경을 고르세요. 승인한 계획과 결과가 여기에 나옵니다.",
+  "Ready": "준비됨",
+  "Connection failed": "연결 실패",
+  "Move a service to another environment without a disaster.": "재난이 없어도 서비스를 다른 환경으로 옮깁니다.",
+  "Choose a service": "서비스 선택",
+  "Not serving traffic": "트래픽을 받지 않음",
+  "{{name}} needs the same version running before it can take traffic.": "트래픽을 받으려면 {{name}}에 같은 버전이 떠 있어야 합니다.",
+  "Skip to plan": "계획으로 건너뛰기",
+  "Deploy to {{name}} first": "{{name}}에 먼저 배포"
 }

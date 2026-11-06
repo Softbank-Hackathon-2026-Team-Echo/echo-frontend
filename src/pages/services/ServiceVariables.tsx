@@ -41,7 +41,7 @@ function EnvironmentVariables({
   environmentId: string;
   environmentName: string;
   disabledReason?: string;
-  onDeploy: () => void;
+  onDeploy: (environmentId: string) => void;
 }) {
   const target = { orgId, serviceId, environmentId };
   const variables = useServiceVariables(target);
@@ -94,9 +94,9 @@ function EnvironmentVariables({
             requires="DEVELOPER"
             size="sm"
             disabledReason={disabledReason}
-            onClick={onDeploy}
+            onClick={() => onDeploy(environmentId)}
           >
-            {t('Deploy')}
+            {t('Redeploy now')}
           </RoleButton>
         </div>
       )}
@@ -213,7 +213,7 @@ export function ServiceVariables({
   orgId: string;
   service: ServiceDetail;
   disabledReason?: string;
-  onDeploy: () => void;
+  onDeploy: (environmentId: string) => void;
 }) {
   const [picked, setPicked] = useState<string>();
   const links = service.environments;

@@ -207,10 +207,10 @@ describe('DeployProgressPage 화면', () => {
 
   let trigger: string | null = null;
 
-  function renderDeploy(detail: DeployRequestDetail) {
+  function renderDeploy(detail: DeployRequestDetail, environments: unknown[] = []) {
     server.use(
       http.get(`${API}/me`, () => ok(me)),
-      http.get(`${API}/orgs/o1/services/s1`, () => ok({ name: 'demo', environments: [] })),
+      http.get(`${API}/orgs/o1/services/s1`, () => ok({ name: 'demo', environments })),
       http.get(`${API}/orgs/o1/deploy-requests/r3`, () => ok(detail)),
       http.get(`${API}/orgs/o1/services/s1/deploy-requests`, ({ request: req }) => {
         trigger = new URL(req.url).searchParams.get('trigger');
@@ -238,6 +238,37 @@ describe('DeployProgressPage 화면', () => {
       url: '/o/echo-demo/services/s1/deploys/r3',
     });
   }
+
+  it('첫 배포가 실패하면 이전 버전이 돈다고 말하지 않고 환경 변수로 안내한다', async () => {
+    renderDeploy(
+      request({
+        status: 'FAILED',
+        errorCode: 'CONTAINER_START_FAILED',
+        revertStatus: 'SUCCEEDED',
+        isCurrent: false,
+      }),
+      [{ serviceEnvironmentId: 'se1', currentDeployment: null }],
+    );
+
+    expect(await screen.findByText('No version is running on aws-tokyo yet.')).toBeInTheDocument();
+    expect(screen.queryByText('The previous version was kept running.')).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Check environment variables' })).toHaveAttribute(
+      'href',
+      '/o/echo-demo/services/s1#variables',
+    );
+  });
+
+  it('떠 있던 버전이 있으면 그 버전이 계속 돈다고 말한다', async () => {
+    renderDeploy(
+      request({ status: 'FAILED', errorCode: 'BUILD_FAILED', revertStatus: 'SUCCEEDED' }),
+      [{ serviceEnvironmentId: 'se1', currentDeployment: { commitSha: 'a'.repeat(40) } }],
+    );
+
+    expect(await screen.findByText('The previous version was kept running.')).toBeInTheDocument();
+    expect(
+      screen.queryByRole('link', { name: 'Check environment variables' }),
+    ).not.toBeInTheDocument();
+  });
 
   it('되돌리기 요청은 되돌린 대상 요청으로 가는 링크가 있다', async () => {
     renderDeploy(request({ trigger: 'ROLLBACK', rollbackOfRequestId: 'r1' }));

@@ -2,6 +2,7 @@ import { type FormEvent, useState } from 'react';
 import { FormError, FormField } from '@/components/FormField';
 import { PageHeader } from '@/components/PageHeader';
 import { RoleButton } from '@/components/RoleButton';
+import { SharedTrafficNotice } from '@/components/SharedTrafficNotice';
 import { StageList } from '@/components/StageList';
 import { Input } from '@/components/ui/input';
 import { fieldErrors, formErrorMessage } from '@/lib/api/form-errors';
@@ -136,6 +137,7 @@ export function PlanDraft({
         }
       />
       <WizardSteps current={2} precheckSkipped={precheckSkipped} />
+      <SharedTrafficNotice orgId={orgId} />
       <FormError message={formErrorMessage(create.error, FIELDS)} />
       <div className="flex items-start gap-3 max-wide:flex-col">
         <section className="flex flex-1 flex-col gap-3 rounded-xl border border-line bg-surface p-4 max-wide:w-full">

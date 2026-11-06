@@ -7,6 +7,7 @@ import { ProviderLabel } from '@/components/ProviderLabel';
 import { RoleButton } from '@/components/RoleButton';
 import { SimulatedBadge } from '@/components/SimulatedBadge';
 import { StatusBadge } from '@/components/StatusBadge';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { isTerminalStatus, useDeployRequests, useRollback, useService } from '@/lib/api/services';
 import type { DeployRequestSummary, ServiceEnvironment } from '@/lib/api/types';
@@ -77,6 +78,16 @@ export function ServicePanel({
         </Link>
         {service.simulated && <SimulatedBadge />}
       </header>
+      <div className="flex flex-wrap gap-2">
+        <Button asChild variant="outline" size="sm">
+          <Link to={`/o/${orgSlug}/services/${service.id}`}>{t('Service details')}</Link>
+        </Button>
+        <Button asChild variant="outline" size="sm">
+          <Link to={`/o/${orgSlug}/services/${service.id}#variables`}>
+            {t('Environment variables')}
+          </Link>
+        </Button>
+      </div>
 
       <section className="flex flex-col gap-2">
         <h3 className="text-body-medium">{t('Environments')}</h3>

@@ -1,14 +1,15 @@
 import {
   ArrowRightLeft,
   GitBranch,
+  KeyRound,
   Lock,
   MoreHorizontal,
   Pencil,
   RotateCcw,
   Trash2,
 } from 'lucide-react';
-import { useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router';
+import { useEffect, useState } from 'react';
+import { Link, useLocation, useNavigate, useParams } from 'react-router';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { DeployDialog } from '@/components/DeployDialog';
 import { EmptyState } from '@/components/EmptyState';
@@ -54,9 +55,17 @@ import {
 import { EditServiceDialog } from './EditServiceDialog';
 import { ServiceVariables } from './ServiceVariables';
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({
+  id,
+  title,
+  children,
+}: {
+  id?: string;
+  title: string;
+  children: React.ReactNode;
+}) {
   return (
-    <section className="flex flex-col gap-3">
+    <section id={id} className="flex scroll-mt-16 flex-col gap-3">
       <h2 className="text-h3">{title}</h2>
       {children}
     </section>
@@ -259,6 +268,7 @@ function DeployHistory({
 export default function ServiceDetailPage() {
   const { slug, serviceId } = useParams();
   const navigate = useNavigate();
+  const { hash } = useLocation();
   const { organization } = useCurrentOrg(slug);
   const role = useRole();
   const {
@@ -270,8 +280,20 @@ export default function ServiceDetailPage() {
   } = useService(organization?.id, serviceId);
   const deleteService = useDeleteService(organization?.id ?? '');
   const [deployOpen, setDeployOpen] = useState(false);
+  const [deployEnvironmentId, setDeployEnvironmentId] = useState<string>();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const loaded = Boolean(service && organization);
+
+  // 다른 화면에서 #variables 로 오면 데이터가 그려진 뒤에야 그 칸이 생긴다
+  useEffect(() => {
+    if (loaded && hash) document.getElementById(hash.slice(1))?.scrollIntoView();
+  }, [loaded, hash]);
+
+  function openDeploy(environmentId?: string) {
+    setDeployEnvironmentId(environmentId);
+    setDeployOpen(true);
+  }
 
   if (isError) return <ErrorState error={error} onRetry={() => refetch()} />;
   if (isPending || !organization) {
@@ -312,10 +334,16 @@ export default function ServiceDetailPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <Button asChild variant="outline">
+            <a href="#variables">
+              <KeyRound aria-hidden />
+              {t('Environment variables')}
+            </a>
+          </Button>
           <RoleButton
             requires="DEVELOPER"
             disabledReason={deleting ? t('This service is being deleted') : undefined}
-            onClick={() => setDeployOpen(true)}
+            onClick={() => openDeploy()}
           >
             {t('Deploy')}
           </RoleButton>
@@ -396,12 +424,12 @@ export default function ServiceDetailPage() {
         <EnvironmentLinks service={service} orgSlug={organization.slug} />
       </Section>
 
-      <Section title={t('Environment variables')}>
+      <Section id="variables" title={t('Environment variables')}>
         <ServiceVariables
           orgId={organization.id}
           service={service}
           disabledReason={deleting ? t('This service is being deleted') : undefined}
-          onDeploy={() => setDeployOpen(true)}
+          onDeploy={openDeploy}
         />
       </Section>
 
@@ -410,12 +438,14 @@ export default function ServiceDetailPage() {
       </Section>
 
       <DeployDialog
+        key={deployEnvironmentId ?? 'any'}
         open={deployOpen}
         onOpenChange={setDeployOpen}
         orgId={organization.id}
         orgSlug={organization.slug}
         serviceId={service.id}
         serviceName={service.name}
+        defaultEnvironmentId={deployEnvironmentId}
       />
       <EditServiceDialog
         open={editOpen}

@@ -25,5 +25,6 @@
   "Values stay in the secret store. Only names and versions show here.": "値はシークレットストアにのみ保存されます。ここには名前とバージョンだけが表示されます。",
   "Variables belong to an environment, so deploy to it once to add them.": "変数は環境ごとに保存されるため、その環境に一度デプロイしてから追加できます。",
   "{{max}} variables is the limit": "変数は{{max}}個までです",
-  "{{n}} variables apply on the next deploy to {{name}}.": "変数{{n}}個が{{name}}の次回デプロイで反映されます。"
+  "{{n}} variables apply on the next deploy to {{name}}.": "変数{{n}}個が{{name}}の次回デプロイで反映されます。",
+  "Redeploy now": "今すぐ再デプロイ"
 }

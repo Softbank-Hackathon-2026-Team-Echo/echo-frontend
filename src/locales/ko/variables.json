@@ -25,5 +25,6 @@
   "Values stay in the secret store. Only names and versions show here.": "값은 시크릿 보관함에만 있습니다. 여기에는 이름과 버전만 보입니다.",
   "Variables belong to an environment, so deploy to it once to add them.": "변수는 환경별로 저장되므로, 그 환경에 한 번 배포한 뒤에 넣을 수 있습니다.",
   "{{max}} variables is the limit": "변수는 {{max}}개까지입니다",
-  "{{n}} variables apply on the next deploy to {{name}}.": "변수 {{n}}개가 {{name}}의 다음 배포 때 반영됩니다."
+  "{{n}} variables apply on the next deploy to {{name}}.": "변수 {{n}}개가 {{name}}의 다음 배포 때 반영됩니다.",
+  "Redeploy now": "지금 다시 배포"
 }

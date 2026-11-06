@@ -242,12 +242,20 @@ const CANCEL_REASONS: Record<string, string> = {
   BASE_CHANGED: k('Cancelled because another version went live before this rollback started.'),
 };
 
+/** 앱이 뜨지 못한 실패는 필수 변수가 빠진 경우가 많다. 원인을 단정하지 않고 볼 곳만 알려 준다 */
+const CHECK_VARIABLES_ERRORS = new Set(['CONTAINER_START_FAILED', 'HEALTH_CHECK_FAILED']);
+
 function Outcome({
   request,
   requestLink,
+  variablesLink,
+  hasRunningVersion,
 }: {
   request: DeployRequestDetail;
   requestLink: (id: string) => string;
+  variablesLink: string;
+  /** 이 환경에 이미 떠 있는 버전이 있는지. 서비스를 아직 못 읽었으면 undefined */
+  hasRunningVersion: boolean | undefined;
 }) {
   if (request.status === 'SUCCEEDED') {
     return (
@@ -264,11 +272,24 @@ function Outcome({
           {request.errorCode ? deployErrorLabel(request.errorCode) : t('The deploy failed.')}
         </p>
         {request.errorMessage && <p className="text-body">{request.errorMessage}</p>}
-        {request.revertStatus === 'SUCCEEDED' && (
+        {request.revertStatus === 'SUCCEEDED' && hasRunningVersion === true && (
           <p className="text-body">{t('The previous version was kept running.')}</p>
+        )}
+        {request.revertStatus === 'SUCCEEDED' && hasRunningVersion === false && (
+          <p className="text-body">
+            {t('No version is running on {{name}} yet.', { name: request.environment.name })}
+          </p>
         )}
         {request.revertStatus === 'FAILED' && (
           <p className="text-body">{t('Reverting to the previous version also failed.')}</p>
+        )}
+        {request.errorCode && CHECK_VARIABLES_ERRORS.has(request.errorCode) && (
+          <p className="text-body">
+            {t('Missing environment variables are a common cause.')}{' '}
+            <Link to={variablesLink} className="underline">
+              {t('Check environment variables')}
+            </Link>
+          </p>
         )}
       </div>
     );
@@ -381,6 +402,11 @@ export default function DeployProgressPage() {
       <Outcome
         request={request}
         requestLink={(id) => `/o/${slug}/services/${serviceId}/deploys/${id}`}
+        variablesLink={`/o/${slug}/services/${serviceId}#variables`}
+        hasRunningVersion={service.data?.environments.some(
+          (link) =>
+            link.serviceEnvironmentId === request.serviceEnvironmentId && link.currentDeployment,
+        )}
       />
 
       <div className="grid grid-cols-[1fr_20rem] items-start gap-4 max-wide:grid-cols-1">

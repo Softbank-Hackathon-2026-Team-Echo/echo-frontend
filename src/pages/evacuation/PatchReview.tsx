@@ -1,10 +1,17 @@
 import { CircleCheck, CircleX } from 'lucide-react';
 import { RoleButton } from '@/components/RoleButton';
+import { SimulatedBadge } from '@/components/SimulatedBadge';
 import { StatusBadge } from '@/components/StatusBadge';
 import { parseDiff, usePatchDecision } from '@/lib/api/prechecks';
 import type { PrecheckPatch } from '@/lib/api/types';
+import { dateTime } from '@/lib/format';
 import { t } from '@/lib/i18n';
-import { patchBlockReasonLabel, patchStatusView } from '@/lib/status';
+import {
+  patchBlockReasonLabel,
+  patchStatusView,
+  precheckFailureLabel,
+  shortSha,
+} from '@/lib/status';
 import { cn } from '@/lib/utils';
 
 const DIFF_CLASS = {
@@ -27,6 +34,34 @@ type PatchReviewProps = {
   patch: PrecheckPatch;
   number: number;
 };
+
+/** 샌드박스 반영 실행의 결과. 브랜치 · 커밋은 러너 결과가 나온 뒤에만 찬다 */
+function ApplyResult({ apply }: { apply: NonNullable<PrecheckPatch['apply']> }) {
+  return (
+    <div className="flex flex-col gap-1 border-t border-line px-4 py-3 text-small">
+      {apply.failureCode && (
+        <p className="flex flex-wrap items-center gap-x-2 text-danger-fg">
+          {precheckFailureLabel(apply.failureCode)}
+          <span className="font-mono text-mono">{apply.failureCode}</span>
+        </p>
+      )}
+      <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-fg-secondary">
+        {apply.finishedAt ? (
+          <span>{t('Finished {{time}}', { time: dateTime(apply.finishedAt) })}</span>
+        ) : (
+          <span>{t('Applying in the sandbox…')}</span>
+        )}
+        {apply.branch && <span className="font-mono text-mono">{apply.branch}</span>}
+        {apply.appliedCommitSha && (
+          <span className="font-mono text-mono" title={apply.appliedCommitSha}>
+            {shortSha(apply.appliedCommitSha)}
+          </span>
+        )}
+        {apply.simulated && <SimulatedBadge />}
+      </p>
+    </div>
+  );
+}
 
 /** 러너가 낸 수정안 하나. 사람이 승인 · 거절한다(F15). 막힌 패치는 승인 버튼이 없다 */
 export function PatchReview({ orgId, precheckId, patch, number }: PatchReviewProps) {
@@ -63,6 +98,7 @@ export function PatchReview({ orgId, precheckId, patch, number }: PatchReviewPro
           </span>
         ))}
       </pre>
+      {patch.apply && <ApplyResult apply={patch.apply} />}
       <footer className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
         <span
           className={cn(
