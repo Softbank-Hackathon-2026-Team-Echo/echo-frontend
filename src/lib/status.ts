@@ -275,6 +275,11 @@ const PATCH_BLOCK_REASONS: Record<string, string> = {
   CHECK_NOT_PASSED: k('A verification check did not pass'),
 };
 
+/** 앱이 뜨지 못한 실패는 필수 변수가 빠진 경우가 많다. 원인을 단정하지 않고 볼 곳만 알린다 */
+export function suggestsVariables(errorCode: string | null | undefined): boolean {
+  return errorCode === 'CONTAINER_START_FAILED' || errorCode === 'HEALTH_CHECK_FAILED';
+}
+
 export function patchBlockReasonLabel(reason: string): string {
   return labelOf(PATCH_BLOCK_REASONS, reason);
 }

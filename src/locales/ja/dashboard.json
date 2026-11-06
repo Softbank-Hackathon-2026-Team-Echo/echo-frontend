@@ -150,5 +150,6 @@
   "Requests per second": "毎秒リクエスト数",
   "Requests per second by environment, last 15 minutes": "直近15分の環境別毎秒リクエスト数",
   "Recent runs on an overseas model, no secrets sent: {{count}}": "海外モデルを使用し、シークレットは送信していない最近の実行: {{count}}件",
-  "Allowed without a region if no forbidden data is sent: {{providers}}": "禁止データを送信しない場合はリージョンなしで許可: {{providers}}"
+  "Allowed without a region if no forbidden data is sent: {{providers}}": "禁止データを送信しない場合はリージョンなしで許可: {{providers}}",
+  "Open services": "サービスを開く"
 }

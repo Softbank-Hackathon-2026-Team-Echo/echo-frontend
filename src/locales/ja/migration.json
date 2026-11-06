@@ -267,5 +267,13 @@
   "Not serving traffic": "トラフィックを受けていません",
   "{{name}} needs the same version running before it can take traffic.": "トラフィックを受けるには {{name}} で同じバージョンが動いている必要があります。",
   "Skip to plan": "計画へスキップ",
-  "Deploy to {{name}} first": "先に {{name}} へデプロイ"
+  "Deploy to {{name}} first": "先に {{name}} へデプロイ",
+  "All keys present": "すべてのキーあり",
+  "Deploy this service first": "先にこのサービスをデプロイしてください",
+  "Migration history": "移行履歴",
+  "Missing {{keys}}": "{{keys}} が未設定",
+  "Plans for this service and their results show up here.": "このサービスの計画と結果がここに表示されます。",
+  "Serving from {{name}} now.": "現在は {{name}} でサービス中です。",
+  "This service is not serving traffic yet.": "このサービスはまだトラフィックを受けていません。",
+  "Where it can move": "移行できる環境"
 }

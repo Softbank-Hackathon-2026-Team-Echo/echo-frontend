@@ -15,51 +15,23 @@ import {
   useStandbySyncs,
 } from '@/lib/api/services';
 import type { DeployRequestDetail, DeployRequestSummary, ServiceDetail } from '@/lib/api/types';
+import {
+  DEPLOY_STAGES as STAGES,
+  type StageState,
+  stageDuration,
+  stageStates,
+} from '@/lib/deploy-stages';
 import { dateTime, elapsed } from '@/lib/format';
 import { k, t } from '@/lib/i18n';
-import { deployErrorLabel, deployStatusView, deployTriggerLabel, shortSha } from '@/lib/status';
+import {
+  deployErrorLabel,
+  deployStatusView,
+  deployTriggerLabel,
+  shortSha,
+  suggestsVariables,
+} from '@/lib/status';
 import { cn } from '@/lib/utils';
 import { DeployLogs } from './DeployLogs';
-
-type StageState = 'done' | 'current' | 'failed' | 'pending' | 'skipped';
-
-const STAGES = [
-  { status: 'QUEUED', label: k('Queued'), at: 'queuedAt' },
-  { status: 'BUILDING', label: k('Building'), at: 'buildingAt' },
-  { status: 'DEPLOYING', label: k('Deploying'), at: 'deployingAt' },
-  { status: 'VERIFYING', label: k('Verifying'), at: 'verifyingAt' },
-] as const;
-
-/** 단계별 상태. 실패하면 마지막으로 시작한 단계가 실패 단계다 */
-export function stageStates(
-  request: Pick<DeployRequestDetail, 'status' | 'stageTimes'>,
-): StageState[] {
-  const started = STAGES.map((stage) => Boolean(request.stageTimes[stage.at]));
-  const lastStarted = started.lastIndexOf(true);
-  return STAGES.map((stage, index) => {
-    if (request.status === 'SUCCEEDED') return 'done';
-    if (!started[index]) return 'pending';
-    if (index < lastStarted) return 'done';
-    if (request.status === 'FAILED' || request.status === 'CANCELLED') return 'failed';
-    return stage.status === request.status ? 'current' : 'done';
-  });
-}
-
-/**
- * 단계에 걸린 시간. 단계의 끝은 그 뒤로 처음 찍힌 시각이다. 취소·실패로 다음 단계가 없으면 finishedAt 이고,
- * 진행 중이면 찍힌 시각이 없어 지금까지 센다
- */
-export function stageDuration(
-  times: DeployRequestDetail['stageTimes'],
-  index: number,
-  now: number,
-): string | null {
-  const stage = STAGES[index];
-  const startedAt = stage && times[stage.at];
-  if (!startedAt) return null;
-  const later = [...STAGES.slice(index + 1).map((next) => times[next.at]), times.finishedAt];
-  return elapsed(startedAt, later.find(Boolean) ?? null, now);
-}
 
 const STAGE_ICON: Record<StageState, React.ReactNode> = {
   done: <Check aria-hidden className="size-4" />,
@@ -242,9 +214,6 @@ const CANCEL_REASONS: Record<string, string> = {
   BASE_CHANGED: k('Cancelled because another version went live before this rollback started.'),
 };
 
-/** 앱이 뜨지 못한 실패는 필수 변수가 빠진 경우가 많다. 원인을 단정하지 않고 볼 곳만 알려 준다 */
-const CHECK_VARIABLES_ERRORS = new Set(['CONTAINER_START_FAILED', 'HEALTH_CHECK_FAILED']);
-
 function Outcome({
   request,
   requestLink,
@@ -283,7 +252,7 @@ function Outcome({
         {request.revertStatus === 'FAILED' && (
           <p className="text-body">{t('Reverting to the previous version also failed.')}</p>
         )}
-        {request.errorCode && CHECK_VARIABLES_ERRORS.has(request.errorCode) && (
+        {suggestsVariables(request.errorCode) && (
           <p className="text-body">
             {t('Missing environment variables are a common cause.')}{' '}
             <Link to={variablesLink} className="underline">
@@ -385,7 +354,7 @@ export default function DeployProgressPage() {
           </p>
         </div>
         <Link
-          to={`/o/${slug}/services?service=${serviceId}`}
+          to={`/o/${slug}/services/${serviceId}?tab=deployments`}
           className="text-body text-brand hover:underline"
         >
           {t('Back to services')}
@@ -402,7 +371,7 @@ export default function DeployProgressPage() {
       <Outcome
         request={request}
         requestLink={(id) => `/o/${slug}/services/${serviceId}/deploys/${id}`}
-        variablesLink={`/o/${slug}/services/${serviceId}#variables`}
+        variablesLink={`/o/${slug}/services/${serviceId}?tab=variables`}
         hasRunningVersion={service.data?.environments.some(
           (link) =>
             link.serviceEnvironmentId === request.serviceEnvironmentId && link.currentDeployment,

@@ -47,7 +47,7 @@ src/
 │  ├─ disaster/          # 재난 시뮬레이션 다이얼로그(S01-D) · 지도(DisasterMap, d3-geo + world-atlas 50m 지연 로드)
 │  └─ *.tsx              # 두 화면 이상에서 쓰는 앱 컴포넌트 (Panel, RoleButton, StatusBadge, SimulatedBadge, ProviderLabel, FormField, ConfirmDeleteDialog, ExternalLink, EmptyState, ErrorState, ScreenErrorBoundary, Logo, OrthoGlobe, 등록·배포 다이얼로그(EnvironmentFormDialog · RegisterServiceDialog · DeployDialog) …)
 ├─ layouts/AppShell.tsx  # 사이드바(워드마크 · Operate/Resilience/Govern 묶음 · 사용자 메뉴=테마·로그아웃) + 상단 바(브레드크럼 · Org 선택 · Simulate disaster · 알림)
-├─ pages/                # 화면 단위 폴더 (login/, root/, landing/(L01 소개), onboarding/(O01~O03), dashboard/, services/, evacuation/, migrations/, security/, audit/, remote/(S01-R 휴대폰 리모컨), settings/, dev/). 한 화면에서만 쓰는 컴포넌트는 그 폴더 안에
+├─ pages/                # 화면 단위 폴더 (login/, root/, landing/(L01 소개), onboarding/(O01~O03), dashboard/(조직 개요 · 서비스 Overview 칸), services/(목록 · 서비스 작업 공간 탭), evacuation/, migrations/, security/, audit/, remote/(S01-R 휴대폰 리모컨), settings/, dev/). 한 화면에서만 쓰는 컴포넌트는 그 폴더 안에
 ├─ hooks/                # useTheme(테마 3개, localStorage), useRole(현재 조직 역할), useNow(경과 시간), usePrefersReducedMotion, useInViewOnce(처음 화면에 들어오면 true)
 ├─ lib/
 │  ├─ api/               # client(api = openapi-fetch + unwrap, 스키마 밖 경로는 apiFetch) · errors · notify · form-errors(422 → 칸 오류)
@@ -58,6 +58,8 @@ src/
 │  ├─ audit.ts           # 감사 행동 이름 · 행위자 · 결과 → 화면 문구
 │  ├─ status.ts          # 서버 상태 값 → 화면 문구·색 (StatusBadge 와 짝), 오류 코드 → 문구
 │  ├─ migration-*.ts     # 이전 단계 시간(stages) · 결과 숫자(metrics). 두 화면 이상에서 쓴다
+│  ├─ deploy-stages.ts   # 배포 단계 상태 · 시간
+│  ├─ env-file.ts        # 붙여 넣은 .env 를 키 · 값으로 나눈다
 │  ├─ route-prefetch.ts  # 메뉴 의도(마우스 올림 · 포커스) 때 화면 청크 미리 받기 · route-pattern.ts(Sentry 화면 이름)
 │  ├─ geo.ts             # 리전·도시 → 좌표(계약 4-1 🆕 전까지), 거리 계산
 │  ├─ i18n.ts            # 번역 t · k, 언어 감지 · 저장. 영어 문구가 키다
@@ -239,4 +241,10 @@ docs/                    # api-contract.md, perf.md(성능 측정 방법 · 기�
 | 11/6 | 리전 없는 Anthropic 호출이 비밀값을 안 넘기면 위반 대신 "해외 모델 사용 · 비밀값은 안 보냄" 을 ai 색으로 보인다. 사전 점검 칸에는 정책 응답이 없어 제공자 · 리전 · 데이터 등급으로 판단한다 | echo-was #80 조건부 허용(AD-12). 금지 등급이 SECRETS 뿐이라 같은 뜻이다. 금지 등급이 늘면 서버 값으로 바꾼다 |
 | 11/6 | 재난 없는 이전은 M01 "Plan a migration" 다이얼로그에서 서비스와 도착 환경을 골라 시작한다. 도착에 같은 버전이 없으면 먼저 배포로 보낸다. 다음 화면은 AI 사전 점검이고 계획으로 건너뛸 수 있다 | 도현님 시험에서 재난 없이는 이전 입구를 찾지 못했다. 준비 판단은 서버의 계획 만들기 규칙과 같고, 사전 점검은 누른 사람이 시작한다(화면을 여는 것만으로 운영 점검을 만들지 않는다) |
 | 11/6 | 서비스가 둘 이상이면 이전 다이얼로그와 E01-3 에 "모든 서비스가 같이 이동합니다" 를 보인다 | 진입점 가중치와 DB 쓰기 담당이 조직 전체에 한 벌이다. 서비스별로 나뉘는 건 시연 뒤로 제안됐다 |
-| 11/6 | 서비스 목록의 이름은 상세로 가고, 행을 누르면 지금처럼 오른쪽 패널을 연다. 패널과 상세 상단에 환경 변수 바로가기를 둔다 | 행 클릭을 상세로 바꾸면 와이어프레임의 패널이 쓸모없어진다. 길을 못 찾은 문제만 고친다 |
+| ~~11/6~~ | ~~서비스 목록의 이름은 상세로 가고, 행을 누르면 오른쪽 패널을 연다~~ → 11/6 번복 | |
+| 11/6 | 서비스가 작업의 중심이다. `/o/:slug/services/:id` 는 Overview · Deployments · Variables · Migration · Settings 탭이고 탭은 주소 `tab` 에 남긴다. 목록 행은 상세로 가고 오른쪽 패널은 지웠다 | 지민님 · 도현님 피드백과 Railway 시험. 서비스가 둘 이상이면 처음 찾은 서비스의 지표만 보이던 대시보드가 맞지 않다 |
+| 11/6 | `/o/:slug` 는 조직 개요(서비스 카드 · 환경 · 활동 · 비용 · 레지던시)다. KPI · 토폴로지 · 이전 진행은 서비스 Overview(`ServiceDashboard`)로 옮기고 지연 로드한다. 시연 시작 주소도 옮겼다 | 지표 API 가 이미 서비스별이다. 토폴로지 코드를 다른 탭에서 받지 않게 한다 |
+| 11/6 | 변수는 키 × 환경 표로 보이고 `.env` 붙여넣기 · 한 줄 입력으로 여러 환경에 넣는다. 일부 실패는 그 줄만 다시 보낸다. 값은 다이얼로그 state 에만 둔다 | Railway RAW Editor · 인라인 입력을 가져오고, 멀티 클라우드라 환경 비교(C-SEC-1 이 막는 키)를 표로 보인다 |
+| 11/6 | 적용 막대는 서버 `pendingRedeploy` 로 만든다. 서버가 저장 즉시 새 버전을 만들어 스테이징 · 값 비교 · 항목 취소는 없다. 적용은 환경마다 현재 커밋, 없으면 그 환경의 최근 시도 커밋으로 다시 배포한다 | Railway Staged Changes 의 "무엇이 재배포되는지 미리 안다" 만 가져온다. 값을 읽을 수 없고 브랜치를 다시 묻지 않게 한다 |
+| 11/6 | 서비스 활동 서랍은 감사 로그를 서비스 이름으로 검색하고, 배포 · 이전 줄은 그 화면으로 잇는다 | 서비스별 활동 API 가 없다. 이름표가 같은 다른 대상이 섞일 수 있다 |
+| 11/6 | 등록은 저장소 주소를 먼저 받아 이름을 제안하고, 고급 설정을 접고, 끝나면 배포 창을 연다 | Railway 는 입력 하나로 배포까지 간다. 온보딩은 `onRegistered` 로 지금 흐름을 유지한다 |

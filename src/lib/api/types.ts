@@ -51,6 +51,7 @@ export type PrecheckProcessing = Schemas['AgentRunProcessingResponse'];
 export type AiResidencySummary = Schemas['AiResidencySummaryResponse'];
 export type CloudCosts = Schemas['CloudCostsResponse'];
 export type AuditLog = Schemas['AuditLogResponse'];
+export type ServiceVariable = Schemas['ServiceVariableResponse'];
 export type AuditActorType = Schemas['ActorType'];
 export type SecurityMatrix = Schemas['SecurityMatrixResponse'];
 export type SecurityMatrixRow = Schemas['SecurityMatrixRowResponse'];

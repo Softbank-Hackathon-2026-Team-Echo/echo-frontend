@@ -240,6 +240,20 @@ data: {"seq": 1042, "ts": "2026-11-07T03:05:40Z", "orgId": "…", "resource": {"
 
 `action` 은 문자열로 읽는다(옛 거부 줄은 `POST /api/…` 그대로). 대시보드 "최근 활동"은 `includeReads=false&size=3` 이다. 내보내기 API 는 없다.
 
+### 4-9. 서비스 작업 공간 요청 (가칭) 🆕
+
+화면 설계는 [specs/fe-3-service-workspace-ux.md](../specs/fe-3-service-workspace-ux.md) 이다. 아직 서버에 없고, 없는 동안 화면은 지금 API 로 동작한다.
+
+| # | 요청 (가칭) | 없을 때 화면 |
+|---|---|---|
+| W1 | 첫 배포 전 변수 저장. `POST …/services/{id}/environments/{envId}/connect` 로 연결을 먼저 만들거나 연결 없이 `PUT …/variables/{key}` 를 받는다 | 첫 배포 뒤 변수를 넣고 다시 배포한다 |
+| W2 | `GET …/services/{id}/env-template?ref=` → `{ keys: [{ key, required, comment }], source }`. 저장소 `.env.example` 기준 | 붙여넣기만 쓴다 |
+| W3 | 배포 요청 상세에 `failure: { exitCode, reason, logTail: string[] }`. 실패한 Pod 가 지워지기 전에 읽고 비밀값을 지운다 | 오류 코드와 변수 안내만 보인다 |
+| W4 | 배포 요청에 `standbyEnvironmentIds: string[]` | 환경마다 배포한다 |
+| W5 | `PUT …/variables` 일괄 저장 (선택) | 화면이 키 × 환경 수만큼 부른다 |
+
+W3 은 ai-agent #22 의 실패 로그 입력과 같은 값이다.
+
 ## 5. 열린 질문
 
 1. 실시간 채널을 조직 하나로 둘지, 이전·배포 단위로 나눌지 (제안: 조직 하나)

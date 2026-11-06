@@ -9,7 +9,7 @@ import { afterAll, describe, expect, it, vi } from 'vitest';
 import type { EnvironmentSummary, Me, ServiceDetail, ServiceEnvironment } from '@/lib/api/types';
 import { server } from '@/test/msw-server';
 import { renderRoute } from '@/test/render';
-import DashboardPage from './DashboardPage';
+import { ServiceDashboard } from './ServiceDashboard';
 
 const { counts, bump } = vi.hoisted(() => {
   const counts = new Map<string, number>();
@@ -139,6 +139,7 @@ function service(id: string): ServiceDetail {
 }
 
 const services = [service('shop-api'), service('shop-web')];
+const organization = me.organizations[0] as Me['organizations'][number];
 
 function serve() {
   server.use(
@@ -184,7 +185,7 @@ afterAll(() => {
   console.warn(`\n[dashboard renders per refetch]\n${results.join('\n')}`);
 });
 
-describe('DashboardPage 다시 그리기', () => {
+describe('ServiceDashboard 다시 그리기', () => {
   it('같은 응답으로 다시 불러오면 칸을 다시 그리지 않는다', async () => {
     serve();
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -198,7 +199,7 @@ describe('DashboardPage 다시 그리기', () => {
           renderMs += actualDuration;
         }}
       >
-        <DashboardPage />
+        <ServiceDashboard organization={organization} service={services[0] as ServiceDetail} />
       </Profiler>,
       { path: '/o/:slug', url: '/o/echo-demo', queryClient: client },
     );

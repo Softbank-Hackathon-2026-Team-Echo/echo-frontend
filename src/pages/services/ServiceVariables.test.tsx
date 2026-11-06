@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HttpResponse, http } from 'msw';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import type { Me, MemberRole, ServiceDetail } from '@/lib/api/types';
 import { variableKeyProblem } from '@/lib/api/variables';
 import { server } from '@/test/msw-server';
@@ -10,7 +10,8 @@ import { ServiceVariables } from './ServiceVariables';
 
 const API = 'http://api.test/api/v1';
 const AT = '2026-11-05T00:00:00Z';
-const BASE = `${API}/orgs/o1/services/s1/environments/e1/variables`;
+const base = (environmentId: string) =>
+  `${API}/orgs/o1/services/s1/environments/${environmentId}/variables`;
 const ok = <T,>(data: T, status = 200) => HttpResponse.json({ success: true, data }, { status });
 
 const me = (role: MemberRole): Me => ({
@@ -28,9 +29,10 @@ const me = (role: MemberRole): Me => ({
   ],
 });
 
-const link = (id: string, name: string) => ({
+const link = (id: string, name: string, role = 'SERVING') => ({
   serviceEnvironmentId: `se-${id}`,
   environment: { id, name, kind: 'aws' },
+  role,
 });
 
 const service = (environments: unknown[]) =>
@@ -47,23 +49,57 @@ const variable = (extra = {}) => ({
   ...extra,
 });
 
-function serve({ role = 'ADMIN' as MemberRole, items = [variable()], simulated = false } = {}) {
-  const puts: { key: string; body: unknown }[] = [];
+type Put = { environmentId: string; key: string; body: unknown };
+
+function serve({
+  role = 'ADMIN' as MemberRole,
+  items = [variable()],
+  standbyItems = [] as unknown[],
+  simulated = false,
+  failKey = '',
+} = {}) {
+  const puts: Put[] = [];
   const deletes: string[] = [];
   server.use(
     http.get(`${API}/me`, () => ok(me(role))),
-    http.get(BASE, () => ok({ items, simulated })),
-    http.put(`${BASE}/:key`, async ({ params, request }) => {
-      puts.push({ key: String(params.key), body: await request.json() });
-      return ok({ ...variable(), simulated }, 201);
-    }),
-    http.delete(`${BASE}/:key`, ({ params }) => {
+    http.get(`${API}/orgs/o1/environments`, () =>
+      ok({
+        items: [
+          { id: 'e1', name: 'aws-tokyo' },
+          { id: 'e2', name: 'gcp-seoul' },
+        ],
+      }),
+    ),
+    http.get(base('e1'), () => ok({ items, simulated })),
+    http.get(base('e2'), () => ok({ items: standbyItems, simulated })),
+    http.put(
+      `${API}/orgs/o1/services/s1/environments/:env/variables/:key`,
+      async ({ params, request }) => {
+        if (params.key === failKey)
+          return HttpResponse.json(
+            {
+              success: false,
+              error: { code: 'SECRET_STORE_UNAVAILABLE', message: 'x', details: [] },
+            },
+            { status: 502 },
+          );
+        puts.push({
+          environmentId: String(params.env),
+          key: String(params.key),
+          body: await request.json(),
+        });
+        return ok({ ...variable(), simulated }, 201);
+      },
+    ),
+    http.delete(`${base('e1')}/:key`, ({ params }) => {
       deletes.push(String(params.key));
       return new HttpResponse(null, { status: 204 });
     }),
   );
   return { puts, deletes };
 }
+
+const both = [link('e1', 'aws-tokyo'), link('e2', 'gcp-seoul', 'STANDBY')];
 
 function renderPanel(onDeploy = vi.fn(), environments: unknown[] = [link('e1', 'aws-tokyo')]) {
   return renderRoute(
@@ -91,63 +127,117 @@ describe('variableKeyProblem', () => {
 });
 
 describe('ServiceVariables', () => {
-  it('환경이 없으면 먼저 배포하라고 말한다', async () => {
-    serve();
-    renderPanel(vi.fn(), []);
-
-    expect(await screen.findByText('Deploy first')).toBeInTheDocument();
+  beforeAll(() => {
+    // Radix 메뉴가 쓰는데 jsdom 에 없다
+    Element.prototype.hasPointerCapture = () => false;
+    Element.prototype.scrollIntoView = () => {};
   });
 
-  it('키 · 저장 위치 · 버전만 보이고 다시 배포가 필요하다고 알린다', async () => {
+  it('환경이 없으면 먼저 배포하게 한다', async () => {
     const onDeploy = vi.fn();
     serve();
-    renderPanel(onDeploy);
+    renderPanel(onDeploy, []);
 
-    expect(await screen.findByText('DATABASE_URL')).toBeInTheDocument();
-    expect(screen.getByText('GCP Secret Manager')).toBeInTheDocument();
-    expect(screen.getByText('v3')).toBeInTheDocument();
-    expect(screen.getByText('Redeploy to apply')).toBeInTheDocument();
-
-    await clickWhenAllowed('Redeploy now');
-    expect(onDeploy).toHaveBeenCalledWith('e1');
+    expect(await screen.findByText('Deploy first')).toBeInTheDocument();
+    await clickWhenAllowed('Deploy');
+    expect(onDeploy).toHaveBeenCalled();
   });
 
-  it('새 키를 넣으면 PUT 으로 보내고 닫으면 값이 남지 않는다', async () => {
-    const { puts } = serve({ items: [] });
+  it('키 × 환경 표에 버전과 적용 상태가 보이고 값은 없다', async () => {
+    serve();
     renderPanel();
 
-    await clickWhenAllowed('Add variable');
+    expect(await screen.findByText('DATABASE_URL')).toBeInTheDocument();
+    expect(screen.getByRole('columnheader', { name: 'aws-tokyo' })).toBeInTheDocument();
+    expect(screen.getByText('v3')).toBeInTheDocument();
+    expect(screen.getByText('Redeploy to apply')).toBeInTheDocument();
+  });
+
+  it('서비스 중 환경에 있는 키가 예비에 없으면 이전이 막힌다고 알리고 바로 넣게 한다', async () => {
+    const { puts } = serve();
+    renderPanel(vi.fn(), both);
+
+    expect(await screen.findByRole('status')).toHaveTextContent(
+      'gcp-seoul is missing DATABASE_URL',
+    );
+    expect(screen.getByText('Missing')).toBeInTheDocument();
+
+    await clickWhenAllowed('Add DATABASE_URL to gcp-seoul');
     const dialog = await screen.findByRole('dialog');
-    await userEvent.type(within(dialog).getByLabelText('Key'), 'API_KEY');
-    await userEvent.type(within(dialog).getByLabelText('New value'), 'top-secret');
+    await userEvent.type(within(dialog).getByLabelText('New value'), 'next');
     await userEvent.click(within(dialog).getByRole('button', { name: 'Save' }));
 
-    await waitFor(() => expect(puts).toEqual([{ key: 'API_KEY', body: { value: 'top-secret' } }]));
-    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    await expect.poll(() => puts.map((put) => put.environmentId)).toEqual(['e2']);
+  });
 
-    await userEvent.click(screen.getByRole('button', { name: 'Add variable' }));
-    expect(await screen.findByLabelText('New value')).toHaveValue('');
+  it('한 줄 입력으로 고른 환경 모두에 넣고 이어서 넣을 수 있다', async () => {
+    const { puts } = serve({ items: [] });
+    renderPanel(vi.fn(), both);
+
+    await clickWhenAllowed('New variable');
+    await userEvent.type(screen.getByLabelText('Key'), 'API_KEY');
+    await userEvent.type(screen.getByLabelText('Value'), 'top-secret');
+    await userEvent.click(screen.getByRole('button', { name: 'Add' }));
+
+    await waitFor(() => expect(puts.map((put) => put.environmentId).sort()).toEqual(['e1', 'e2']));
+    await waitFor(() => expect(screen.getByLabelText('Value')).toHaveValue(''));
   });
 
   it('예약 이름은 보내지 않고 이유를 보인다', async () => {
     const { puts } = serve({ items: [] });
     renderPanel();
 
-    await clickWhenAllowed('Add variable');
-    const dialog = await screen.findByRole('dialog');
-    await userEvent.type(within(dialog).getByLabelText('Key'), 'ECHO_TOKEN');
-    await userEvent.type(within(dialog).getByLabelText('New value'), 'x');
-    await userEvent.click(within(dialog).getByRole('button', { name: 'Save' }));
+    await clickWhenAllowed('New variable');
+    await userEvent.type(screen.getByLabelText('Key'), 'ECHO_TOKEN');
+    await userEvent.type(screen.getByLabelText('Value'), 'x');
+    await userEvent.click(screen.getByRole('button', { name: 'Add' }));
 
-    expect(within(dialog).getByText(/are reserved/)).toBeInTheDocument();
+    expect(screen.getByText(/are reserved/)).toBeInTheDocument();
     expect(puts).toEqual([]);
+  });
+
+  it('.env 를 붙여 넣으면 키를 미리 보이고 고른 환경에 저장한다', async () => {
+    const { puts } = serve();
+    renderPanel(vi.fn(), both);
+
+    await clickWhenAllowed('Paste .env');
+    const dialog = await screen.findByRole('dialog');
+    await userEvent.click(within(dialog).getByLabelText('.env contents'));
+    await userEvent.paste('A_KEY=1\nB_KEY=2\nPORT=80');
+
+    expect(within(dialog).getByText('A_KEY')).toBeInTheDocument();
+    expect(within(dialog).getByText('Line 3: PORT is reserved.')).toBeInTheDocument();
+    await userEvent.click(within(dialog).getByLabelText('gcp-seoul'));
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Save 2 variables' }));
+
+    await waitFor(() => expect(puts).toHaveLength(2));
+    expect(puts.every((put) => put.environmentId === 'e1')).toBe(true);
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+  });
+
+  it('일부만 실패하면 실패한 키만 다시 보낸다', async () => {
+    const { puts } = serve({ failKey: 'B_KEY' });
+    renderPanel();
+
+    await clickWhenAllowed('Paste .env');
+    const dialog = await screen.findByRole('dialog');
+    await userEvent.click(within(dialog).getByLabelText('.env contents'));
+    await userEvent.paste('A_KEY=1\nB_KEY=2');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Save 2 variables' }));
+
+    expect(await within(dialog).findByRole('alert')).toHaveTextContent('B_KEY');
+    expect(puts.map((put) => put.key)).toEqual(['A_KEY']);
+    expect(within(dialog).getByRole('button', { name: 'Retry failed' })).toBeInTheDocument();
   });
 
   it('값 바꾸기는 키를 고정하고 값만 받는다', async () => {
     const { puts } = serve();
     renderPanel();
 
-    await clickWhenAllowed('Replace value');
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Actions for DATABASE_URL on aws-tokyo' }),
+    );
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Replace value' }));
     const dialog = await screen.findByRole('dialog');
     expect(within(dialog).queryByLabelText('Key')).not.toBeInTheDocument();
     await userEvent.type(within(dialog).getByLabelText('New value'), 'next');
@@ -160,7 +250,10 @@ describe('ServiceVariables', () => {
     const { deletes } = serve();
     renderPanel();
 
-    await clickWhenAllowed('Delete DATABASE_URL');
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Actions for DATABASE_URL on aws-tokyo' }),
+    );
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Delete' }));
     const dialog = await screen.findByRole('dialog');
     await userEvent.type(within(dialog).getByRole('textbox'), 'DATABASE_URL');
     await userEvent.click(within(dialog).getByRole('button', { name: /Delete/ }));
@@ -172,7 +265,7 @@ describe('ServiceVariables', () => {
     serve({ role: 'VIEWER' });
     const view = renderPanel();
 
-    expect(await screen.findByRole('button', { name: 'Add variable' })).toHaveAttribute(
+    expect(await screen.findByRole('button', { name: 'New variable' })).toHaveAttribute(
       'aria-disabled',
       'true',
     );
@@ -180,10 +273,28 @@ describe('ServiceVariables', () => {
 
     serve({ role: 'DEVELOPER' });
     renderPanel();
-    expect(await screen.findByRole('button', { name: 'Delete DATABASE_URL' })).toHaveAttribute(
+    await userEvent.click(
+      await screen.findByRole('button', { name: 'Actions for DATABASE_URL on aws-tokyo' }),
+    );
+    expect(await screen.findByRole('menuitem', { name: 'Delete' })).toHaveAttribute(
       'aria-disabled',
       'true',
     );
+  });
+
+  it('배포한 적 없는 환경은 배포로 안내한다', async () => {
+    const onDeploy = vi.fn();
+    serve();
+    renderPanel(onDeploy);
+
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Deploy to gcp-seoul' })).not.toHaveAttribute(
+        'aria-disabled',
+        'true',
+      ),
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Deploy to gcp-seoul' }));
+    expect(onDeploy).toHaveBeenCalledWith('e2');
   });
 
   it('가짜 보관함이면 simulated 를 단다', async () => {

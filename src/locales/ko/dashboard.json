@@ -150,5 +150,6 @@
   "Requests per second": "초당 요청 수",
   "Requests per second by environment, last 15 minutes": "최근 15분 환경별 초당 요청 수",
   "Recent runs on an overseas model, no secrets sent: {{count}}": "해외 모델 사용 · 비밀값은 안 보낸 최근 실행: {{count}}건",
-  "Allowed without a region if no forbidden data is sent: {{providers}}": "금지 데이터를 보내지 않으면 리전 없이 허용: {{providers}}"
+  "Allowed without a region if no forbidden data is sent: {{providers}}": "금지 데이터를 보내지 않으면 리전 없이 허용: {{providers}}",
+  "Open services": "서비스 열기"
 }

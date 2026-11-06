@@ -107,7 +107,7 @@ function serve(role: MemberRole, onRollback?: (id: string) => void) {
 function renderPage() {
   return renderRoute(<ServiceDetailPage />, {
     path: '/o/:slug/services/:serviceId',
-    url: '/o/echo-demo/services/s1',
+    url: '/o/echo-demo/services/s1?tab=deployments',
   });
 }
 
@@ -147,16 +147,41 @@ describe('ServiceDetailPage 배포 이력', () => {
   });
 });
 
-describe('ServiceDetailPage 길 찾기', () => {
-  it('상단에 환경 변수 바로가기가 있고 그 칸으로 간다', async () => {
+describe('ServiceDetailPage 탭', () => {
+  it('탭을 고르면 주소에 남고 변수 탭으로 갈 수 있다', async () => {
     serve('VIEWER');
+    server.use(
+      http.get(`${API}/orgs/o1/environments`, () =>
+        ok({ items: [], total: 0, page: 0, size: 100 }),
+      ),
+    );
     renderPage();
 
-    expect(await screen.findByRole('link', { name: 'Environment variables' })).toHaveAttribute(
-      'href',
-      '#variables',
+    await userEvent.click(await screen.findByRole('tab', { name: 'Variables' }));
+
+    expect(await screen.findByText('Deploy first')).toBeInTheDocument();
+  });
+
+  it('최근 배포가 실패하면 원인과 변수 확인 · 다시 배포를 맨 위에 보인다', async () => {
+    serve('DEVELOPER');
+    server.use(
+      http.get(`${API}/orgs/o1/services/s1/deploy-requests`, () =>
+        ok({
+          items: [request('r9', 'c', { status: 'FAILED', errorCode: 'CONTAINER_START_FAILED' })],
+          total: 1,
+          page: 0,
+          size: 20,
+        }),
+      ),
     );
-    expect(document.getElementById('variables')).toHaveTextContent('Environment variables');
+    renderPage();
+
+    const latest = await screen.findByRole('region', { name: 'Latest deploy' });
+    expect(within(latest).getByRole('alert')).toHaveTextContent('common cause');
+    expect(
+      within(latest).getByRole('link', { name: 'Check environment variables' }),
+    ).toHaveAttribute('href', expect.stringContaining('tab=variables'));
+    expect(within(latest).getByRole('button', { name: 'Deploy again' })).toBeInTheDocument();
   });
 });
 

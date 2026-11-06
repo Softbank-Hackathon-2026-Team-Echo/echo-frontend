@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { ErrorState } from '@/components/ErrorState';
 import { SimulatedBadge } from '@/components/SimulatedBadge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { isTerminalStatus, useDeployLogs } from '@/lib/api/services';
@@ -40,11 +41,16 @@ function LogLines({
 }) {
   const live = !isTerminalStatus(request.status);
   const logs = useDeployLogs(orgId, request.id, source.value, live);
+  const [query, setQuery] = useState('');
 
   if (logs.isError) return <ErrorState error={logs.error} onRetry={() => logs.refetch()} />;
   if (logs.isPending) return <Skeleton className="m-4 h-24" />;
 
   const lines = logs.data.pages.flatMap((page) => page.items);
+  const needle = query.trim().toLowerCase();
+  const visible = needle
+    ? lines.filter((line) => line.message.toLowerCase().includes(needle))
+    : lines;
   const simulated = logs.data.pages.some((page) => page.simulated);
   return (
     <div className="flex flex-col gap-2 p-4">
@@ -59,11 +65,21 @@ function LogLines({
           {t('This build was reused from an earlier deploy. The lines below are from that build.')}
         </p>
       )}
+      {lines.length > 0 && (
+        <Input
+          aria-label={t('Search loaded logs')}
+          placeholder={t('Search loaded logs')}
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+        />
+      )}
       {lines.length === 0 ? (
         <p className="text-small text-fg-muted">{t(source.empty)}</p>
+      ) : visible.length === 0 ? (
+        <p className="text-small text-fg-muted">{t('No lines match.')}</p>
       ) : (
         <ol className="flex max-h-96 flex-col gap-1 overflow-y-auto font-mono text-mono">
-          {lines.map((line, index) => (
+          {visible.map((line, index) => (
             // biome-ignore lint/suspicious/noArrayIndexKey: 로그 줄에는 id 가 없고 시간 순으로만 쌓인다
             <li key={index} className="flex gap-4">
               <span className="shrink-0 text-fg-muted">

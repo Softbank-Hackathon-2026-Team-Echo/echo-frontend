@@ -35,7 +35,7 @@ export function targetState(service: ServiceDetail, environment: EnvironmentSumm
   return link.versionStatus === 'OUT_OF_SYNC' ? 'out-of-sync' : 'ready';
 }
 
-function targetStateLabel(state: TargetState) {
+export function targetStateLabel(state: TargetState) {
   if (state === 'ready') return t('Ready');
   if (state === 'not-deployed') return t('Not deployed');
   if (state === 'out-of-sync') return t('Out of sync');
@@ -52,6 +52,8 @@ type PlanMigrationDialogProps = {
   orgId: string;
   orgSlug: string;
   serviceIds: string[];
+  /** 서비스 화면에서 열면 서비스를 고르지 않는다 */
+  fixedServiceId?: string;
 };
 
 /** M01 이전 시작: 재난 없이 서비스와 도착 환경을 고른다. 다음 화면은 사전 점검 또는 계획이다 */
@@ -60,11 +62,12 @@ export function PlanMigrationDialog({
   orgId,
   orgSlug,
   serviceIds,
+  fixedServiceId,
 }: PlanMigrationDialogProps) {
   const navigate = useNavigate();
   const details = useServiceDetails(orgId, serviceIds);
   const environments = useEnvironments(orgId);
-  const [serviceId, setServiceId] = useState('');
+  const [serviceId, setServiceId] = useState(fixedServiceId ?? '');
   const [targetId, setTargetId] = useState('');
   const [deploying, setDeploying] = useState(false);
 
@@ -102,29 +105,31 @@ export function PlanMigrationDialog({
         </DialogHeader>
 
         <div className="flex flex-col gap-4">
-          <FormField id="migration-service" label={t('Service')}>
-            <Select
-              value={serviceId}
-              onValueChange={(value) => {
-                setServiceId(value);
-                setTargetId('');
-              }}
-            >
-              <SelectTrigger id="migration-service" className="w-full">
-                <SelectValue placeholder={t('Choose a service')} />
-              </SelectTrigger>
-              <SelectContent>
-                {details.data.map((item) => (
-                  <SelectItem key={item.id} value={item.id} disabled={!sourceLink(item)}>
-                    <span>{item.name}</span>
-                    <span className="text-caption text-fg-muted">
-                      {sourceLink(item)?.environment.name ?? t('Not serving traffic')}
-                    </span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </FormField>
+          {!fixedServiceId && (
+            <FormField id="migration-service" label={t('Service')}>
+              <Select
+                value={serviceId}
+                onValueChange={(value) => {
+                  setServiceId(value);
+                  setTargetId('');
+                }}
+              >
+                <SelectTrigger id="migration-service" className="w-full">
+                  <SelectValue placeholder={t('Choose a service')} />
+                </SelectTrigger>
+                <SelectContent>
+                  {details.data.map((item) => (
+                    <SelectItem key={item.id} value={item.id} disabled={!sourceLink(item)}>
+                      <span>{item.name}</span>
+                      <span className="text-caption text-fg-muted">
+                        {sourceLink(item)?.environment.name ?? t('Not serving traffic')}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </FormField>
+          )}
 
           <FormField id="migration-target" label={t('Target environment')}>
             <Select value={targetId} onValueChange={setTargetId} disabled={!service}>

@@ -3,9 +3,10 @@ import userEvent from '@testing-library/user-event';
 import { HttpResponse, http } from 'msw';
 import { describe, expect, it } from 'vitest';
 import type { DeployRequestDetail, DeployRequestSummary, Me } from '@/lib/api/types';
+import { stageDuration, stageStates } from '@/lib/deploy-stages';
 import { server } from '@/test/msw-server';
 import { renderRoute } from '@/test/render';
-import DeployProgressPage, { stageDuration, stageStates, standbyStep } from './DeployProgressPage';
+import DeployProgressPage, { standbyStep } from './DeployProgressPage';
 
 const times = {
   queuedAt: '2026-11-02T00:00:00Z',
@@ -254,7 +255,7 @@ describe('DeployProgressPage 화면', () => {
     expect(screen.queryByText('The previous version was kept running.')).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Check environment variables' })).toHaveAttribute(
       'href',
-      '/o/echo-demo/services/s1#variables',
+      '/o/echo-demo/services/s1?tab=variables',
     );
   });
 
@@ -268,6 +269,15 @@ describe('DeployProgressPage 화면', () => {
     expect(
       screen.queryByRole('link', { name: 'Check environment variables' }),
     ).not.toBeInTheDocument();
+  });
+
+  it('불러온 로그를 글자로 거른다', async () => {
+    renderDeploy(request({}));
+
+    expect(await screen.findByText('build step')).toBeInTheDocument();
+    await userEvent.type(screen.getByLabelText('Search loaded logs'), 'nothing here');
+
+    expect(await screen.findByText('No lines match.')).toBeInTheDocument();
   });
 
   it('되돌리기 요청은 되돌린 대상 요청으로 가는 링크가 있다', async () => {
