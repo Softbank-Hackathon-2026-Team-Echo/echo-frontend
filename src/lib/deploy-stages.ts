@@ -1,10 +1,11 @@
+// 배포 요청 단계(큐 · 빌드 · 배포 · 헬스 체크). 배포 진행 화면의 가로 스테퍼와 단계 목록이 같이 쓴다
 import type { DeployRequestDetail } from '@/lib/api/types';
 import { elapsed } from '@/lib/format';
 import { k } from '@/lib/i18n';
 
 export type StageState = 'done' | 'current' | 'failed' | 'pending' | 'skipped';
 
-export const DEPLOY_STAGES = [
+export const STAGES = [
   { status: 'QUEUED', label: k('Queued'), at: 'queuedAt' },
   { status: 'BUILDING', label: k('Building'), at: 'buildingAt' },
   { status: 'DEPLOYING', label: k('Deploying'), at: 'deployingAt' },
@@ -15,9 +16,9 @@ export const DEPLOY_STAGES = [
 export function stageStates(
   request: Pick<DeployRequestDetail, 'status' | 'stageTimes'>,
 ): StageState[] {
-  const started = DEPLOY_STAGES.map((stage) => Boolean(request.stageTimes[stage.at]));
+  const started = STAGES.map((stage) => Boolean(request.stageTimes[stage.at]));
   const lastStarted = started.lastIndexOf(true);
-  return DEPLOY_STAGES.map((stage, index) => {
+  return STAGES.map((stage, index) => {
     if (request.status === 'SUCCEEDED') return 'done';
     if (!started[index]) return 'pending';
     if (index < lastStarted) return 'done';
@@ -35,9 +36,9 @@ export function stageDuration(
   index: number,
   now: number,
 ): string | null {
-  const stage = DEPLOY_STAGES[index];
+  const stage = STAGES[index];
   const startedAt = stage && times[stage.at];
   if (!startedAt) return null;
-  const later = [...DEPLOY_STAGES.slice(index + 1).map((next) => times[next.at]), times.finishedAt];
+  const later = [...STAGES.slice(index + 1).map((next) => times[next.at]), times.finishedAt];
   return elapsed(startedAt, later.find(Boolean) ?? null, now);
 }

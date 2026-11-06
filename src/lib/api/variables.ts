@@ -1,9 +1,15 @@
 // 앱 환경 변수 (API 서버 10, echo-was docs/api/variables.md). 쓰기 전용이라 값은 어떤 응답에도 없다
 import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, unwrap } from './client';
+import { environmentsQuery } from './environments';
 import { describeApiError } from './errors';
 import { queryKeys } from './query-keys';
-import type { ServiceDetail, ServiceVariable } from './types';
+import type {
+  EnvironmentSummary,
+  ServiceDetail,
+  ServiceEnvironment,
+  ServiceVariable,
+} from './types';
 
 export const MAX_VARIABLES = 40;
 
@@ -40,9 +46,37 @@ export function useServiceVariables(target: Target) {
 
 const LIVE_POLL_MS = 5_000;
 
-/** 서비스가 연결된 환경마다 변수 목록. 배포 중이면 적용 상태가 바뀌니 다시 부른다 */
+type MatrixLink = Pick<
+  ServiceEnvironment,
+  | 'serviceEnvironmentId'
+  | 'environment'
+  | 'role'
+  | 'currentDeployment'
+  | 'activeRequestId'
+  | 'queuedRequestId'
+>;
+
+/** 아직 배포하지 않은 환경. 서버가 첫 배포 전 변수를 받으면(echo-was #96) 표의 한 칸이 된다 */
+const unlinked = (environment: EnvironmentSummary): MatrixLink => ({
+  serviceEnvironmentId: `unlinked-${environment.id}`,
+  environment: { id: environment.id, name: environment.name, kind: environment.kind },
+  role: 'NONE',
+  currentDeployment: null,
+  activeRequestId: null,
+  queuedRequestId: null,
+});
+
+/**
+ * 환경마다 변수 목록. 연결된 환경은 항상, 연결 전 환경은 서버가 답할 때만 칸이 된다(지금 운영은 404).
+ * 배포 중이면 적용 상태가 바뀌니 다시 부른다
+ */
 export function useVariableMatrix(orgId: string, service: ServiceDetail) {
-  const links = service.environments;
+  const environments = useQuery(environmentsQuery(orgId));
+  const linked = new Set(service.environments.map((link) => link.environment.id));
+  const links: MatrixLink[] = [
+    ...service.environments,
+    ...(environments.data?.items ?? []).filter((item) => !linked.has(item.id)).map(unlinked),
+  ];
   const deploying = links.some((link) => link.activeRequestId || link.queuedRequestId);
   const results = useQueries({
     queries: links.map((link) => ({
@@ -50,14 +84,19 @@ export function useVariableMatrix(orgId: string, service: ServiceDetail) {
       refetchInterval: deploying ? LIVE_POLL_MS : (false as const),
     })),
   });
+  const usable = links.flatMap((link, index) => {
+    const result = results[index];
+    return linked.has(link.environment.id) || result?.isSuccess ? [{ link, result }] : [];
+  });
+  const connected = usable.filter(({ link }) => linked.has(link.environment.id));
   return {
-    columns: links.map((link, index) => ({
+    columns: usable.map(({ link, result }) => ({
       link,
-      items: results[index]?.data?.items ?? ([] as ServiceVariable[]),
+      items: result?.data?.items ?? ([] as ServiceVariable[]),
     })),
-    simulated: results.some((result) => result.data?.simulated),
-    isPending: results.some((result) => result.isPending),
-    error: results.find((result) => result.error)?.error ?? null,
+    simulated: usable.some(({ result }) => result?.data?.simulated),
+    isPending: connected.some(({ result }) => result?.isPending),
+    error: connected.find(({ result }) => result?.error)?.result?.error ?? null,
     refetch: () => Promise.all(results.map((result) => result.refetch())),
   };
 }
@@ -96,9 +135,12 @@ export function usePendingVariableCounts(orgId: string | undefined, services: Se
 function useInvalidateVariables({ orgId, serviceId, environmentId }: Target) {
   const queryClient = useQueryClient();
   return () =>
-    queryClient.invalidateQueries({
-      queryKey: queryKeys.serviceVariables(orgId, serviceId, environmentId),
-    });
+    Promise.all([
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.serviceVariables(orgId, serviceId, environmentId),
+      }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.service(orgId, serviceId) }),
+    ]);
 }
 
 export function useSaveVariable(target: Target) {
@@ -154,13 +196,15 @@ export function useSaveVariables(orgId: string, serviceId: string) {
       return failures;
     },
     onSettled: (_failures, _error, writes) =>
-      Promise.all(
-        [...new Set(writes.map((write) => write.environmentId))].map((environmentId) =>
+      Promise.all([
+        ...[...new Set(writes.map((write) => write.environmentId))].map((environmentId) =>
           queryClient.invalidateQueries({
             queryKey: queryKeys.serviceVariables(orgId, serviceId, environmentId),
           }),
         ),
-      ),
+        // 첫 배포 전에 넣으면 서버가 연결을 만든다(echo-was #96). 서비스의 환경 목록도 다시 읽는다
+        queryClient.invalidateQueries({ queryKey: queryKeys.service(orgId, serviceId) }),
+      ]),
     meta: { skipGlobalErrorToast: true },
   });
 }

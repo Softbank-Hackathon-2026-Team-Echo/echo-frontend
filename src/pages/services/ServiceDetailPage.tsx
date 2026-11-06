@@ -19,7 +19,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useRole } from '@/hooks/useRole';
 import { useCurrentOrg } from '@/lib/api/me';
-import { useDeleteService, useService } from '@/lib/api/services';
+import { useDeleteService, useDeployRequests, useService } from '@/lib/api/services';
 import { k, t } from '@/lib/i18n';
 import { hasRole } from '@/lib/roles';
 import { teardownErrorLabel } from '@/lib/status';
@@ -27,6 +27,7 @@ import { ApplyChangesBar } from './ApplyChangesBar';
 import { EditServiceDialog } from './EditServiceDialog';
 import { ServiceActivity } from './ServiceActivity';
 import { ServiceDeployments } from './ServiceDeployments';
+import { ServiceMetrics } from './ServiceMetrics';
 import { ServiceMigration } from './ServiceMigration';
 import { ServiceSettings } from './ServiceSettings';
 import { ServiceVariables } from './ServiceVariables';
@@ -40,6 +41,7 @@ const TABS = [
   { value: 'overview', label: k('Overview') },
   { value: 'deployments', label: k('Deployments') },
   { value: 'variables', label: k('Variables') },
+  { value: 'metrics', label: k('Metrics') },
   { value: 'migration', label: k('Migration') },
   { value: 'settings', label: k('Settings') },
 ] as const;
@@ -63,6 +65,7 @@ export default function ServiceDetailPage() {
     refetch,
   } = useService(organization?.id, serviceId);
   const deleteService = useDeleteService(organization?.id ?? '');
+  const history = useDeployRequests(organization?.id, serviceId);
   const [deployOpen, setDeployOpen] = useState(false);
   const [deployEnvironmentId, setDeployEnvironmentId] = useState<string>();
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -242,11 +245,15 @@ export default function ServiceDetailPage() {
           onDeploy={openDeploy}
         />
       )}
+      {tab === 'metrics' && (
+        <ServiceMetrics orgId={organization.id} service={service} history={history.data?.items} />
+      )}
       {tab === 'migration' && (
         <ServiceMigration orgId={organization.id} orgSlug={organization.slug} service={service} />
       )}
       {tab === 'settings' && (
         <ServiceSettings
+          orgId={organization.id}
           service={service}
           disabledReason={deleteReason}
           onEdit={() => setEditOpen(true)}

@@ -15,6 +15,8 @@ export const queryKeys = {
     ['org', orgId, 'services', serviceId, 'deploy-requests'] as const,
   standbySyncs: (orgId: string, serviceId: string, sourceStatus: string) =>
     ['org', orgId, 'services', serviceId, 'standby-syncs', sourceStatus] as const,
+  serviceMetrics: (orgId: string, serviceId: string, range: string) =>
+    ['org', orgId, 'services', serviceId, 'metrics', range] as const,
   deployRequest: (orgId: string, deployRequestId: string) =>
     ['org', orgId, 'deploy-requests', deployRequestId] as const,
   deployLogs: (orgId: string, deployRequestId: string, source: string) =>
@@ -34,8 +36,6 @@ export const queryKeys = {
   migrationPlan: (orgId: string, planId: string) => ['org', orgId, 'migrations', planId] as const,
   migrationLogs: (orgId: string, planId: string) =>
     ['org', orgId, 'migrations', planId, 'logs'] as const,
-  serviceMetrics: (orgId: string, serviceId: string) =>
-    ['org', orgId, 'service-metrics', serviceId] as const,
   cloudCosts: (orgId: string) => ['org', orgId, 'costs'] as const,
   aiResidency: (orgId: string) => ['org', orgId, 'ai-residency'] as const,
   security: (orgId: string) => ['org', orgId, 'security'] as const,

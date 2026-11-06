@@ -132,6 +132,10 @@ describe('ServiceDetailPage 배포 이력', () => {
     renderPage();
 
     await userEvent.click(await screen.findByRole('button', { name: /roll back/i }));
+    // 되돌리는 범위(이미지 · 변수 버전)를 보이는 확인 창을 거친다
+    const dialog = await screen.findByRole('dialog');
+    expect(called).toEqual([]);
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Roll back' }));
 
     await expect.poll(() => called).toEqual(['r1']);
   });
@@ -160,28 +164,6 @@ describe('ServiceDetailPage 탭', () => {
     await userEvent.click(await screen.findByRole('tab', { name: 'Variables' }));
 
     expect(await screen.findByText('Deploy first')).toBeInTheDocument();
-  });
-
-  it('최근 배포가 실패하면 원인과 변수 확인 · 다시 배포를 맨 위에 보인다', async () => {
-    serve('DEVELOPER');
-    server.use(
-      http.get(`${API}/orgs/o1/services/s1/deploy-requests`, () =>
-        ok({
-          items: [request('r9', 'c', { status: 'FAILED', errorCode: 'CONTAINER_START_FAILED' })],
-          total: 1,
-          page: 0,
-          size: 20,
-        }),
-      ),
-    );
-    renderPage();
-
-    const latest = await screen.findByRole('region', { name: 'Latest deploy' });
-    expect(within(latest).getByRole('alert')).toHaveTextContent('common cause');
-    expect(
-      within(latest).getByRole('link', { name: 'Check environment variables' }),
-    ).toHaveAttribute('href', expect.stringContaining('tab=variables'));
-    expect(within(latest).getByRole('button', { name: 'Deploy again' })).toBeInTheDocument();
   });
 });
 

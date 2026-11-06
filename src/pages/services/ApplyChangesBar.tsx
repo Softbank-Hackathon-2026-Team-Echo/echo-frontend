@@ -84,6 +84,7 @@ export function ApplyChangesBar({
     }
   }
 
+  const keys = [...new Set(plans.flatMap((plan) => plan.pending.map((item) => item.key)))];
   const label = count === 1 ? t('Apply 1 change') : t('Apply {{n}} changes', { n: count });
   const deployLabel = deploying ? t('Deploying…') : t('Deploy changes');
 
@@ -93,7 +94,10 @@ export function ApplyChangesBar({
         role="status"
         className="sticky top-2 z-10 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-line bg-warning-bg px-3 py-2 text-warning-fg shadow-sm"
       >
-        <span className="text-body-medium">{label}</span>
+        <span className="flex min-w-0 flex-wrap items-center gap-x-3">
+          <span className="text-body-medium">{label}</span>
+          <span className="min-w-0 truncate font-mono text-mono">{keys.join(' · ')}</span>
+        </span>
         <span className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => setDetails(true)}>
             {t('Details')}

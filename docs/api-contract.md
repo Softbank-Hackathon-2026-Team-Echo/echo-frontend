@@ -242,7 +242,7 @@ data: {"seq": 1042, "ts": "2026-11-07T03:05:40Z", "orgId": "…", "resource": {"
 
 ### 4-9. 서비스 작업 공간 요청 (가칭) 🆕
 
-화면 설계는 [specs/fe-3-service-workspace-ux.md](../specs/fe-3-service-workspace-ux.md) 이다. 아직 서버에 없고, 없는 동안 화면은 지금 API 로 동작한다.
+화면 설계는 [specs/fe-3-service-workspace-ux.md](../specs/fe-3-service-workspace-ux.md) 이다. W1 은 echo-was #96, W3 은 #97 로 진행 중이고(11/7 기준 열림), 화면은 두 값이 없어도 동작하고 생기면 바로 쓴다.
 
 | # | 요청 (가칭) | 없을 때 화면 |
 |---|---|---|

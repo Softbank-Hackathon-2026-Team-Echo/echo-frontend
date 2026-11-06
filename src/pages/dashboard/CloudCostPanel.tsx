@@ -1,4 +1,7 @@
+import { useState } from 'react';
+import { CostBreakdownDialog } from '@/components/CostBreakdownDialog';
 import { Panel } from '@/components/Panel';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { usd, useCloudCosts } from '@/lib/api/costs';
 import { t } from '@/lib/i18n';
@@ -7,12 +10,23 @@ import { t } from '@/lib/i18n';
 export function CloudCostPanel({ orgId, className }: { orgId: string; className?: string }) {
   const costs = useCloudCosts(orgId);
   const data = costs.data;
+  const [breakdownOpen, setBreakdownOpen] = useState(false);
   const unverified = [...(data?.environments ?? []), ...(data?.shared ?? [])].some((item) =>
     item.components.some((component) => !component.priceVerified),
   );
 
   return (
-    <Panel title={t('Cloud cost')} className={className}>
+    <Panel
+      title={t('Cloud cost')}
+      className={className}
+      action={
+        data && (
+          <Button variant="ghost" size="sm" onClick={() => setBreakdownOpen(true)}>
+            {t('Unit prices')}
+          </Button>
+        )
+      }
+    >
       {costs.isPending ? (
         <Skeleton className="h-32" />
       ) : !data ? (
@@ -67,6 +81,7 @@ export function CloudCostPanel({ orgId, className }: { orgId: string; className?
           )}
         </>
       )}
+      <CostBreakdownDialog open={breakdownOpen} onOpenChange={setBreakdownOpen} orgId={orgId} />
     </Panel>
   );
 }

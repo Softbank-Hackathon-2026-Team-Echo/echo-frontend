@@ -151,7 +151,7 @@ export default function EvacuationPage() {
       <div className="flex flex-wrap items-center gap-3">
         <span className="text-small text-fg-secondary">{disasterTitle}</span>
         <SimulatedBadge />
-        {atRisk.length > 1 && (
+        {details.data.length > 1 && (
           <Select
             value={service.id}
             onValueChange={(value) => {
@@ -163,15 +163,46 @@ export default function EvacuationPage() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {atRisk.map((item) => (
-                <SelectItem key={item.id} value={item.id}>
-                  {item.name}
-                </SelectItem>
-              ))}
+              {/* 반경 밖이거나 아직 서비스 중이 아닌 서비스도 보이되 고를 수 없게 이유를 단다 */}
+              {details.data.map((item) => {
+                const isAtRisk = atRisk.includes(item);
+                return (
+                  <SelectItem key={item.id} value={item.id} disabled={!isAtRisk}>
+                    {item.name}
+                    {!isAtRisk && (
+                      <span className="text-caption text-fg-muted">
+                        {servingEnvironmentId(item) === null
+                          ? t('not serving yet')
+                          : t('outside the radius')}
+                      </span>
+                    )}
+                  </SelectItem>
+                );
+              })}
             </SelectContent>
           </Select>
         )}
       </div>
+
+      {/* 한 화면은 서비스 하나씩 보지만, 재난 반경 안 서비스는 모두 함께 옮겨 간다 */}
+      {(atRisk.length > 1 || disaster.meetsThreshold) && (
+        <p role="status" className="rounded-lg bg-subtle px-3 py-2 text-small text-fg-secondary">
+          {disaster.meetsThreshold
+            ? t('All services in the radius move together, one migration plan each: {{names}}.', {
+                names: atRisk.map((item) => item.name).join(', '),
+              })
+            : t(
+                '{{count}} services are at risk: {{names}}. Plan each one with the service picker above.',
+                {
+                  count: atRisk.length,
+                  names: atRisk.map((item) => item.name).join(', '),
+                },
+              )}{' '}
+          <Link className="underline" to={`/o/${organization.slug}/migrations`}>
+            {t('See all migrations')}
+          </Link>
+        </p>
+      )}
 
       {service.activeMigrationPlanId && (
         <p

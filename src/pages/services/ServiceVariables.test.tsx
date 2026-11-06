@@ -57,6 +57,7 @@ function serve({
   standbyItems = [] as unknown[],
   simulated = false,
   failKey = '',
+  connected = ['e1'],
 } = {}) {
   const puts: Put[] = [];
   const deletes: string[] = [];
@@ -70,8 +71,18 @@ function serve({
         ],
       }),
     ),
-    http.get(base('e1'), () => ok({ items, simulated })),
-    http.get(base('e2'), () => ok({ items: standbyItems, simulated })),
+    // 연결 전 환경은 지금 운영처럼 404 다. echo-was #96 이 켜지면 답한다
+    http.get(`${API}/orgs/o1/services/s1/environments/:env/variables`, ({ params }) => {
+      if (!connected.includes(String(params.env)))
+        return HttpResponse.json(
+          {
+            success: false,
+            error: { code: 'SERVICE_ENVIRONMENT_NOT_FOUND', message: 'x', details: [] },
+          },
+          { status: 404 },
+        );
+      return ok({ items: params.env === 'e1' ? items : standbyItems, simulated });
+    }),
     http.put(
       `${API}/orgs/o1/services/s1/environments/:env/variables/:key`,
       async ({ params, request }) => {
@@ -135,7 +146,7 @@ describe('ServiceVariables', () => {
 
   it('환경이 없으면 먼저 배포하게 한다', async () => {
     const onDeploy = vi.fn();
-    serve();
+    serve({ connected: [] });
     renderPanel(onDeploy, []);
 
     expect(await screen.findByText('Deploy first')).toBeInTheDocument();
@@ -154,7 +165,7 @@ describe('ServiceVariables', () => {
   });
 
   it('서비스 중 환경에 있는 키가 예비에 없으면 이전이 막힌다고 알리고 바로 넣게 한다', async () => {
-    const { puts } = serve();
+    const { puts } = serve({ connected: ['e1', 'e2'] });
     renderPanel(vi.fn(), both);
 
     expect(await screen.findByRole('status')).toHaveTextContent(
@@ -171,7 +182,7 @@ describe('ServiceVariables', () => {
   });
 
   it('한 줄 입력으로 고른 환경 모두에 넣고 이어서 넣을 수 있다', async () => {
-    const { puts } = serve({ items: [] });
+    const { puts } = serve({ items: [], connected: ['e1', 'e2'] });
     renderPanel(vi.fn(), both);
 
     await clickWhenAllowed('New variable');
@@ -197,7 +208,7 @@ describe('ServiceVariables', () => {
   });
 
   it('.env 를 붙여 넣으면 키를 미리 보이고 고른 환경에 저장한다', async () => {
-    const { puts } = serve();
+    const { puts } = serve({ connected: ['e1', 'e2'] });
     renderPanel(vi.fn(), both);
 
     await clickWhenAllowed('Paste .env');
@@ -295,6 +306,14 @@ describe('ServiceVariables', () => {
     );
     await userEvent.click(screen.getByRole('button', { name: 'Deploy to gcp-seoul' }));
     expect(onDeploy).toHaveBeenCalledWith('e2');
+  });
+
+  it('서버가 첫 배포 전 변수를 받으면 연결 전 환경도 표의 칸이 된다', async () => {
+    serve({ connected: ['e1', 'e2'] });
+    renderPanel();
+
+    expect(await screen.findByRole('columnheader', { name: 'gcp-seoul' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Deploy to gcp-seoul' })).not.toBeInTheDocument();
   });
 
   it('가짜 보관함이면 simulated 를 단다', async () => {

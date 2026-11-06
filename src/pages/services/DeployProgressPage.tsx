@@ -1,5 +1,7 @@
 import { Check, CircleAlert, Loader2, Minus, X } from 'lucide-react';
-import { Link, useParams } from 'react-router';
+import { useState } from 'react';
+import { Link, useNavigate, useParams } from 'react-router';
+import { DeployDialog } from '@/components/DeployDialog';
 import { ErrorState } from '@/components/ErrorState';
 import { ExternalLink } from '@/components/ExternalLink';
 import { ProviderLabel } from '@/components/ProviderLabel';
@@ -11,27 +13,30 @@ import { useCurrentOrg } from '@/lib/api/me';
 import {
   isTerminalStatus,
   useDeployRequest,
+  useDeployRequests,
+  useRollback,
   useService,
   useStandbySyncs,
 } from '@/lib/api/services';
-import type { DeployRequestDetail, DeployRequestSummary, ServiceDetail } from '@/lib/api/types';
 import {
-  DEPLOY_STAGES as STAGES,
-  type StageState,
-  stageDuration,
-  stageStates,
-} from '@/lib/deploy-stages';
+  type DeployRequestDetail,
+  type DeployRequestSummary,
+  deployFailure,
+  type LogSource,
+  type ServiceDetail,
+} from '@/lib/api/types';
+import { STAGES, type StageState, stageDuration, stageStates } from '@/lib/deploy-stages';
 import { dateTime, elapsed } from '@/lib/format';
 import { k, t } from '@/lib/i18n';
-import {
-  deployErrorLabel,
-  deployStatusView,
-  deployTriggerLabel,
-  shortSha,
-  suggestsVariables,
-} from '@/lib/status';
+import { deployErrorLabel, deployStatusView, deployTriggerLabel, shortSha } from '@/lib/status';
 import { cn } from '@/lib/utils';
+import { DeployDetailsCard } from './DeployDetailsCard';
+import { DeployDiagnosis, type DiagnosisActions } from './DeployDiagnosis';
 import { DeployLogs } from './DeployLogs';
+import { DeploySteps } from './DeploySteps';
+import { RollbackDialog } from './RollbackDialog';
+
+export { stageDuration, stageStates } from '@/lib/deploy-stages';
 
 const STAGE_ICON: Record<StageState, React.ReactNode> = {
   done: <Check aria-hidden className="size-4" />,
@@ -214,17 +219,37 @@ const CANCEL_REASONS: Record<string, string> = {
   BASE_CHANGED: k('Cancelled because another version went live before this rollback started.'),
 };
 
+/**
+ * 이 배포 전에 같은 환경에서 성공한 배포가 있었나. 없으면 첫 배포라 "이전 버전 유지" 문구가 틀린다(도현 11/6).
+ * 이력을 못 불렀으면 null
+ */
+export function hadPreviousVersion(
+  request: Pick<DeployRequestDetail, 'id' | 'serviceEnvironmentId' | 'stageTimes'>,
+  history:
+    | Pick<DeployRequestSummary, 'id' | 'serviceEnvironmentId' | 'status' | 'stageTimes'>[]
+    | undefined,
+): boolean | null {
+  if (!history) return null;
+  const queuedAt = new Date(request.stageTimes.queuedAt).getTime();
+  return history.some(
+    (item) =>
+      item.id !== request.id &&
+      item.serviceEnvironmentId === request.serviceEnvironmentId &&
+      item.status === 'SUCCEEDED' &&
+      new Date(item.stageTimes.queuedAt).getTime() < queuedAt,
+  );
+}
+
 function Outcome({
   request,
   requestLink,
-  variablesLink,
-  hasRunningVersion,
+  hadPrevious,
+  actions,
 }: {
   request: DeployRequestDetail;
   requestLink: (id: string) => string;
-  variablesLink: string;
-  /** 이 환경에 이미 떠 있는 버전이 있는지. 서비스를 아직 못 읽었으면 undefined */
-  hasRunningVersion: boolean | undefined;
+  hadPrevious: boolean | null;
+  actions: DiagnosisActions;
 }) {
   if (request.status === 'SUCCEEDED') {
     return (
@@ -234,32 +259,48 @@ function Outcome({
     );
   }
   if (request.status === 'FAILED') {
+    const failure = deployFailure(request);
+    // 서버가 알려 주면(echo-was #97) 그 값을, 아니면 이력으로 판단한 값을 쓴다
+    const previousRunning = failure?.previousVersionRunning ?? hadPrevious;
+    const container =
+      failure &&
+      [
+        failure.containerReason,
+        failure.exitCode !== null && t('exit code {{code}}', { code: failure.exitCode }),
+        failure.restartCount !== null && t('{{count}} restarts', { count: failure.restartCount }),
+      ].filter(Boolean);
     return (
-      <div role="alert" className="flex flex-col gap-1 rounded-lg bg-danger-bg p-4 text-danger-fg">
-        <p className="flex items-center gap-2 text-title">
-          <CircleAlert aria-hidden className="size-4" />
-          {request.errorCode ? deployErrorLabel(request.errorCode) : t('The deploy failed.')}
-        </p>
-        {request.errorMessage && <p className="text-body">{request.errorMessage}</p>}
-        {request.revertStatus === 'SUCCEEDED' && hasRunningVersion === true && (
-          <p className="text-body">{t('The previous version was kept running.')}</p>
-        )}
-        {request.revertStatus === 'SUCCEEDED' && hasRunningVersion === false && (
-          <p className="text-body">
-            {t('No version is running on {{name}} yet.', { name: request.environment.name })}
+      <div className="flex flex-col gap-3 rounded-lg border border-line bg-surface p-4">
+        <div role="alert" className="flex flex-col gap-1 text-danger-fg">
+          <p className="flex items-center gap-2 text-title">
+            <CircleAlert aria-hidden className="size-4" />
+            {request.errorCode ? deployErrorLabel(request.errorCode) : t('The deploy failed.')}
           </p>
+          {failure?.message && <p className="text-body">{failure.message}</p>}
+          {previousRunning === false ? (
+            <p className="text-body">{t('No version is running in this environment yet.')}</p>
+          ) : request.revertStatus === 'SUCCEEDED' ? (
+            <p className="text-body">{t('The previous version was kept running.')}</p>
+          ) : request.revertStatus === 'FAILED' ? (
+            <p className="text-body">{t('Reverting to the previous version also failed.')}</p>
+          ) : null}
+        </div>
+        {failure && failure.logTail.length > 0 && (
+          <details className="flex flex-col gap-1.5">
+            <summary className="cursor-pointer text-small text-fg-secondary">
+              {t('Last {{count}} log lines from {{container}}', {
+                count: failure.logTail.length,
+                container: failure.container ?? t('the container'),
+              })}
+              {container && container.length > 0 && ` · ${container.join(' · ')}`}
+            </summary>
+            <pre className="mt-1.5 max-h-64 overflow-auto rounded-md bg-subtle px-3 py-2 font-mono text-mono text-fg">
+              {failure.logTail.join('\n')}
+              {failure.logTruncated && `\n${t('… earlier lines cut')}`}
+            </pre>
+          </details>
         )}
-        {request.revertStatus === 'FAILED' && (
-          <p className="text-body">{t('Reverting to the previous version also failed.')}</p>
-        )}
-        {suggestsVariables(request.errorCode) && (
-          <p className="text-body">
-            {t('Missing environment variables are a common cause.')}{' '}
-            <Link to={variablesLink} className="underline">
-              {t('Check environment variables')}
-            </Link>
-          </p>
-        )}
+        <DeployDiagnosis request={request} actions={actions} />
       </div>
     );
   }
@@ -305,7 +346,13 @@ export default function DeployProgressPage() {
     refetch,
   } = useDeployRequest(organization?.id, deployRequestId);
   const syncs = useStandbySyncs(organization?.id, serviceId, request);
+  const history = useDeployRequests(organization?.id, serviceId);
+  const rollback = useRollback(organization?.id ?? '', serviceId ?? '');
+  const navigate = useNavigate();
   const now = useNow(Boolean(request && !isTerminalStatus(request.status)));
+  const [logSource, setLogSource] = useState<LogSource>('DEPLOY_JOB');
+  const [rollbackTarget, setRollbackTarget] = useState<DeployRequestSummary>();
+  const [deployOpen, setDeployOpen] = useState(false);
 
   if (isError) return <ErrorState error={error} onRetry={() => refetch()} />;
   if (isPending) {
@@ -316,6 +363,26 @@ export default function DeployProgressPage() {
       </div>
     );
   }
+
+  const servicePage = `/o/${slug}/services/${serviceId}`;
+  // 같은 환경에서 되돌릴 수 있는 가장 최근 성공 배포 (이력은 최신순)
+  const lastGood = history.data?.items.find(
+    (item) => item.rollbackable && item.serviceEnvironmentId === request.serviceEnvironmentId,
+  );
+  const actions: DiagnosisActions = {
+    run: (fix) => {
+      if (fix === 'OPEN_VARIABLES')
+        navigate(`${servicePage}?tab=variables&env=${request.environment.id}`);
+      else if (fix === 'OPEN_SETTINGS') navigate(`${servicePage}?tab=settings`);
+      else if (fix === 'ROLLBACK') setRollbackTarget(lastGood);
+      else if (fix === 'REDEPLOY') setDeployOpen(true);
+      else {
+        setLogSource('BUILD');
+        document.getElementById('deploy-logs')?.scrollIntoView({ behavior: 'smooth' });
+      }
+    },
+    unavailable: lastGood ? [] : ['ROLLBACK'],
+  };
 
   const refText = request.ref.type === 'BRANCH' ? request.ref.value : shortSha(request.ref.value);
   const serviceName = service.data?.name ?? t('service');
@@ -371,17 +438,52 @@ export default function DeployProgressPage() {
       <Outcome
         request={request}
         requestLink={(id) => `/o/${slug}/services/${serviceId}/deploys/${id}`}
-        variablesLink={`/o/${slug}/services/${serviceId}?tab=variables`}
-        hasRunningVersion={service.data?.environments.some(
-          (link) =>
-            link.serviceEnvironmentId === request.serviceEnvironmentId && link.currentDeployment,
-        )}
+        hadPrevious={hadPreviousVersion(request, history.data?.items)}
+        actions={actions}
       />
 
       <div className="grid grid-cols-[1fr_20rem] items-start gap-4 max-wide:grid-cols-1">
-        {organization && <DeployLogs orgId={organization.id} request={request} />}
-        <UrlCard request={request} />
+        <div className="flex min-w-0 flex-col gap-4">
+          <DeploySteps request={request} now={now} />
+          {organization && (
+            <DeployLogs
+              key={logSource}
+              orgId={organization.id}
+              request={request}
+              defaultSource={logSource}
+            />
+          )}
+        </div>
+        <div className="flex flex-col gap-4">
+          <UrlCard request={request} />
+          <DeployDetailsCard request={request} service={service.data} />
+        </div>
       </div>
+
+      <RollbackDialog
+        target={rollbackTarget}
+        onOpenChange={(open) => !open && setRollbackTarget(undefined)}
+        pending={rollback.isPending}
+        onConfirm={(target) =>
+          rollback.mutate(target.id, {
+            onSuccess: (created) => {
+              setRollbackTarget(undefined);
+              navigate(`${servicePage}/deploys/${created.id}`);
+            },
+          })
+        }
+      />
+      {organization && service.data && (
+        <DeployDialog
+          open={deployOpen}
+          onOpenChange={setDeployOpen}
+          orgId={organization.id}
+          orgSlug={organization.slug}
+          serviceId={service.data.id}
+          serviceName={service.data.name}
+          defaultEnvironmentId={request.environment.id}
+        />
+      )}
     </>
   );
 }

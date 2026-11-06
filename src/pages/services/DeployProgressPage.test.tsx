@@ -3,10 +3,14 @@ import userEvent from '@testing-library/user-event';
 import { HttpResponse, http } from 'msw';
 import { describe, expect, it } from 'vitest';
 import type { DeployRequestDetail, DeployRequestSummary, Me } from '@/lib/api/types';
-import { stageDuration, stageStates } from '@/lib/deploy-stages';
 import { server } from '@/test/msw-server';
 import { renderRoute } from '@/test/render';
-import DeployProgressPage, { standbyStep } from './DeployProgressPage';
+import DeployProgressPage, {
+  hadPreviousVersion,
+  stageDuration,
+  stageStates,
+  standbyStep,
+} from './DeployProgressPage';
 
 const times = {
   queuedAt: '2026-11-02T00:00:00Z',
@@ -208,10 +212,10 @@ describe('DeployProgressPage 화면', () => {
 
   let trigger: string | null = null;
 
-  function renderDeploy(detail: DeployRequestDetail, environments: unknown[] = []) {
+  function renderDeploy(detail: DeployRequestDetail) {
     server.use(
       http.get(`${API}/me`, () => ok(me)),
-      http.get(`${API}/orgs/o1/services/s1`, () => ok({ name: 'demo', environments })),
+      http.get(`${API}/orgs/o1/services/s1`, () => ok({ name: 'demo', environments: [] })),
       http.get(`${API}/orgs/o1/deploy-requests/r3`, () => ok(detail)),
       http.get(`${API}/orgs/o1/services/s1/deploy-requests`, ({ request: req }) => {
         trigger = new URL(req.url).searchParams.get('trigger');
@@ -239,46 +243,6 @@ describe('DeployProgressPage 화면', () => {
       url: '/o/echo-demo/services/s1/deploys/r3',
     });
   }
-
-  it('첫 배포가 실패하면 이전 버전이 돈다고 말하지 않고 환경 변수로 안내한다', async () => {
-    renderDeploy(
-      request({
-        status: 'FAILED',
-        errorCode: 'CONTAINER_START_FAILED',
-        revertStatus: 'SUCCEEDED',
-        isCurrent: false,
-      }),
-      [{ serviceEnvironmentId: 'se1', currentDeployment: null }],
-    );
-
-    expect(await screen.findByText('No version is running on aws-tokyo yet.')).toBeInTheDocument();
-    expect(screen.queryByText('The previous version was kept running.')).not.toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Check environment variables' })).toHaveAttribute(
-      'href',
-      '/o/echo-demo/services/s1?tab=variables',
-    );
-  });
-
-  it('떠 있던 버전이 있으면 그 버전이 계속 돈다고 말한다', async () => {
-    renderDeploy(
-      request({ status: 'FAILED', errorCode: 'BUILD_FAILED', revertStatus: 'SUCCEEDED' }),
-      [{ serviceEnvironmentId: 'se1', currentDeployment: { commitSha: 'a'.repeat(40) } }],
-    );
-
-    expect(await screen.findByText('The previous version was kept running.')).toBeInTheDocument();
-    expect(
-      screen.queryByRole('link', { name: 'Check environment variables' }),
-    ).not.toBeInTheDocument();
-  });
-
-  it('불러온 로그를 글자로 거른다', async () => {
-    renderDeploy(request({}));
-
-    expect(await screen.findByText('build step')).toBeInTheDocument();
-    await userEvent.type(screen.getByLabelText('Search loaded logs'), 'nothing here');
-
-    expect(await screen.findByText('No lines match.')).toBeInTheDocument();
-  });
 
   it('되돌리기 요청은 되돌린 대상 요청으로 가는 링크가 있다', async () => {
     renderDeploy(request({ trigger: 'ROLLBACK', rollbackOfRequestId: 'r1' }));
@@ -327,5 +291,41 @@ describe('DeployProgressPage 화면', () => {
 
     expect(await screen.findByText('build step')).toBeInTheDocument();
     expect(screen.queryByText(buildNotice)).not.toBeInTheDocument();
+  });
+});
+
+describe('hadPreviousVersion', () => {
+  const at = (iso: string) => ({ queuedAt: iso }) as DeployRequestSummary['stageTimes'];
+  const request = { id: 'r2', serviceEnvironmentId: 'se1', stageTimes: at('2026-11-06T10:00:00Z') };
+
+  it('이력을 아직 못 받았으면 모른다(null)', () => {
+    expect(hadPreviousVersion(request, undefined)).toBeNull();
+  });
+
+  it('같은 연결에 먼저 성공한 배포가 없으면 첫 배포다', () => {
+    expect(
+      hadPreviousVersion(request, [
+        { id: 'r2', serviceEnvironmentId: 'se1', status: 'FAILED', stageTimes: request.stageTimes },
+        {
+          id: 'r0',
+          serviceEnvironmentId: 'se2',
+          status: 'SUCCEEDED',
+          stageTimes: at('2026-11-06T09:00:00Z'),
+        },
+      ]),
+    ).toBe(false);
+  });
+
+  it('같은 연결에 먼저 성공한 배포가 있으면 이전 버전이 돈다', () => {
+    expect(
+      hadPreviousVersion(request, [
+        {
+          id: 'r1',
+          serviceEnvironmentId: 'se1',
+          status: 'SUCCEEDED',
+          stageTimes: at('2026-11-06T09:00:00Z'),
+        },
+      ]),
+    ).toBe(true);
   });
 });

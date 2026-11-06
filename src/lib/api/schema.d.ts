@@ -3542,6 +3542,27 @@ export interface components {
             /** Size */
             size: number;
         };
+        /**
+         * PrecheckApplyRunResponse
+         * @description kind = APPLY_PATCH 인 실행의 반영 정보(SPEC api-10-3). 사전 점검이면 상세의 `apply` 가 null.
+         *
+         *     patchId·patchHash·repo·branch 는 만들 때 고정한 입력 사본 값이라 결과 전에도 있다.
+         *     appliedCommitSha 는 러너 결과 값이라 결과 전·실패·커밋 없는 성공이면 null 이다.
+         */
+        PrecheckApplyRunResponse: {
+            /** Parentrunid */
+            parentRunId: string | null;
+            /** Patchid */
+            patchId: string | null;
+            /** Patchhash */
+            patchHash: string | null;
+            /** Repo */
+            repo: string | null;
+            /** Branch */
+            branch: string | null;
+            /** Appliedcommitsha */
+            appliedCommitSha: string | null;
+        };
         /** PrecheckBlockedAttemptResponse */
         PrecheckBlockedAttemptResponse: {
             /** Action */
@@ -3572,13 +3593,19 @@ export interface components {
             origin: components["schemas"]["AgentRunOrigin"];
             severity: components["schemas"]["AgentRunSeverity"];
         };
-        /** PrecheckDetailResponse */
+        /**
+         * PrecheckDetailResponse
+         * @description 사전 점검(kind = PRECHECK) 또는 반영 실행(kind = APPLY_PATCH)의 상세.
+         *
+         *     반영 실행이면 `apply` 가 차고 사전 점검 결과 칸(configDiff·findings·patches 등)은 비어 있다.
+         */
         PrecheckDetailResponse: {
             /**
              * Id
              * Format: uuid
              */
             id: string;
+            kind: components["schemas"]["AgentRunKind"];
             /**
              * Serviceid
              * Format: uuid
@@ -3636,6 +3663,7 @@ export interface components {
             patches: components["schemas"]["PrecheckPatchResponse"][];
             /** Blockedattempts */
             blockedAttempts: components["schemas"]["PrecheckBlockedAttemptResponse"][];
+            apply: components["schemas"]["PrecheckApplyRunResponse"] | null;
         };
         /** PrecheckFeatureGapResponse */
         PrecheckFeatureGapResponse: {
