@@ -295,6 +295,17 @@ export function processingView(processing: PrecheckProcessing | null | undefined
       tone: 'success',
     };
   }
+  // 리전을 고를 수 없는 Anthropic 호출은 금지 등급을 안 넘기면 정책이 허용한다(echo-was #80). 위반으로 보이지 않게 한다
+  const regionlessAllowed =
+    processing.modelProvider === 'ANTHROPIC' &&
+    !processing.modelRegion &&
+    !processing.dataClasses.includes('SECRETS');
+  if (regionlessAllowed) {
+    return {
+      label: [t('Overseas model · no secrets sent'), processing.model].filter(Boolean).join(' · '),
+      tone: 'ai',
+    };
+  }
   return {
     label: [
       t('External transfer'),
@@ -321,11 +332,14 @@ export function securityCompareNote(row: {
   source: { result: string };
   target: { result: string };
   blocksMigration: boolean;
+  change: string;
 }): string {
   if (row.blocksMigration) return t('blocks migration');
   if (row.source.result === 'UNKNOWN' || row.target.result === 'UNKNOWN') return t('not collected');
   if (row.target.result === 'WARN') return t('warning only');
-  return row.source.result === row.target.result ? t('same') : t('differs');
+  if (row.change === 'WORSE') return t('worse on target');
+  if (row.change === 'BETTER') return t('better on target');
+  return row.change === 'SAME' ? t('same') : t('differs');
 }
 
 // 이전 종류 (서버가 만들 때 판정한 mode)

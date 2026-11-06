@@ -21,6 +21,8 @@ export function AiResidencyPanel({ orgId, className }: { orgId: string; classNam
   const residency = useAiResidency(orgId);
   const data = residency.data;
   const reasons = [...new Set(data?.violations.flatMap((item) => item.reasons) ?? [])];
+  const regionless = data?.recentRuns.filter((run) => run.regionlessAllowed).length ?? 0;
+  const regionlessProviders = data?.policy.allowedRegionlessProviders ?? [];
 
   return (
     <Panel title={t('AI data residency')} className={className}>
@@ -50,6 +52,20 @@ export function AiResidencyPanel({ orgId, className }: { orgId: string; classNam
               external: data.runs.externalTransfer,
             })}
           </p>
+          {regionless > 0 && (
+            <p className="text-small text-ai-fg tabular-nums">
+              {t('Recent runs on an overseas model, no secrets sent: {{count}}', {
+                count: regionless,
+              })}
+            </p>
+          )}
+          {regionlessProviders.length > 0 && (
+            <p className="text-small text-fg-muted">
+              {t('Allowed without a region if no forbidden data is sent: {{providers}}', {
+                providers: regionlessProviders.map((item) => item.provider).join(', '),
+              })}
+            </p>
+          )}
           {reasons.map((reason) => (
             <p key={reason} className="text-small text-warning-fg">
               {residencyReasonLabel(reason)}

@@ -347,18 +347,76 @@ describe('SecurityPage', () => {
     expect(screen.getByText('Saccharine1211')).toBeInTheDocument();
   });
 
-  it('Compare 탭은 두 환경을 나란히 보여 준다', async () => {
+  it('Compare 탭은 서버 비교를 그리고 막는 통제를 밝힌다', async () => {
     serve(ENVIRONMENTS);
+    const queries: URLSearchParams[] = [];
+    server.use(
+      http.get(`${API}/orgs/o1/security/compare`, ({ request }) => {
+        queries.push(new URL(request.url).searchParams);
+        return ok({
+          policyVersion: 'sec-rules-2026.11.06',
+          phase: 'PREPARATION',
+          checkedAt: AT,
+          simulated: false,
+          serviceId: null,
+          source: {
+            environmentId: 'e1',
+            environmentName: 'aws-tokyo',
+            environmentKind: 'aws',
+            services: [],
+          },
+          target: {
+            environmentId: 'e2',
+            environmentName: 'gcp-seoul',
+            environmentKind: 'gcp',
+            services: [],
+          },
+          summary: { blocking: 1, worseOnTarget: 1, same: 1, better: 0 },
+          rows: [
+            {
+              control: 'iam',
+              source: waivedCell,
+              target: waivedCell,
+              blocksMigration: false,
+              blockingControlIds: [],
+              change: 'SAME',
+            },
+            {
+              control: 'policy',
+              source: warnCell,
+              target: emptyCell,
+              blocksMigration: true,
+              blockingControlIds: ['C-IAM-1'],
+              change: 'WORSE',
+            },
+          ],
+        });
+      }),
+    );
     renderPage();
 
     await userEvent.click(await screen.findByRole('tab', { name: 'Compare' }));
 
-    expect(
-      await screen.findByRole('heading', { name: 'Compare environments' }),
-    ).toBeInTheDocument();
-    expect(screen.getByText('warning only')).toBeInTheDocument();
-    expect(screen.getByText('simulated')).toBeInTheDocument();
-    expect(screen.queryByText('blocks migration')).not.toBeInTheDocument();
+    expect(await screen.findByText('blocks migration')).toBeInTheDocument();
+    expect(screen.getByText(/1 blocking · 1 worse on target/)).toBeInTheDocument();
+    expect(screen.getAllByText(/Exception/).length).toBeGreaterThan(0);
+    expect(screen.queryByText('simulated')).not.toBeInTheDocument();
+    expect(queries[0]?.get('source')).toBe('e1');
+    expect(queries[0]?.get('target')).toBe('e2');
+  });
+
+  it('비교를 못 불러오면 오류를 보인다', async () => {
+    serve(ENVIRONMENTS);
+    server.use(
+      http.get(`${API}/orgs/o1/security/compare`, () =>
+        HttpResponse.json({ success: false, code: 'NOT_FOUND', message: 'x' }, { status: 404 }),
+      ),
+    );
+    renderPage();
+
+    await userEvent.click(await screen.findByRole('tab', { name: 'Compare' }));
+
+    expect(await screen.findByText("Couldn't load this")).toBeInTheDocument();
   });
 
   it('환경이 없으면 등록을 안내한다', async () => {

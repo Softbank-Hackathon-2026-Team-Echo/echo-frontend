@@ -1,13 +1,8 @@
-// 보안 매트릭스·증거는 운영 API 를 부른다(echo-was docs/api/security.md).
-// 시뮬레이션: 이전 전후 비교(계약 4-7 compare 🆕)만 서버가 생기기 전까지 환경 종류별 고정 값을 쓰고 항상 simulated 다.
-// 서버가 생기면 SECURITY_COMPARE_API_READY 를 켜고 api + unwrap 으로 바꾼다. 이전을 막을지는 서버 게이트가 정한다
+// 보안 매트릭스 · 증거 · 이전 전후 비교 (echo-was docs/api/security.md). 이전을 막을지는 서버 게이트가 정한다
 import { useQuery } from '@tanstack/react-query';
 import { api, unwrap } from './client';
-import { useEnvironments } from './environments';
 import { queryKeys } from './query-keys';
-import type { EnvironmentSummary, SecurityMatrixCell } from './types';
-
-export const SECURITY_COMPARE_API_READY = false;
+import type { SecurityMatrixCell } from './types';
 
 const FINDINGS_PAGE_SIZE = 100;
 
@@ -16,13 +11,6 @@ export type SecurityControl = (typeof SECURITY_CONTROLS)[number];
 
 export type SecurityResult = 'PASS' | 'WARN' | 'FAIL' | 'NA' | 'UNKNOWN';
 export type SecurityCell = { result: SecurityResult; findingCount: number };
-
-export type SecurityCompareRow = {
-  control: SecurityControl;
-  source: SecurityCell;
-  target: SecurityCell;
-  blocksMigration: boolean;
-};
 
 export function useSecurityMatrix(orgId: string | undefined) {
   return useQuery({
@@ -99,68 +87,24 @@ export function cellIssueCount(cell: SecurityMatrixCell): number {
     .length;
 }
 
-// 데모가 막히지 않게 시뮬레이션 값에는 FAIL 이 없다
-const SIMULATED_ISSUES: Record<string, Partial<Record<SecurityControl, number>>> = {
-  gcp: { policy: 2 },
-  onprem: { iam: 1 },
-};
-
-// 온프레 디스크 암호화는 수집기가 없어 미수집으로 둔다
-const NOT_COLLECTED: Record<string, SecurityControl[]> = { onprem: ['encryption'] };
-const KNOWN_KINDS = ['aws', 'gcp', 'onprem'];
-
-// 접속하지 못한 환경은 검사할 수 없으니 통과로 보이지 않게 한다
-const isScannable = (environment: EnvironmentSummary) =>
-  environment.connectionStatus === 'CONNECTED' && KNOWN_KINDS.includes(environment.kind);
-
-function cellOf(environment: EnvironmentSummary, control: SecurityControl): SecurityCell {
-  const collected = isScannable(environment) && !NOT_COLLECTED[environment.kind]?.includes(control);
-  if (!collected) return { result: 'UNKNOWN', findingCount: 0 };
-  const findingCount = SIMULATED_ISSUES[environment.kind]?.[control] ?? 0;
-  return { result: findingCount > 0 ? 'WARN' : 'PASS', findingCount };
-}
-
-/** 비교 시뮬레이션의 한 환경 값 */
-export function simulatedCells(
-  environment: EnvironmentSummary,
-): Record<SecurityControl, SecurityCell> {
-  return {
-    iam: cellOf(environment, 'iam'),
-    encryption: cellOf(environment, 'encryption'),
-    auditLog: cellOf(environment, 'auditLog'),
-    policy: cellOf(environment, 'policy'),
-  };
-}
-
-/** 도착 환경이 통제를 어기면 이전을 막는다. 서버가 생기면 이 판단은 서버 값으로 바뀐다 */
-export function compareCells(
-  control: SecurityControl,
-  source: SecurityCell,
-  target: SecurityCell,
-): SecurityCompareRow {
-  return { control, source, target, blocksMigration: target.result === 'FAIL' };
-}
-
+/** 두 환경의 칸을 나란히 준다. serviceId 를 넣으면 그 서비스 기준이라 게이트 판정과 같다 */
 export function useSecurityCompare(
   orgId: string | undefined,
-  sourceId: string | undefined,
-  targetId: string | undefined,
+  source: string | undefined,
+  target: string | undefined,
+  serviceId?: string,
 ) {
-  const environments = useEnvironments(orgId);
-  const items = environments.data?.items;
-  const source = items?.find((item) => item.id === sourceId);
-  const target = items?.find((item) => item.id === targetId);
-  const data = (() => {
-    if (!items) return undefined;
-    if (!source || !target) return [];
-    const [from, to] = [simulatedCells(source), simulatedCells(target)];
-    return SECURITY_CONTROLS.map((control) => compareCells(control, from[control], to[control]));
-  })();
-  return {
-    data,
-    isPending: environments.isPending,
-    isError: environments.isError,
-    error: environments.error,
-    refetch: environments.refetch,
-  };
+  return useQuery({
+    queryKey: queryKeys.securityCompare(orgId ?? '', source ?? '', target ?? '', serviceId ?? null),
+    queryFn: () =>
+      unwrap(
+        api.GET('/api/v1/orgs/{org_id}/security/compare', {
+          params: {
+            path: { org_id: orgId ?? '' },
+            query: { source: source ?? '', target: target ?? '', serviceId },
+          },
+        }),
+      ),
+    enabled: Boolean(orgId && source && target && source !== target),
+  });
 }

@@ -232,7 +232,6 @@
   "Policy {{version}} · checked {{time}}": "ポリシー {{version}} · {{time}} 点検",
   "Preparation checks only. The migration gate adds execution checks.": "準備段階の点検のみ表示します。実行直前の点検は移行ゲートが行います。",
   "Scans run with each deploy": "検査はデプロイのたびに実行されます",
-  "Simulated until the server comparison is ready, so it can differ from the matrix.": "サーバーの比較APIが用意されるまではシミュレーション値のため、マトリクスと異なる場合があります。",
   "Whole organization": "組織全体",
   "No exceptions": "例外なし",
   "Every control is judged as it is.": "すべてのコントロールをそのまま判定します。",
@@ -243,5 +242,11 @@
   "The security gate blocked this migration.": "セキュリティゲートがこの移行をブロックしました。",
   "Security exceptions": "セキュリティ例外",
   "A control can stop blocking for up to 7 days, with a reason and an approval.": "理由と承認があれば、コントロールのブロックを最大7日間止められます。",
-  "Exceptions": "例外"
+  "Exceptions": "例外",
+  "Choose two different environments.": "異なる環境を2つ選んでください。",
+  "{{blocking}} blocking · {{worse}} worse on target · checked {{time}}": "ブロック {{blocking}}件 · 移行先が悪化 {{worse}}件 · {{time}} 確認",
+  "The security comparison is not available right now.": "現在セキュリティ比較を取得できません。",
+  "worse on target": "移行先が悪化",
+  "better on target": "移行先が改善",
+  "Overseas model · no secrets sent": "海外モデルを使用 · シークレットは送信しない"
 }

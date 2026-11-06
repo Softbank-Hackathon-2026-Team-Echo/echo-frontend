@@ -59,13 +59,13 @@
 | SVC 배포 | `POST …/services/{id}/deploy-requests` `{environmentId, branch \| commitSha}` | ✅ |
 | SVC 배포 진행 | `GET /orgs/{orgId}/deploy-requests/{id}` (`status`·`stageTimes`·`build.reused`·`errorCode`·`revertStatus`) | ✅ (실시간 전까지 2초 폴링) |
 | SVC 배포 이력 · 되돌리기 · 로그 | 이력 `rollbackable`·`isCurrent` · `POST /orgs/{orgId}/deploy-requests/{id}/rollback` · `GET …/deploy-requests/{id}/logs?source=DEPLOY_JOB\|BUILD\|RUNTIME&cursor&limit` | ✅ (11/3 운영) |
-| S01 대시보드 | 환경 목록 · 서비스 상세 · 지표(4-2) · 진행 중 재난(4-3) · 최근 이벤트·활동(4-8) | ✅ / 🆕 |
+| S01 대시보드 | 환경 목록 · 서비스 상세 · 지표(4-2) · 진행 중 재난(4-3) · 최근 이벤트·활동(4-8) | ✅ |
 | S01-D 재난 시뮬레이션 · S01-R 휴대폰 리모컨 | 재난 만들기·미리보기(4-3) | ✅ |
 | E01-1 대피처 고르기 | 대피 후보·점수(4-4) | 🆕 |
 | E01-2 AI 사전 점검 | 실행·단계·로그·패치·패치 승인(4-5) ✅ | ✅ |
-| E01-3 계획 승인 | 이전 계획·승인(4-6) · 보안 비교(4-7) | 🆕 |
+| E01-3 계획 승인 | 이전 계획·승인(4-6) · 보안 비교(4-7) | ✅ |
 | M01 이전 목록 · M02 이전 실행 (계획·긴급·복귀, Live·Result) | 이전 실행·단계·트래픽·쓰기 전환·측정 결과(4-6) | 🆕 |
-| SEC 보안 (Matrix · Compare · 근거 드로어) | 매트릭스·finding ✅ · 비교 🆕 (4-7) | 일부 🆕 |
+| SEC 보안 (Matrix · Compare · 근거 드로어) | 매트릭스 · finding · 비교 (4-7) | ✅ |
 | AUD 감사 로그 | 감사 로그 조회(4-8) | ✅ |
 
 🔁 서비스 목록 요약: 목록 표에 "어디서 서비스 중인지 · 버전"을 보여 주므로, `ServiceSummary`에 `servingEnvironment {id, name, kind}`와 `currentCommitSha`가 있으면 상세를 서비스마다 부르지 않아도 된다. 없으면 프론트가 상세를 따로 부른다(서비스 수가 적어서 데모에는 문제없음).
@@ -114,16 +114,22 @@ data: {"seq": 1042, "ts": "2026-11-07T03:05:40Z", "orgId": "…", "resource": {"
 
 ### 4-2. 대시보드 지표 (F17)
 
+✅ 운영에 열렸다(echo-was #81 · #82, 원본은 echo-was `docs/api/metrics.md`).
+
 `GET /orgs/{orgId}/services/{id}/metrics?range=15m&step=10s`
 
 ```json
-{"range": "15m", "step": "10s",
- "series": [{"environmentId": "…", "points": [{"t": "…", "rps": 10.2, "successRate": 0.9998, "p95Ms": 182}]}],
- "summary": {"successRate": 0.9998, "p95Ms": 182, "replicationLagMs": 120, "errorBudgetLeft": 0.72},
+{"range": "15m", "step": "10s", "asOf": "…",
+ "metricsStatus": "OK", "metricsErrorCode": null,
+ "series": [{"environmentId": "…", "environmentName": "aws-tokyo", "cloudProvider": "aws",
+             "points": [{"t": "…", "rps": 10.2, "successRate": 0.9998, "p95Ms": 182}]}],
+ "summary": {"successRate": 0.9998, "p95Ms": 182, "replicationLagMs": 120, "errorBudgetLeft": 0.72, "sloTarget": 0.999},
  "simulated": false}
 ```
 
-KPI 타일 5개(성공률·p95·복제 지연·트래픽 비율·에러 버짓)와 스파크라인, A/B 요청 그래프가 이 하나로 그려진다.
+- `metricsStatus` 가 `UNAVAILABLE` · `NOT_CONFIGURED` 여도 200 이고 `series: []`, summary 칸은 `null` 이다. 화면은 값을 비우고 이유만 적는다.
+- 대기 환경은 평소 `points: []` 가 정상이다. 앱 경로 요청이 없으면 `rps: 0` 이고 성공률 · p95 는 `null` 이다.
+- KPI 4칸(성공률 · p95 · 복제 지연 · 에러 버짓)과 평소 요청 그래프가 이 응답을 쓴다. 이전 중 A·B 그래프는 지금처럼 서버가 적용한 비율선이다. 10초마다 다시 부른다(서버 캐시 5초).
 
 ### 4-3. 재난 (2차 P1)
 
@@ -216,9 +222,11 @@ KPI 타일 5개(성공률·p95·복제 지연·트래픽 비율·에러 버짓)�
 |---|---|
 | 매트릭스 ✅ | `GET /orgs/{orgId}/security/matrix` → `{policyVersion, phase, checkedAt, rows[{environmentId, environmentName, environmentKind, services[], cells{iam, encryption, auditLog, policy}: {result: PASS \| WARN \| FAIL \| NA \| UNKNOWN, findingCount, hasException, mode, checkedAt, expiresAt, controls[{controlId, title, result, isMandatory, reasons[], findingIds[], mode, checkedAt, expiresAt, serviceId}]}}]}` (빈칸 0, NFR-09. 미수집은 `UNKNOWN`) |
 | finding 목록 ✅ | `GET /orgs/{orgId}/security/findings?environmentId&serviceId&controlId&findingId&includeExpired&page&size` → 페이지 `{id, controlId, result, reason, source(TRIVY_IMAGE \| GITLEAKS \| TLS_PROBE …), origin(RULE \| HUMAN \| AI), mode, environmentId, serviceId, collectedAt, expiresAt, evidenceRef, items[], totalItems}` |
-| 이전 전후 비교 | `GET /orgs/{orgId}/security/compare?source=&target=` → 통제마다 양쪽 값과 `blocksMigration`. 프론트는 `rows[{control, source: cell, target: cell, blocksMigration}]` (가칭)로 쓴다 |
+| 이전 전후 비교 ✅ | `GET /orgs/{orgId}/security/compare?source=&target=&serviceId=` → `{policyVersion, phase, checkedAt, simulated, serviceId, source, target, summary{blocking, worseOnTarget, same, better}, rows[{control, source: cell, target: cell, blocksMigration, blockingControlIds[], change: WORSE \| SAME \| BETTER}]}`. 칸은 매트릭스 칸과 같다. E01-3 은 `serviceId` 를 넣어 게이트 판정과 맞춘다 |
 
-> 11/5: 매트릭스 · finding 은 운영 API 를 부른다(echo-was #59). `compare` 는 다음 PR 이라 그전까지 비교만 `lib/api/security.ts` 가 시뮬레이션한다. finding 은 `controlId`(`C-IMG-1`)로 오므로 칸과는 매트릭스의 `controls[].findingIds` 로 잇고, 칸을 열 때 `findingId` 로 그 칸의 증거만 부른다. 서버 `findingCount` 는 판정에 쓴 증거 수라, 칸 글자의 건수는 WARN · FAIL 통제 수로 센다.
+> 11/6: `compare` 가 운영에 열렸다(echo-was #84). `blocksMigration` 은 필수 통제가 FAIL · UNKNOWN 이고 예외가 없으면 true 라 시뮬레이션의 "FAIL 일 때만" 보다 엄격하다. `lib/api/security.ts` 의 시뮬레이션은 지웠다.
+>
+> 11/5: 매트릭스 · finding 은 운영 API 를 부른다(echo-was #59). finding 은 `controlId`(`C-IMG-1`)로 오므로 칸과는 매트릭스의 `controls[].findingIds` 로 잇고, 칸을 열 때 `findingId` 로 그 칸의 증거만 부른다. 서버 `findingCount` 는 판정에 쓴 증거 수라, 칸 글자의 건수는 WARN · FAIL 통제 수로 센다.
 >
 > 11/4: 김형래 제안(슬랙)대로 맞추고 `UNKNOWN` 을 더했다. 서버(echo-was #28)가 생기기 전까지 `lib/api/security.ts` 가 같은 모양으로 시뮬레이션하고 화면에 항상 `simulated` 배지를 단다. 이전 차단은 서버 판정이 기준이고 버튼 비활성은 안내일 뿐이다.
 

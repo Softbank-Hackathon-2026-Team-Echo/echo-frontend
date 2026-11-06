@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest';
+import type { PrecheckProcessing } from './api/types';
 import { hasRole } from './roles';
 import {
   clusterInfoErrorLabel,
   connectionStatusView,
   migrationModeLabel,
   planFailureLabel,
+  processingView,
   securityCellLabel,
   securityCompareNote,
   securityResultView,
@@ -57,15 +59,19 @@ describe('보안 표시', () => {
   });
 
   it('비교 판정은 막힘을 가장 먼저 말한다', () => {
-    const row = (source: string, target: string, blocksMigration = false) => ({
+    const row = (source: string, target: string, blocksMigration = false, change = 'SAME') => ({
       source: { result: source },
       target: { result: target },
       blocksMigration,
+      change,
     });
     expect(securityCompareNote(row('PASS', 'FAIL', true))).toBe('blocks migration');
     expect(securityCompareNote(row('PASS', 'UNKNOWN'))).toBe('not collected');
     expect(securityCompareNote(row('PASS', 'WARN'))).toBe('warning only');
     expect(securityCompareNote(row('PASS', 'PASS'))).toBe('same');
+    expect(securityCompareNote(row('NA', 'PASS', false, 'WORSE'))).toBe('worse on target');
+    expect(securityCompareNote(row('PASS', 'NA', false, 'BETTER'))).toBe('better on target');
+    expect(securityCompareNote(row('PASS', 'PASS', false, 'NEW'))).toBe('differs');
   });
 });
 
@@ -100,5 +106,30 @@ describe('hasRole', () => {
   it('역할이 없거나 모르는 값이면 권한이 없다', () => {
     expect(hasRole(null, 'VIEWER')).toBe(false);
     expect(hasRole('OWNER', 'VIEWER')).toBe(false);
+  });
+});
+
+describe('processingView', () => {
+  const processing = (overrides: Partial<PrecheckProcessing>): PrecheckProcessing => ({
+    location: 'gcp-seoul',
+    sandbox: true,
+    modelProvider: 'ANTHROPIC',
+    model: 'claude-opus-5-5',
+    modelRegion: null,
+    dataClasses: ['CONFIG'],
+    externalTransfer: true,
+    externalTransferBytes: 100,
+    ...overrides,
+  });
+
+  it('리전 없는 Anthropic 호출이 비밀값을 안 넘기면 위반으로 보이지 않는다', () => {
+    expect(processingView(processing({}))).toEqual({
+      label: 'Overseas model · no secrets sent · claude-opus-5-5',
+      tone: 'ai',
+    });
+  });
+
+  it('비밀값을 넘겼으면 위험으로 보인다', () => {
+    expect(processingView(processing({ dataClasses: ['SECRETS'] })).tone).toBe('danger');
   });
 });

@@ -133,16 +133,51 @@ const plan: MigrationPlan = {
   errorMessage: null,
 };
 
+const compareQueries: URLSearchParams[] = [];
+const compareCell = {
+  result: 'PASS' as const,
+  findingCount: 0,
+  hasException: false,
+  gateStatus: 'PASS' as const,
+  exception: null,
+  mode: 'REAL' as const,
+  checkedAt: null,
+  expiresAt: null,
+  controls: [],
+};
+const compare = (blocked: boolean) => ({
+  policyVersion: 'sec-rules-2026.11.06',
+  phase: 'PREPARATION',
+  checkedAt: '2026-11-06T00:00:00Z',
+  simulated: false,
+  serviceId: 's1',
+  source: { environmentId: 'e1', environmentName: 'a', environmentKind: 'aws', services: [] },
+  target: { environmentId: 'e2', environmentName: 'b', environmentKind: 'gcp', services: [] },
+  summary: { blocking: blocked ? 1 : 0, worseOnTarget: 0, same: 1, better: 0 },
+  rows: [
+    {
+      control: 'auditLog',
+      source: compareCell,
+      target: compareCell,
+      blocksMigration: blocked,
+      blockingControlIds: blocked ? ['C-AUD-1'] : [],
+      change: 'SAME',
+    },
+  ],
+});
+
 function serve({
   allowSelfApproval,
   active,
   stale = false,
   targetSimulated = true,
+  blocked = false,
 }: {
   allowSelfApproval: boolean;
   active: string | null;
   stale?: boolean;
   targetSimulated?: boolean;
+  blocked?: boolean;
 }) {
   const calls: { path: string; body?: unknown }[] = [];
   server.use(
@@ -150,6 +185,10 @@ function serve({
     http.get(`${API}/orgs/o1/services/s1`, () => ok(service(active, targetSimulated))),
     http.get(`${API}/orgs/o1/environments`, () => ok({ items: [], total: 0, page: 0, size: 100 })),
     http.get(`${API}/orgs/o1/migration-plans/:id`, () => ok(plan)),
+    http.get(`${API}/orgs/o1/security/compare`, ({ request }) => {
+      compareQueries.push(new URL(request.url).searchParams);
+      return ok(compare(blocked));
+    }),
     http.post(`${API}/orgs/o1/migration-plans/:id/approve`, () => {
       calls.push({ path: 'approve' });
       if (stale) {
@@ -281,6 +320,16 @@ describe('PlanPage', () => {
     renderPage();
 
     expect(await screen.findByLabelText('Inject a failure (demo)')).toBeEnabled();
+  });
+
+  it('서버 비교가 막으면 승인을 잠그고 서비스 기준으로 부른다', async () => {
+    serve({ allowSelfApproval: true, active: plan.id, blocked: true });
+    renderPage();
+
+    expect(
+      await screen.findByText('Approval locked: 1 security mismatch (Audit log).'),
+    ).toBeInTheDocument();
+    expect(compareQueries.at(-1)?.get('serviceId')).toBe('s1');
   });
 
   it('승인이 PLAN_STALE 이면 무엇이 바뀌었는지 보여 준다', async () => {
