@@ -1,6 +1,7 @@
 import {
   ArrowRightLeft,
   GitBranch,
+  KeyRound,
   Lock,
   MoreHorizontal,
   Pencil,
@@ -8,13 +9,12 @@ import {
   Trash2,
 } from 'lucide-react';
 import { useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { DeployDialog } from '@/components/DeployDialog';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorState } from '@/components/ErrorState';
 import { ExternalLink } from '@/components/ExternalLink';
-import { ProviderLabel } from '@/components/ProviderLabel';
 import { RoleButton } from '@/components/RoleButton';
 import { SimulatedBadge } from '@/components/SimulatedBadge';
 import { StatusBadge } from '@/components/StatusBadge';
@@ -26,6 +26,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,
@@ -35,126 +42,33 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useRole } from '@/hooks/useRole';
 import { useCurrentOrg } from '@/lib/api/me';
 import { useDeleteService, useDeployRequests, useRollback, useService } from '@/lib/api/services';
-import type { DeployRequestSummary, ServiceDetail } from '@/lib/api/types';
+import type { DeployRequestSummary } from '@/lib/api/types';
 import { timeAgo } from '@/lib/format';
-import { t } from '@/lib/i18n';
+import { k, t } from '@/lib/i18n';
 import { hasRole } from '@/lib/roles';
-import {
-  deployErrorLabel,
-  deployStatusView,
-  deployTriggerLabel,
-  envRoleView,
-  shortSha,
-  teardownErrorLabel,
-  versionStatusView,
-} from '@/lib/status';
+import { deployStatusView, deployTriggerLabel, shortSha, teardownErrorLabel } from '@/lib/status';
+import { ActiveDeployments } from './ActiveDeployments';
 import { EditServiceDialog } from './EditServiceDialog';
+import { PendingChangesBar } from './PendingChangesBar';
+import { RollbackDialog } from './RollbackDialog';
+import { ServiceActivity } from './ServiceActivity';
+import { ServiceMetrics } from './ServiceMetrics';
+import { ServiceSettings } from './ServiceSettings';
 import { ServiceVariables } from './ServiceVariables';
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section className="flex flex-col gap-3">
-      <h2 className="text-h3">{title}</h2>
-      {children}
-    </section>
-  );
-}
-
-function EnvironmentLinks({ service, orgSlug }: { service: ServiceDetail; orgSlug: string }) {
-  if (service.environments.length === 0) {
-    return (
-      <EmptyState
-        icon={GitBranch}
-        title={t('Not deployed yet')}
-        description={t('Deploy this service to an environment to get a public URL.')}
-      />
-    );
-  }
-  return (
-    <div className="overflow-hidden rounded-lg border border-line bg-surface">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>{t('Environment')}</TableHead>
-            <TableHead>{t('Role')}</TableHead>
-            <TableHead className="text-right">{t('Traffic')}</TableHead>
-            <TableHead>{t('Version')}</TableHead>
-            <TableHead>URL</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {service.environments.map((link) => {
-            const runningId = link.activeRequestId ?? link.queuedRequestId;
-            return (
-              <TableRow key={link.serviceEnvironmentId}>
-                <TableCell>
-                  <span className="flex flex-col gap-0.5">
-                    <span className="text-body-medium">{link.environment.name}</span>
-                    <ProviderLabel kind={link.environment.kind} showLocation={false} />
-                  </span>
-                </TableCell>
-                <TableCell>
-                  <span className="flex flex-wrap items-center gap-1.5">
-                    <StatusBadge {...envRoleView(link.role)} />
-                    {runningId && (
-                      <Link
-                        to={`/o/${orgSlug}/services/${service.id}/deploys/${runningId}`}
-                        className="text-caption text-migrating-fg hover:underline"
-                      >
-                        {link.activeRequestId ? t('Deploying…') : t('Queued')}
-                      </Link>
-                    )}
-                  </span>
-                </TableCell>
-                <TableCell className="text-right font-mono text-mono tabular-nums">
-                  {link.trafficWeight}%
-                </TableCell>
-                <TableCell>
-                  <span className="flex flex-col gap-0.5">
-                    <span className="flex flex-wrap items-center gap-1.5">
-                      <span className="font-mono text-mono">
-                        {shortSha(link.currentDeployment?.commitSha)}
-                      </span>
-                      {link.versionStatus && (
-                        <StatusBadge {...versionStatusView(link.versionStatus)} />
-                      )}
-                      {link.simulated && <SimulatedBadge />}
-                    </span>
-                    {/* 예비 따라가기: 성공하면 걸린 초, 실패하면 그 이유 */}
-                    {link.lastSyncError ? (
-                      <span className="text-caption text-warning-fg">
-                        {t('Standby sync failed: {{reason}}', {
-                          reason: deployErrorLabel(link.lastSyncError),
-                        })}
-                      </span>
-                    ) : link.lastSyncSeconds !== null ? (
-                      <span className="text-caption text-fg-muted">
-                        {t('Synced {{seconds}}s after the source', {
-                          seconds: link.lastSyncSeconds,
-                        })}
-                      </span>
-                    ) : null}
-                    {link.teardownError && (
-                      <span className="text-caption text-danger-fg">
-                        {teardownErrorLabel(link.teardownError)}
-                      </span>
-                    )}
-                  </span>
-                </TableCell>
-                <TableCell className="max-w-72">
-                  <ExternalLink href={link.url} />
-                </TableCell>
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
-    </div>
-  );
-}
+// 탭은 주소 ?tab= 에 둔다. 배포 진행 화면의 AI 진단이 ?tab=variables 로 바로 연다
+const TABS = [
+  { value: 'deployments', label: k('Deployments') },
+  { value: 'variables', label: k('Variables') },
+  { value: 'metrics', label: k('Metrics') },
+  { value: 'settings', label: k('Settings') },
+] as const;
+type TabValue = (typeof TABS)[number]['value'];
+const ALL_ENVIRONMENTS = 'all';
 
 function refLabel(request: DeployRequestSummary) {
   return request.ref.type === 'BRANCH' ? request.ref.value : shortSha(request.ref.value);
@@ -164,19 +78,25 @@ function DeployHistory({
   orgId,
   orgSlug,
   serviceId,
+  environmentId,
 }: {
   orgId: string;
   orgSlug: string;
   serviceId: string;
+  environmentId: string | undefined;
 }) {
   const navigate = useNavigate();
   const history = useDeployRequests(orgId, serviceId);
   const rollback = useRollback(orgId, serviceId);
+  const [target, setTarget] = useState<DeployRequestSummary>();
 
   if (history.isError)
     return <ErrorState error={history.error} onRetry={() => history.refetch()} />;
   if (history.isPending) return <Skeleton className="h-32 w-full" />;
-  if (history.data.items.length === 0) {
+  const items = environmentId
+    ? history.data.items.filter((item) => item.environment.id === environmentId)
+    : history.data.items;
+  if (items.length === 0) {
     return <p className="text-body text-fg-muted">{t('No deploys yet.')}</p>;
   }
 
@@ -196,7 +116,7 @@ function DeployHistory({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {history.data.items.map((request) => (
+          {items.map((request) => (
             <TableRow key={request.id}>
               <TableCell className="text-fg-secondary">
                 {timeAgo(request.stageTimes.queuedAt)}
@@ -234,12 +154,7 @@ function DeployHistory({
                       variant="ghost"
                       size="sm"
                       disabled={rollback.isPending}
-                      onClick={() =>
-                        rollback.mutate(request.id, {
-                          onSuccess: (created) =>
-                            navigate(`/o/${orgSlug}/services/${serviceId}/deploys/${created.id}`),
-                        })
-                      }
+                      onClick={() => setTarget(request)}
                     >
                       <RotateCcw aria-hidden />
                       {t('Roll back')}
@@ -251,14 +166,31 @@ function DeployHistory({
           ))}
         </TableBody>
       </Table>
+      <RollbackDialog
+        target={target}
+        onOpenChange={(open) => !open && setTarget(undefined)}
+        pending={rollback.isPending}
+        onConfirm={(request) =>
+          rollback.mutate(request.id, {
+            onSuccess: (created) => {
+              setTarget(undefined);
+              navigate(`/o/${orgSlug}/services/${serviceId}/deploys/${created.id}`);
+            },
+          })
+        }
+      />
     </div>
   );
 }
 
-/** SVC 서비스 상세: 환경별 연결 · 배포 · 이력 */
+/**
+ * SVC 서비스 상세 (Railway 구성). 맨 위 환경별 지금 배포 카드, 아래 탭(배포 · 변수 · 지표 · 설정),
+ * 오른쪽에 최근 활동. 환경 고르기는 ?env, 탭은 ?tab 이라 다른 화면이 바로 열 수 있다
+ */
 export default function ServiceDetailPage() {
   const { slug, serviceId } = useParams();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { organization } = useCurrentOrg(slug);
   const role = useRole();
   const {
@@ -268,8 +200,10 @@ export default function ServiceDetailPage() {
     error,
     refetch,
   } = useService(organization?.id, serviceId);
+  const history = useDeployRequests(organization?.id, serviceId);
   const deleteService = useDeleteService(organization?.id ?? '');
-  const [deployOpen, setDeployOpen] = useState(false);
+  // undefined = 닫힘, '' = 환경을 고르지 않고 열림
+  const [deployEnvironment, setDeployEnvironment] = useState<string>();
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
 
@@ -284,7 +218,25 @@ export default function ServiceDetailPage() {
   }
 
   const deleting = service.status === 'DELETING';
+  const deletingReason = deleting ? t('This service is being deleted') : undefined;
   const standbys = service.environments.filter((link) => link.role === 'STANDBY');
+  const tabParam = searchParams.get('tab');
+  const tab: TabValue = TABS.some((item) => item.value === tabParam)
+    ? (tabParam as TabValue)
+    : 'deployments';
+  const envParam = searchParams.get('env');
+  const selectedEnvironment = service.environments.find((link) => link.environment.id === envParam)
+    ?.environment.id;
+  const setParam = (key: string, value: string | undefined) =>
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (value) next.set(key, value);
+        else next.delete(key);
+        return next;
+      },
+      { replace: true },
+    );
 
   return (
     <>
@@ -305,17 +257,38 @@ export default function ServiceDetailPage() {
               {service.private && <Lock aria-label={t('Private repository')} className="size-3" />}
               {service.repoUrl.replace(/^https:\/\//, '')}
             </a>
-            <span>
-              {t('Health')} <span className="font-mono">{service.healthCheckPath}</span> ·{' '}
-              {t('port')} <span className="font-mono">{service.containerPort}</span>
-            </span>
+            <ExternalLink href={service.url} />
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {service.environments.length > 0 && (
+            <Select
+              value={selectedEnvironment ?? ALL_ENVIRONMENTS}
+              onValueChange={(value) =>
+                setParam('env', value === ALL_ENVIRONMENTS ? undefined : value)
+              }
+            >
+              <SelectTrigger className="w-44" aria-label={t('Environment')}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={ALL_ENVIRONMENTS}>{t('All environments')}</SelectItem>
+                {service.environments.map((link) => (
+                  <SelectItem key={link.serviceEnvironmentId} value={link.environment.id}>
+                    {link.environment.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+          <Button variant="outline" onClick={() => setParam('tab', 'variables')}>
+            <KeyRound aria-hidden />
+            {t('Environment variables')}
+          </Button>
           <RoleButton
             requires="DEVELOPER"
-            disabledReason={deleting ? t('This service is being deleted') : undefined}
-            onClick={() => setDeployOpen(true)}
+            disabledReason={deletingReason}
+            onClick={() => setDeployEnvironment(selectedEnvironment ?? '')}
           >
             {t('Deploy')}
           </RoleButton>
@@ -387,35 +360,92 @@ export default function ServiceDetailPage() {
         </p>
       )}
 
-      <div className="flex flex-col gap-1">
-        <span className="text-overline uppercase text-fg-muted">{t('Public URL')}</span>
-        <ExternalLink href={service.url} className="text-body" />
+      <PendingChangesBar
+        orgId={organization.id}
+        service={service}
+        disabledReason={deletingReason}
+        onDeploy={setDeployEnvironment}
+      />
+
+      {service.environments.length === 0 ? (
+        <EmptyState
+          icon={GitBranch}
+          title={t('Not deployed yet')}
+          description={t('Deploy this service to an environment to get a public URL.')}
+        />
+      ) : (
+        <ActiveDeployments
+          service={service}
+          history={history.data?.items}
+          orgSlug={organization.slug}
+          selectedEnvironmentId={selectedEnvironment}
+        />
+      )}
+
+      <div className="grid grid-cols-[minmax(0,1fr)_20rem] items-start gap-6 max-wide:grid-cols-1">
+        <div className="flex min-w-0 flex-col gap-4">
+          <Tabs
+            value={tab}
+            onValueChange={(value) => setParam('tab', value === 'deployments' ? undefined : value)}
+          >
+            <TabsList>
+              {TABS.map((item) => (
+                <TabsTrigger key={item.value} value={item.value}>
+                  {t(item.label)}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+          {tab === 'deployments' && (
+            <DeployHistory
+              orgId={organization.id}
+              orgSlug={organization.slug}
+              serviceId={service.id}
+              environmentId={selectedEnvironment}
+            />
+          )}
+          {tab === 'variables' && (
+            <ServiceVariables
+              orgId={organization.id}
+              service={service}
+              disabledReason={deletingReason}
+              onDeploy={setDeployEnvironment}
+              environmentId={selectedEnvironment}
+              onEnvironmentChange={(id) => setParam('env', id)}
+            />
+          )}
+          {tab === 'metrics' && (
+            <ServiceMetrics
+              orgId={organization.id}
+              service={service}
+              history={history.data?.items}
+            />
+          )}
+          {tab === 'settings' && (
+            <ServiceSettings
+              orgId={organization.id}
+              service={service}
+              disabledReason={deletingReason}
+              onEdit={() => setEditOpen(true)}
+            />
+          )}
+        </div>
+        <ServiceActivity
+          orgId={organization.id}
+          orgSlug={organization.slug}
+          serviceName={service.name}
+        />
       </div>
 
-      <Section title={t('Environments')}>
-        <EnvironmentLinks service={service} orgSlug={organization.slug} />
-      </Section>
-
-      <Section title={t('Environment variables')}>
-        <ServiceVariables
-          orgId={organization.id}
-          service={service}
-          disabledReason={deleting ? t('This service is being deleted') : undefined}
-          onDeploy={() => setDeployOpen(true)}
-        />
-      </Section>
-
-      <Section title={t('Deploy history')}>
-        <DeployHistory orgId={organization.id} orgSlug={organization.slug} serviceId={service.id} />
-      </Section>
-
       <DeployDialog
-        open={deployOpen}
-        onOpenChange={setDeployOpen}
+        key={deployEnvironment ?? 'closed'}
+        open={deployEnvironment !== undefined}
+        onOpenChange={(open) => !open && setDeployEnvironment(undefined)}
         orgId={organization.id}
         orgSlug={organization.slug}
         serviceId={service.id}
         serviceName={service.name}
+        defaultEnvironmentId={deployEnvironment || undefined}
       />
       <EditServiceDialog
         open={editOpen}

@@ -1,6 +1,6 @@
 import { History, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router';
+import { useParams, useSearchParams } from 'react-router';
 import { AuditRow } from '@/components/AuditRow';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorState } from '@/components/ErrorState';
@@ -29,8 +29,11 @@ export default function AuditPage() {
   const { slug } = useParams();
   const { organization } = useCurrentOrg(slug);
   const [actor, setActor] = useState<AuditActorType | 'ALL'>('ALL');
-  const [search, setSearch] = useState('');
-  const [q, setQ] = useState('');
+  // 서비스 화면의 Activity "View all" 이 ?q= 로 서비스 이름을 넘긴다
+  const [searchParams] = useSearchParams();
+  const initialQuery = searchParams.get('q') ?? '';
+  const [search, setSearch] = useState(initialQuery);
+  const [q, setQ] = useState(initialQuery);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setQ(search.trim()), SEARCH_DELAY_MS);

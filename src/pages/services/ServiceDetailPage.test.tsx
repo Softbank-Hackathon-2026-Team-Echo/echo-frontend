@@ -132,6 +132,10 @@ describe('ServiceDetailPage 배포 이력', () => {
     renderPage();
 
     await userEvent.click(await screen.findByRole('button', { name: /roll back/i }));
+    // 되돌리는 범위(이미지 · 변수 버전)를 보이는 확인 창을 거친다
+    const dialog = await screen.findByRole('dialog');
+    expect(called).toEqual([]);
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Roll back' }));
 
     await expect.poll(() => called).toEqual(['r1']);
   });

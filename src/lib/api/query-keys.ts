@@ -15,6 +15,10 @@ export const queryKeys = {
     ['org', orgId, 'services', serviceId, 'deploy-requests'] as const,
   standbySyncs: (orgId: string, serviceId: string, sourceStatus: string) =>
     ['org', orgId, 'services', serviceId, 'standby-syncs', sourceStatus] as const,
+  serviceMetrics: (orgId: string, serviceId: string, range: string) =>
+    ['org', orgId, 'services', serviceId, 'metrics', range] as const,
+  serviceActivity: (orgId: string, serviceName: string) =>
+    ['org', orgId, 'audit', 'service', serviceName] as const,
   deployRequest: (orgId: string, deployRequestId: string) =>
     ['org', orgId, 'deploy-requests', deployRequestId] as const,
   deployLogs: (orgId: string, deployRequestId: string, source: string) =>

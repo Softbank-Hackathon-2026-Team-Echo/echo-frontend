@@ -1,4 +1,4 @@
-import { CircleCheck, CircleX, Loader2 } from 'lucide-react';
+import { CircleCheck, CircleX, KeyRound, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { DeployDialog } from '@/components/DeployDialog';
@@ -7,12 +7,14 @@ import { ProviderLabel } from '@/components/ProviderLabel';
 import { RoleButton } from '@/components/RoleButton';
 import { SimulatedBadge } from '@/components/SimulatedBadge';
 import { StatusBadge } from '@/components/StatusBadge';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { isTerminalStatus, useDeployRequests, useRollback, useService } from '@/lib/api/services';
 import type { DeployRequestSummary, ServiceEnvironment } from '@/lib/api/types';
 import { dateTime } from '@/lib/format';
 import { t } from '@/lib/i18n';
 import { deployErrorLabel, deployTriggerLabel, shortSha } from '@/lib/status';
+import { RollbackDialog } from './RollbackDialog';
 
 /** 연결 하나의 오른쪽 배지: Serving 100% · Standby 0% · Out of sync */
 function linkBadge(link: ServiceEnvironment) {
@@ -60,6 +62,7 @@ export function ServicePanel({
   const history = useDeployRequests(orgId, serviceId);
   const rollback = useRollback(orgId, serviceId);
   const [deployOpen, setDeployOpen] = useState(false);
+  const [rollbackTarget, setRollbackTarget] = useState<DeployRequestSummary>();
 
   if (isPending || !service) return <Skeleton className="h-96 w-full" />;
 
@@ -160,17 +163,36 @@ export function ServicePanel({
             requires="DEVELOPER"
             variant="outline"
             disabled={rollback.isPending}
-            onClick={() =>
-              rollback.mutate(previous.id, {
-                onSuccess: (created) =>
-                  navigate(`/o/${orgSlug}/services/${service.id}/deploys/${created.id}`),
-              })
-            }
+            onClick={() => setRollbackTarget(previous)}
           >
             {t('Roll back to {{sha}}', { sha: shortSha(previous.commitSha) })}
           </RoleButton>
         )}
+        <div className="grid grid-cols-2 gap-2">
+          <Button asChild variant="outline">
+            <Link to={`/o/${orgSlug}/services/${service.id}`}>{t('Open service')}</Link>
+          </Button>
+          <Button asChild variant="outline">
+            <Link to={`/o/${orgSlug}/services/${service.id}?tab=variables`}>
+              <KeyRound aria-hidden />
+              {t('Variables')}
+            </Link>
+          </Button>
+        </div>
       </div>
+      <RollbackDialog
+        target={rollbackTarget}
+        onOpenChange={(open) => !open && setRollbackTarget(undefined)}
+        pending={rollback.isPending}
+        onConfirm={(target) =>
+          rollback.mutate(target.id, {
+            onSuccess: (created) => {
+              setRollbackTarget(undefined);
+              navigate(`/o/${orgSlug}/services/${service.id}/deploys/${created.id}`);
+            },
+          })
+        }
+      />
 
       <DeployDialog
         open={deployOpen}

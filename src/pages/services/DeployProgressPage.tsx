@@ -1,5 +1,7 @@
 import { Check, CircleAlert, Loader2, Minus, X } from 'lucide-react';
-import { Link, useParams } from 'react-router';
+import { useState } from 'react';
+import { Link, useNavigate, useParams } from 'react-router';
+import { DeployDialog } from '@/components/DeployDialog';
 import { ErrorState } from '@/components/ErrorState';
 import { ExternalLink } from '@/components/ExternalLink';
 import { ProviderLabel } from '@/components/ProviderLabel';
@@ -11,55 +13,30 @@ import { useCurrentOrg } from '@/lib/api/me';
 import {
   isTerminalStatus,
   useDeployRequest,
+  useDeployRequests,
+  useRollback,
   useService,
   useStandbySyncs,
 } from '@/lib/api/services';
-import type { DeployRequestDetail, DeployRequestSummary, ServiceDetail } from '@/lib/api/types';
+import {
+  type DeployRequestDetail,
+  type DeployRequestSummary,
+  deployFailure,
+  type LogSource,
+  type ServiceDetail,
+} from '@/lib/api/types';
+import { STAGES, type StageState, stageDuration, stageStates } from '@/lib/deploy-stages';
 import { dateTime, elapsed } from '@/lib/format';
 import { k, t } from '@/lib/i18n';
 import { deployErrorLabel, deployStatusView, deployTriggerLabel, shortSha } from '@/lib/status';
 import { cn } from '@/lib/utils';
+import { DeployDetailsCard } from './DeployDetailsCard';
+import { DeployDiagnosis, type DiagnosisActions } from './DeployDiagnosis';
 import { DeployLogs } from './DeployLogs';
+import { DeploySteps } from './DeploySteps';
+import { RollbackDialog } from './RollbackDialog';
 
-type StageState = 'done' | 'current' | 'failed' | 'pending' | 'skipped';
-
-const STAGES = [
-  { status: 'QUEUED', label: k('Queued'), at: 'queuedAt' },
-  { status: 'BUILDING', label: k('Building'), at: 'buildingAt' },
-  { status: 'DEPLOYING', label: k('Deploying'), at: 'deployingAt' },
-  { status: 'VERIFYING', label: k('Verifying'), at: 'verifyingAt' },
-] as const;
-
-/** 단계별 상태. 실패하면 마지막으로 시작한 단계가 실패 단계다 */
-export function stageStates(
-  request: Pick<DeployRequestDetail, 'status' | 'stageTimes'>,
-): StageState[] {
-  const started = STAGES.map((stage) => Boolean(request.stageTimes[stage.at]));
-  const lastStarted = started.lastIndexOf(true);
-  return STAGES.map((stage, index) => {
-    if (request.status === 'SUCCEEDED') return 'done';
-    if (!started[index]) return 'pending';
-    if (index < lastStarted) return 'done';
-    if (request.status === 'FAILED' || request.status === 'CANCELLED') return 'failed';
-    return stage.status === request.status ? 'current' : 'done';
-  });
-}
-
-/**
- * 단계에 걸린 시간. 단계의 끝은 그 뒤로 처음 찍힌 시각이다. 취소·실패로 다음 단계가 없으면 finishedAt 이고,
- * 진행 중이면 찍힌 시각이 없어 지금까지 센다
- */
-export function stageDuration(
-  times: DeployRequestDetail['stageTimes'],
-  index: number,
-  now: number,
-): string | null {
-  const stage = STAGES[index];
-  const startedAt = stage && times[stage.at];
-  if (!startedAt) return null;
-  const later = [...STAGES.slice(index + 1).map((next) => times[next.at]), times.finishedAt];
-  return elapsed(startedAt, later.find(Boolean) ?? null, now);
-}
+export { stageDuration, stageStates } from '@/lib/deploy-stages';
 
 const STAGE_ICON: Record<StageState, React.ReactNode> = {
   done: <Check aria-hidden className="size-4" />,
@@ -242,12 +219,37 @@ const CANCEL_REASONS: Record<string, string> = {
   BASE_CHANGED: k('Cancelled because another version went live before this rollback started.'),
 };
 
+/**
+ * 이 배포 전에 같은 환경에서 성공한 배포가 있었나. 없으면 첫 배포라 "이전 버전 유지" 문구가 틀린다(도현 11/6).
+ * 이력을 못 불렀으면 null
+ */
+export function hadPreviousVersion(
+  request: Pick<DeployRequestDetail, 'id' | 'serviceEnvironmentId' | 'stageTimes'>,
+  history:
+    | Pick<DeployRequestSummary, 'id' | 'serviceEnvironmentId' | 'status' | 'stageTimes'>[]
+    | undefined,
+): boolean | null {
+  if (!history) return null;
+  const queuedAt = new Date(request.stageTimes.queuedAt).getTime();
+  return history.some(
+    (item) =>
+      item.id !== request.id &&
+      item.serviceEnvironmentId === request.serviceEnvironmentId &&
+      item.status === 'SUCCEEDED' &&
+      new Date(item.stageTimes.queuedAt).getTime() < queuedAt,
+  );
+}
+
 function Outcome({
   request,
   requestLink,
+  hadPrevious,
+  actions,
 }: {
   request: DeployRequestDetail;
   requestLink: (id: string) => string;
+  hadPrevious: boolean | null;
+  actions: DiagnosisActions;
 }) {
   if (request.status === 'SUCCEEDED') {
     return (
@@ -257,19 +259,48 @@ function Outcome({
     );
   }
   if (request.status === 'FAILED') {
+    const failure = deployFailure(request);
+    // 서버가 알려 주면(echo-was #97) 그 값을, 아니면 이력으로 판단한 값을 쓴다
+    const previousRunning = failure?.previousVersionRunning ?? hadPrevious;
+    const container =
+      failure &&
+      [
+        failure.containerReason,
+        failure.exitCode !== null && t('exit code {{code}}', { code: failure.exitCode }),
+        failure.restartCount !== null && t('{{count}} restarts', { count: failure.restartCount }),
+      ].filter(Boolean);
     return (
-      <div role="alert" className="flex flex-col gap-1 rounded-lg bg-danger-bg p-4 text-danger-fg">
-        <p className="flex items-center gap-2 text-title">
-          <CircleAlert aria-hidden className="size-4" />
-          {request.errorCode ? deployErrorLabel(request.errorCode) : t('The deploy failed.')}
-        </p>
-        {request.errorMessage && <p className="text-body">{request.errorMessage}</p>}
-        {request.revertStatus === 'SUCCEEDED' && (
-          <p className="text-body">{t('The previous version was kept running.')}</p>
+      <div className="flex flex-col gap-3 rounded-lg border border-line bg-surface p-4">
+        <div role="alert" className="flex flex-col gap-1 text-danger-fg">
+          <p className="flex items-center gap-2 text-title">
+            <CircleAlert aria-hidden className="size-4" />
+            {request.errorCode ? deployErrorLabel(request.errorCode) : t('The deploy failed.')}
+          </p>
+          {failure?.message && <p className="text-body">{failure.message}</p>}
+          {previousRunning === false ? (
+            <p className="text-body">{t('No version is running in this environment yet.')}</p>
+          ) : request.revertStatus === 'SUCCEEDED' ? (
+            <p className="text-body">{t('The previous version was kept running.')}</p>
+          ) : request.revertStatus === 'FAILED' ? (
+            <p className="text-body">{t('Reverting to the previous version also failed.')}</p>
+          ) : null}
+        </div>
+        {failure && failure.logTail.length > 0 && (
+          <details className="flex flex-col gap-1.5">
+            <summary className="cursor-pointer text-small text-fg-secondary">
+              {t('Last {{count}} log lines from {{container}}', {
+                count: failure.logTail.length,
+                container: failure.container ?? t('the container'),
+              })}
+              {container && container.length > 0 && ` · ${container.join(' · ')}`}
+            </summary>
+            <pre className="mt-1.5 max-h-64 overflow-auto rounded-md bg-subtle px-3 py-2 font-mono text-mono text-fg">
+              {failure.logTail.join('\n')}
+              {failure.logTruncated && `\n${t('… earlier lines cut')}`}
+            </pre>
+          </details>
         )}
-        {request.revertStatus === 'FAILED' && (
-          <p className="text-body">{t('Reverting to the previous version also failed.')}</p>
-        )}
+        <DeployDiagnosis request={request} actions={actions} />
       </div>
     );
   }
@@ -315,7 +346,13 @@ export default function DeployProgressPage() {
     refetch,
   } = useDeployRequest(organization?.id, deployRequestId);
   const syncs = useStandbySyncs(organization?.id, serviceId, request);
+  const history = useDeployRequests(organization?.id, serviceId);
+  const rollback = useRollback(organization?.id ?? '', serviceId ?? '');
+  const navigate = useNavigate();
   const now = useNow(Boolean(request && !isTerminalStatus(request.status)));
+  const [logSource, setLogSource] = useState<LogSource>('DEPLOY_JOB');
+  const [rollbackTarget, setRollbackTarget] = useState<DeployRequestSummary>();
+  const [deployOpen, setDeployOpen] = useState(false);
 
   if (isError) return <ErrorState error={error} onRetry={() => refetch()} />;
   if (isPending) {
@@ -326,6 +363,26 @@ export default function DeployProgressPage() {
       </div>
     );
   }
+
+  const servicePage = `/o/${slug}/services/${serviceId}`;
+  // 같은 환경에서 되돌릴 수 있는 가장 최근 성공 배포 (이력은 최신순)
+  const lastGood = history.data?.items.find(
+    (item) => item.rollbackable && item.serviceEnvironmentId === request.serviceEnvironmentId,
+  );
+  const actions: DiagnosisActions = {
+    run: (fix) => {
+      if (fix === 'OPEN_VARIABLES')
+        navigate(`${servicePage}?tab=variables&env=${request.environment.id}`);
+      else if (fix === 'OPEN_SETTINGS') navigate(`${servicePage}?tab=settings`);
+      else if (fix === 'ROLLBACK') setRollbackTarget(lastGood);
+      else if (fix === 'REDEPLOY') setDeployOpen(true);
+      else {
+        setLogSource('BUILD');
+        document.getElementById('deploy-logs')?.scrollIntoView({ behavior: 'smooth' });
+      }
+    },
+    unavailable: lastGood ? [] : ['ROLLBACK'],
+  };
 
   const refText = request.ref.type === 'BRANCH' ? request.ref.value : shortSha(request.ref.value);
   const serviceName = service.data?.name ?? t('service');
@@ -381,12 +438,52 @@ export default function DeployProgressPage() {
       <Outcome
         request={request}
         requestLink={(id) => `/o/${slug}/services/${serviceId}/deploys/${id}`}
+        hadPrevious={hadPreviousVersion(request, history.data?.items)}
+        actions={actions}
       />
 
       <div className="grid grid-cols-[1fr_20rem] items-start gap-4 max-wide:grid-cols-1">
-        {organization && <DeployLogs orgId={organization.id} request={request} />}
-        <UrlCard request={request} />
+        <div className="flex min-w-0 flex-col gap-4">
+          <DeploySteps request={request} now={now} />
+          {organization && (
+            <DeployLogs
+              key={logSource}
+              orgId={organization.id}
+              request={request}
+              defaultSource={logSource}
+            />
+          )}
+        </div>
+        <div className="flex flex-col gap-4">
+          <UrlCard request={request} />
+          <DeployDetailsCard request={request} service={service.data} />
+        </div>
       </div>
+
+      <RollbackDialog
+        target={rollbackTarget}
+        onOpenChange={(open) => !open && setRollbackTarget(undefined)}
+        pending={rollback.isPending}
+        onConfirm={(target) =>
+          rollback.mutate(target.id, {
+            onSuccess: (created) => {
+              setRollbackTarget(undefined);
+              navigate(`${servicePage}/deploys/${created.id}`);
+            },
+          })
+        }
+      />
+      {organization && service.data && (
+        <DeployDialog
+          open={deployOpen}
+          onOpenChange={setDeployOpen}
+          orgId={organization.id}
+          orgSlug={organization.slug}
+          serviceId={service.data.id}
+          serviceName={service.data.name}
+          defaultEnvironmentId={request.environment.id}
+        />
+      )}
     </>
   );
 }

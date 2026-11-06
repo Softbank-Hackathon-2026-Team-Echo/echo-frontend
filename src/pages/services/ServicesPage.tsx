@@ -1,6 +1,6 @@
 import { Activity, ArrowLeftRight, Boxes, Globe, ShieldCheck } from 'lucide-react';
 import { useState } from 'react';
-import { useParams, useSearchParams } from 'react-router';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorState } from '@/components/ErrorState';
 import { PageHeader } from '@/components/PageHeader';
@@ -97,9 +97,12 @@ export default function ServicesPage() {
   const ids = services.data?.items.map((service) => service.id) ?? [];
   const details = useServiceDetails(orgId, ids);
   const requests = useServicesDeployRequests(orgId, ids);
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [registerOpen, setRegisterOpen] = useState(false);
-  const selectedId = searchParams.get('service') ?? ids[0];
+  // 줄을 누르면 상세 화면으로 간다. 오른쪽 패널은 마우스를 올리거나 포커스한 줄을 미리 보인다
+  const [previewId, setPreviewId] = useState<string>();
+  const selectedId = previewId ?? searchParams.get('service') ?? ids[0];
 
   const registerButton = (
     <RoleButton requires="DEVELOPER" onClick={() => setRegisterOpen(true)}>
@@ -155,18 +158,18 @@ export default function ServicesPage() {
                           'cursor-pointer',
                           selected && 'bg-brand-subtle hover:bg-brand-subtle',
                         )}
-                        onClick={() => setSearchParams({ service: summary.id }, { replace: true })}
+                        onClick={() => navigate(`/o/${slug}/services/${summary.id}`)}
+                        onMouseEnter={() => setPreviewId(summary.id)}
                       >
                         <TableCell>
-                          <button
-                            type="button"
+                          <Link
+                            to={`/o/${slug}/services/${summary.id}`}
                             className="text-body-medium hover:underline"
-                            onClick={() =>
-                              setSearchParams({ service: summary.id }, { replace: true })
-                            }
+                            onFocus={() => setPreviewId(summary.id)}
+                            onClick={(event) => event.stopPropagation()}
                           >
                             {summary.name}
-                          </button>
+                          </Link>
                           {summary.status === 'DELETING' && (
                             <span className="ml-2 text-caption text-warning-fg">
                               {t('deleting')}

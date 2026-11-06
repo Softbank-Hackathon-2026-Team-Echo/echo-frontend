@@ -1,5 +1,5 @@
 // 앱 환경 변수 (API 서버 10, echo-was docs/api/variables.md). 쓰기 전용이라 값은 어떤 응답에도 없다
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, unwrap } from './client';
 import { queryKeys } from './query-keys';
 
@@ -22,14 +22,53 @@ const pathOf = ({ orgId, serviceId, environmentId }: Target) => ({
 });
 
 export function useServiceVariables(target: Target) {
-  return useQuery({
-    queryKey: queryKeys.serviceVariables(target.orgId, target.serviceId, target.environmentId),
-    queryFn: () =>
-      unwrap(
-        api.GET(
-          '/api/v1/orgs/{org_id}/services/{service_id}/environments/{environment_id}/variables',
-          { params: { path: pathOf(target) } },
-        ),
+  return useQuery(variablesQuery(target));
+}
+
+const variablesQuery = (target: Target) => ({
+  queryKey: queryKeys.serviceVariables(target.orgId, target.serviceId, target.environmentId),
+  queryFn: () =>
+    unwrap(
+      api.GET(
+        '/api/v1/orgs/{org_id}/services/{service_id}/environments/{environment_id}/variables',
+        { params: { path: pathOf(target) } },
+      ),
+    ),
+});
+
+export type PendingVariable = {
+  environmentId: string;
+  key: string;
+  appliedVersion: number | null;
+  version: number;
+};
+
+/**
+ * 서비스의 모든 환경에서 다음 배포에 반영될 변수(pendingRedeploy). 변경 대기 띠가 쓴다.
+ * 같은 키를 변수 탭과 나눠 쓰므로 탭에서 저장하면 띠도 바로 바뀐다
+ */
+export function usePendingVariables(
+  orgId: string | undefined,
+  serviceId: string | undefined,
+  environmentIds: string[],
+) {
+  return useQueries({
+    queries: environmentIds.map((environmentId) => ({
+      ...variablesQuery({ orgId: orgId ?? '', serviceId: serviceId ?? '', environmentId }),
+      enabled: Boolean(orgId && serviceId),
+    })),
+    combine: (results) =>
+      results.flatMap((result, index) =>
+        (result.data?.items ?? [])
+          .filter((item) => item.pendingRedeploy)
+          .map(
+            (item): PendingVariable => ({
+              environmentId: environmentIds[index] ?? '',
+              key: item.key,
+              appliedVersion: item.appliedVersion,
+              version: item.version,
+            }),
+          ),
       ),
   });
 }
@@ -37,9 +76,13 @@ export function useServiceVariables(target: Target) {
 function useInvalidateVariables({ orgId, serviceId, environmentId }: Target) {
   const queryClient = useQueryClient();
   return () =>
-    queryClient.invalidateQueries({
-      queryKey: queryKeys.serviceVariables(orgId, serviceId, environmentId),
-    });
+    Promise.all([
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.serviceVariables(orgId, serviceId, environmentId),
+      }),
+      // 첫 배포 전에 넣으면 서버가 연결을 만든다(echo-was #96). 서비스 상세의 환경 목록도 다시 읽는다
+      queryClient.invalidateQueries({ queryKey: queryKeys.service(orgId, serviceId) }),
+    ]);
 }
 
 export function useSaveVariable(target: Target) {

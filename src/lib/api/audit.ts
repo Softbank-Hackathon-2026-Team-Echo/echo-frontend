@@ -50,3 +50,23 @@ export const recentActivityQuery = (orgId: string) =>
 export function useRecentActivity(orgId: string | undefined) {
   return useQuery({ ...recentActivityQuery(orgId ?? ''), enabled: Boolean(orgId) });
 }
+
+const SERVICE_ACTIVITY_SIZE = 8;
+
+/** 서비스 화면 오른쪽 최근 활동. 감사 로그에서 대상 이름으로 찾는다(배포 요청 줄도 서비스 이름을 싣는다) */
+export function useServiceActivity(orgId: string | undefined, serviceName: string | undefined) {
+  return useQuery({
+    queryKey: queryKeys.serviceActivity(orgId ?? '', serviceName ?? ''),
+    queryFn: () =>
+      unwrap(
+        api.GET('/api/v1/orgs/{org_id}/audit-logs', {
+          params: {
+            path: { org_id: orgId ?? '' },
+            query: { q: serviceName, includeReads: false, page: 0, size: SERVICE_ACTIVITY_SIZE },
+          },
+        }),
+      ),
+    enabled: Boolean(orgId && serviceName),
+    staleTime: 0,
+  });
+}

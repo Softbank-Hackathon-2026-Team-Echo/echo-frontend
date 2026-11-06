@@ -28,6 +28,8 @@ const me = (role: 'VIEWER' | 'DEVELOPER'): Me => ({
 
 const detail = (extra: Partial<PrecheckDetail> = {}): PrecheckDetail => ({
   id: 'run1',
+  kind: 'PRECHECK',
+  apply: null,
   serviceId: 's1',
   sourceEnvironmentId: 'e1',
   targetEnvironmentId: 'e2',

@@ -141,7 +141,7 @@ export default function DashboardPage() {
 
       {!details.isPending && <SetupBanner orgSlug={organization.slug} progress={setup} />}
 
-      <KpiTiles serving={serving} target={migrating} />
+      <KpiTiles orgId={organization.id} serving={serving} target={migrating} />
 
       <div className="grid grid-cols-12 gap-4">
         <Panel title={t('Topology')} className="col-span-8 max-wide:col-span-12">
