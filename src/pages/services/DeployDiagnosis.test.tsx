@@ -259,4 +259,78 @@ describe('DeployDiagnosis', () => {
 
     expect(await screen.findByText('DEPLOY_IN_PROGRESS')).toBeInTheDocument();
   });
+  it('반영이 끝난 뒤 재배포가 늦게 이어져도 기다렸다가 상태를 보인다', async () => {
+    const applied = (redeployRequestId: string | null) =>
+      run({
+        kind: 'CHANGE_PROPOSAL',
+        patches: [
+          {
+            ...patch,
+            status: 'APPLIED',
+            apply: {
+              status: 'SUCCEEDED',
+              finishedAt: new Date().toISOString(),
+              failureCode: null,
+              branch: 'echoport/fix-a1',
+              appliedCommitSha: 'd387b612',
+              simulated: false,
+              pullRequestUrl: null,
+              redeployRequestId,
+              redeployRejectedCode: null,
+            },
+          },
+        ],
+      });
+    let calls = 0;
+    server.use(
+      http.get(`${API}/orgs/o1/prechecks/run1`, () => {
+        calls += 1;
+        return ok(applied(calls >= 2 ? 'r2' : null));
+      }),
+      http.get(`${API}/orgs/o1/deploy-requests/r2`, () =>
+        ok({ id: 'r2', status: 'BUILDING', commitSha: 'd387b612d83f97c0' }),
+      ),
+    );
+    renderDiagnosis({ ...failed, diagnosis: { runId: 'run1', status: 'SUCCEEDED' } });
+
+    expect(
+      await screen.findByText(
+        'Sandbox check passed. Committing the fix and starting the redeploy…',
+      ),
+    ).toBeInTheDocument();
+    expect(await screen.findByText('Building', {}, { timeout: 4000 })).toBeInTheDocument();
+    expect(calls).toBeGreaterThanOrEqual(2);
+  });
+
+  it('재배포가 오래 이어지지 않으면 다시 확인 버튼을 준다', async () => {
+    server.use(
+      http.get(`${API}/orgs/o1/prechecks/run1`, () =>
+        ok(
+          run({
+            kind: 'CHANGE_PROPOSAL',
+            patches: [
+              {
+                ...patch,
+                status: 'APPLIED',
+                apply: {
+                  status: 'SUCCEEDED',
+                  finishedAt: '2026-11-07T00:00:00Z',
+                  failureCode: null,
+                  branch: null,
+                  appliedCommitSha: null,
+                  simulated: false,
+                  pullRequestUrl: null,
+                  redeployRequestId: null,
+                  redeployRejectedCode: null,
+                },
+              },
+            ],
+          }),
+        ),
+      ),
+    );
+    renderDiagnosis({ ...failed, diagnosis: { runId: 'run1', status: 'SUCCEEDED' } });
+    expect(await screen.findByText('The redeploy has not started yet.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Check again' })).toBeInTheDocument();
+  });
 });

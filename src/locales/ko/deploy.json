@@ -22,5 +22,11 @@
   "The app answers {{path}} on port {{port}}": "앱이 {{port}} 포트의 {{path}} 에 응답",
   "View logs": "로그 보기",
   "Search loaded logs": "불러온 로그 검색",
-  "No lines match.": "맞는 줄이 없습니다."
+  "No lines match.": "맞는 줄이 없습니다.",
+  "Sandbox check passed. Committing the fix and starting the redeploy…": "샌드박스 검증을 통과했습니다. 수정 커밋을 만들고 재배포를 시작하는 중…",
+  "The redeploy has not started yet.": "재배포가 아직 시작되지 않았습니다.",
+  "Check again": "다시 확인",
+  "The fix is live. The health check passed.": "수정본이 반영됐습니다. 헬스 체크를 통과했습니다.",
+  "The redeploy did not finish.": "재배포가 끝나지 못했습니다.",
+  "Original deploy {{sha}}": "원래 배포 {{sha}}"
 }
