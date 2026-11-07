@@ -38,6 +38,7 @@ import { DeployDiagnosis, type DiagnosisActions } from './DeployDiagnosis';
 import { DeployLogs } from './DeployLogs';
 import { DeploySteps } from './DeploySteps';
 import { RollbackDialog } from './RollbackDialog';
+import { StandbyFollowCard } from './StandbyFollowCard';
 
 export { stageDuration, stageStates } from '@/lib/deploy-stages';
 
@@ -641,6 +642,14 @@ export default function DeployProgressPage() {
         <div className="flex flex-col gap-4">
           <UrlCard request={request} />
           <DeployDetailsCard request={request} service={service.data} />
+          {organization && (
+            <StandbyFollowCard
+              orgId={organization.id}
+              request={request}
+              syncs={syncs.data}
+              requestLink={(id) => `/o/${slug}/services/${serviceId}/deploys/${id}`}
+            />
+          )}
         </div>
       </div>
 

@@ -89,5 +89,6 @@
   "Copy 1 key": "キーを1件コピー",
   "Copy {{n}} keys": "キーを{{n}}件コピー",
   "No variables to copy yet": "コピーする変数はまだありません",
-  "Copy to environments": "他の環境にコピー"
+  "Copy to environments": "他の環境にコピー",
+  "Every picked key already exists there. Turn on replace to overwrite.": "選んだキーはコピー先にすべて既にあります。上書きするには置き換えをオンにしてください。"
 }

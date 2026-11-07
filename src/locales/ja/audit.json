@@ -61,5 +61,6 @@
   "requested CVE diagnosis": "CVE診断を要求",
   "checked CVE watch": "CVE監視を確認",
   "injected CVE advisory": "CVEアドバイザリを注入",
-  "copied app variable": "アプリ変数をコピー"
+  "copied app variable": "アプリ変数をコピー",
+  "skipped evacuation (no safe standby)": "避難をスキップ(安全な予備なし)"
 }

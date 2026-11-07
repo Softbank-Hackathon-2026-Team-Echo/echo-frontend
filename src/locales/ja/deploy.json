@@ -33,5 +33,12 @@
   "Last confirmed at {{time}}. Elapsed time is frozen.": "最終確認: {{time}}。経過時間はこの時刻で停止しています。",
   "Elapsed at last confirmation": "最終確認時点の経過時間",
   "Logs will reappear when status checking recovers.": "状態の取得が復旧するとログが再表示されます。",
-  "Check delayed": "確認遅延"
+  "Check delayed": "確認遅延",
+  "Standby environments": "予備環境",
+  "Waiting for the main deploy": "メインデプロイ待ち",
+  "Requested in this deploy": "このデプロイで指定した予備",
+  "Existing standby following this version": "このバージョンに追従する既存の予備",
+  "in progress": "進行中",
+  "EchoPort skips a standby when the environment is gone, its address conflicts, or a migration is running.": "環境がない、アドレスが重複している、または移行中の場合、EchoPortはその予備をスキップします。",
+  "Open": "開く"
 }

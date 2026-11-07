@@ -33,5 +33,12 @@
   "Last confirmed at {{time}}. Elapsed time is frozen.": "마지막 확인: {{time}}. 경과 시간은 이 시각에 멈춰 있습니다.",
   "Elapsed at last confirmation": "마지막 확인 시각까지의 경과 시간",
   "Logs will reappear when status checking recovers.": "상태 조회가 복구되면 로그가 다시 표시됩니다.",
-  "Check delayed": "확인 지연"
+  "Check delayed": "확인 지연",
+  "Standby environments": "예비 환경",
+  "Waiting for the main deploy": "주 배포 대기",
+  "Requested in this deploy": "이번 배포에서 요청한 예비",
+  "Existing standby following this version": "이 버전을 따라가는 기존 예비",
+  "in progress": "진행 중",
+  "EchoPort skips a standby when the environment is gone, its address conflicts, or a migration is running.": "환경이 없거나 주소가 겹치거나 이전이 진행 중이면 EchoPort가 그 예비를 건너뜁니다.",
+  "Open": "보기"
 }

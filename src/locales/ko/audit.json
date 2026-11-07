@@ -61,5 +61,6 @@
   "requested CVE diagnosis": "CVE 진단 요청",
   "checked CVE watch": "CVE 감시 확인",
   "injected CVE advisory": "CVE 권고 주입",
-  "copied app variable": "앱 변수 복사"
+  "copied app variable": "앱 변수 복사",
+  "skipped evacuation (no safe standby)": "대피 건너뜀(안전한 예비 없음)"
 }

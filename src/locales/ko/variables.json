@@ -89,5 +89,6 @@
   "Copy 1 key": "키 1개 복사",
   "Copy {{n}} keys": "키 {{n}}개 복사",
   "No variables to copy yet": "아직 복사할 변수가 없습니다",
-  "Copy to environments": "다른 환경으로 복사"
+  "Copy to environments": "다른 환경으로 복사",
+  "Every picked key already exists there. Turn on replace to overwrite.": "고른 키가 대상 환경에 모두 이미 있습니다. 덮어쓰려면 바꾸기를 켜세요."
 }
