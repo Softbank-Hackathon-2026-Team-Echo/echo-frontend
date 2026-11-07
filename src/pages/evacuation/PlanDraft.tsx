@@ -24,6 +24,7 @@ const FIELDS = [
   'requiredRequests',
   'maxWaitSeconds',
   'simulate',
+  'includeCutover',
   'rollbackConditions.maxErrorRatePercent',
   'rollbackConditions.maxP95Ms',
   'rollbackConditions.maxReplicationLagSeconds',
@@ -94,9 +95,11 @@ export function PlanDraft({
   const [maxWaitSeconds, setMaxWaitSeconds] = useState(DEFAULT_MAX_WAIT_SECONDS);
   const [conditions, setConditions] = useState(DEFAULT_CONDITIONS);
   const [picked, setSimulate] = useState<Simulate | null>(null);
+  // DB 쓰기 담당도 옮기면 비율 100% 뒤에 DB 쓰기 전환 단계가 붙는다(echo-was API 서버 17). 기본 끔
+  const [includeCutover, setIncludeCutover] = useState(false);
   const simulate = realTarget ? null : picked;
   const errors = fieldErrors(create.error);
-  const steps = draftSteps(required, maxWaitSeconds);
+  const steps = draftSteps(required, maxWaitSeconds, includeCutover);
   const total = steps.reduce((sum, step) => sum + step.expectedSeconds, 0);
 
   function handleSubmit(event: FormEvent) {
@@ -107,8 +110,7 @@ export function PlanDraft({
         requiredRequests: required,
         maxWaitSeconds,
         rollbackConditions: conditions,
-        // 쓰기 전환은 사람이 스크립트로 돌린다. 서버 실행기가 꺼져 있으면 true 는 409 다
-        includeCutover: false,
+        includeCutover,
         ...(simulate ? { simulate } : {}),
       },
       { onSuccess: onCreated },
@@ -145,6 +147,26 @@ export function PlanDraft({
         <section className="flex flex-1 flex-col gap-3 rounded-xl border border-line bg-surface p-4 max-wide:w-full">
           <h2 className="text-title">{t('Stages')}</h2>
           <StageList stages={planStages(steps, conditions, targetName)} />
+          <label className="flex items-start gap-2 border-t border-line pt-3 text-body">
+            <input
+              type="checkbox"
+              className="mt-0.5 size-4 accent-brand"
+              checked={includeCutover}
+              onChange={(event) => setIncludeCutover(event.target.checked)}
+            />
+            <span className="flex flex-col gap-0.5">
+              <span>{t('Also move the DB writer')}</span>
+              <span className="text-caption text-fg-muted">
+                {t(
+                  'After 100% of traffic is on {{target}}, EchoPort runs the DB cutover job. Writes pause for a few seconds.',
+                  { target: targetName },
+                )}
+              </span>
+              {errors.includeCutover && (
+                <span className="text-caption text-danger-fg">{errors.includeCutover}</span>
+              )}
+            </span>
+          </label>
         </section>
         <section className="flex w-96 shrink-0 flex-col gap-3 rounded-xl border border-line bg-surface p-4 max-wide:w-full">
           <h2 className="text-title">{t('Each traffic step passes when')}</h2>

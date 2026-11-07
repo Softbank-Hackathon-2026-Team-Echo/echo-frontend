@@ -193,6 +193,8 @@ data: {"seq": 1042, "ts": "2026-11-07T03:05:40Z", "orgId": "…", "resource": {"
 ### 4-6. 이전 계획·실행·결과·복귀 (F6~F10, F17)
 
 > 11/3: E01-3 은 운영 API 서버 8(`POST /services/{id}/migration-plans` · `GET/approve/reject/cancel/abort/logs`)에 붙였다. 서버 단계는 고정(PREFLIGHT · SHIFT 10/50/100 · DATA_SYNC_CHECK)이고 쓰기 전환 단계는 아직 없다. 건수 기준 판정(API 서버 8-1, echo-was #22)도 붙였다: 만들기 `requiredRequests`[10%·50%·100%] · `maxWaitSeconds`(`observeSeconds` 는 없어졌다), 실행 중 `progress`(건수·5xx·남은 초)를 1초마다, 데모 실패 주입 `simulate{reason, failAtStep}`, 승인 409 `PLAN_STALE` 의 `details[].field` 로 바뀐 항목 표시. 11/4: 복귀 표시는 서버가 만들 때 판정한 응답 `mode`(`PLANNED` · `FAILBACK` · `EMERGENCY`, echo-was `specs/api-8-3-plan-mode.md`)를 쓴다. 복귀의 복귀는 `PLANNED` 다. 데모 실패 주입은 실제 실행기에서 서버가 거절하므로 도착 연결의 `simulated: false` 면 고르지 못한다.
+>
+> 11/7: DB 쓰기 전환(echo-was API 서버 17, #106). 만들기 `includeCutover`(체크박스 「DB 쓰기 담당도 함께 옮기기」, 기본 false) → 비율 100% 뒤 `DB_CUTOVER`(index 5) 단계와 `steps[5].cutover`(Job 상태·`reason`·`writer`·`run`) 표시, `DB_CUTOVER_UNKNOWN` 은 빨간 「사람 확인 필요」 배지. 서버 실행기가 꺼져 있으면 409 `DB_CUTOVER_DISABLED`. 상세 `promoteWarning` 이 있으면(재난 긴급 이전 + DB 쓰기 전환) 경고·동의 체크 뒤 승인 본문 `{"acknowledgePromote": true}`, 없이 승인하면 422 `PROMOTE_ACK_REQUIRED`. 그 밖의 승인은 본문 없이 보낸다.
 
 | 동작 | 제안 |
 |---|---|

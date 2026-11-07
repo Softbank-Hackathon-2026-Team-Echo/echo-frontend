@@ -1,4 +1,5 @@
-import { CircleAlert, Route } from 'lucide-react';
+import { CircleAlert, Route, TriangleAlert } from 'lucide-react';
+import { useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorState } from '@/components/ErrorState';
@@ -91,6 +92,8 @@ export default function PlanPage() {
   const approve = usePlanAction(orgId ?? '', serviceId ?? '', 'approve');
   const reject = usePlanAction(orgId ?? '', serviceId ?? '', 'reject');
   const cancel = usePlanAction(orgId ?? '', serviceId ?? '', 'cancel');
+  // 승격 위험 고지(promoteWarning)에 동의했는가. 동의 없이 승인하면 서버가 422 PROMOTE_ACK_REQUIRED 를 준다
+  const [promoteAcknowledged, setPromoteAcknowledged] = useState(false);
   const disasters = useActiveDisasters(orgId);
   // 끝낸 점검에서 왔을 때만 주소에 id 가 있다. 그 밖은 점검을 건너뛴 것이다
   const precheckSkipped = !searchParams.has('precheck');
@@ -178,13 +181,16 @@ export default function PlanPage() {
   const mine = current.createdBy.id === me.user.id;
   const selfBlocked = mine && !organization.allowSelfApproval;
   const mismatches = security.data?.rows.filter((row) => row.blocksMigration) ?? [];
+  const promoteWarning = current.promoteWarning ?? null;
   const approveReason = riskReason
     ? riskReason
     : selfBlocked
       ? t('Self-approval is off. Ask another developer, or turn it on in Settings › Members.')
       : mismatches.length
         ? t('Fix the security mismatch first')
-        : undefined;
+        : promoteWarning && !promoteAcknowledged
+          ? t('Acknowledge the promotion warning first')
+          : undefined;
   const actionError = approve.error ?? reject.error ?? cancel.error;
   // 게이트는 막은 통제마다 details 한 칸을 준다: {field: 통제 ID, reason: 사유}
   const gateBlocks =
@@ -229,7 +235,12 @@ export default function PlanPage() {
                 disabledReason={approveReason}
                 disabled={approve.isPending}
                 onClick={() =>
-                  approve.mutate(current.id, { onSuccess: () => navigate(migrationUrl) })
+                  approve.mutate(
+                    promoteWarning
+                      ? { planId: current.id, acknowledgePromote: promoteAcknowledged }
+                      : current.id,
+                    { onSuccess: () => navigate(migrationUrl) },
+                  )
                 }
               >
                 {t('Approve plan')}
@@ -269,6 +280,28 @@ export default function PlanPage() {
               ? t('Approval locked: {{n}} security mismatch ({{controls}}).', mismatchValues)
               : t('Approval locked: {{n}} security mismatches ({{controls}}).', mismatchValues)}
           </p>
+        </div>
+      )}
+      {promoteWarning && pending && (
+        <div
+          role="alert"
+          className="flex items-start gap-3 rounded-lg border border-warning-solid bg-warning-bg p-3 text-warning-fg"
+        >
+          <TriangleAlert aria-hidden className="mt-0.5 size-4 shrink-0" />
+          <div className="flex flex-col gap-2">
+            <p className="text-body-medium">{t('This plan promotes the target database')}</p>
+            {/* 서버 고지 문장(되돌릴 수 없음·쓰기 손실 가능·복귀에 resync)을 그대로 보여 준다 */}
+            <p className="whitespace-pre-line text-small">{promoteWarning}</p>
+            <label className="flex items-start gap-2 text-body text-fg">
+              <input
+                type="checkbox"
+                className="mt-0.5 size-4 accent-brand"
+                checked={promoteAcknowledged}
+                onChange={(event) => setPromoteAcknowledged(event.target.checked)}
+              />
+              {t('I understand the promotion cannot be undone and unreplicated writes may be lost')}
+            </label>
+          </div>
         </div>
       )}
       {closedText && (

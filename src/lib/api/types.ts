@@ -34,6 +34,9 @@ export type MigrationPlanSummary = Schemas['MigrationPlanSummaryResponse'];
 export type MigrationPlanStatus = Schemas['MigrationPlanStatus'];
 export type MigrationStep = Schemas['MigrationStepResponse'];
 export type CreateMigrationPlan = Schemas['CreateMigrationPlanRequest'];
+export type ApproveMigrationPlan = Schemas['ApproveMigrationPlanRequest'];
+/** DB 쓰기 전환 단계(DB_CUTOVER)의 Job 과 결과. 그 밖의 단계는 null (echo-was API 서버 17) */
+export type StepCutover = Schemas['StepCutoverResponse'];
 export type RollbackConditions = Schemas['RollbackConditionsRequest'];
 export type Invitation = Schemas['InvitationResponse'];
 export type AgentToken = Schemas['AgentTokenResponse'];
