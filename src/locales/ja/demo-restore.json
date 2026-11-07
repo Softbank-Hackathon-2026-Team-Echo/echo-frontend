@@ -1,0 +1,18 @@
+{
+  "Already matches": "すでに一致",
+  "Restored": "元に戻した",
+  "Manual step needed": "手動対応が必要",
+  "Kept as is": "そのまま",
+  "Would change": "変更予定",
+  "Restore demo state": "デモ状態に戻す",
+  "Cancels open migrations, ends active disasters, moves traffic and deploys back to the saved snapshot. Audit logs, security exceptions and settings are kept. Safe to run again.": "進行中の移行を取り消し、進行中の災害を終了してから、トラフィックとデプロイを保存したスナップショットに戻します。監査ログ・セキュリティ例外・設定はそのまま残します。何度実行しても安全です。",
+  "Preview only. Nothing was changed.": "プレビューのみです。何も変更していません。",
+  "Restored to the snapshot.": "スナップショットの状態に戻しました。",
+  "Not fully restored yet.": "まだすべては戻っていません。",
+  "Some steps are still running. Run it again in a moment.": "まだ進行中の段階があります。しばらくしてからもう一度実行してください。",
+  "Manual step needed: {{steps}}": "手動対応が必要: {{steps}}",
+  "Preview": "プレビュー",
+  "Preview first": "先にプレビューを実行してください",
+  "Working…": "処理中…",
+  "Restore": "元に戻す"
+}

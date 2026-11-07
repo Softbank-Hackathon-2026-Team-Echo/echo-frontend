@@ -1,0 +1,18 @@
+{
+  "Already matches": "이미 같음",
+  "Restored": "되돌림",
+  "Manual step needed": "수동 필요",
+  "Kept as is": "그대로 둠",
+  "Would change": "바꿀 예정",
+  "Restore demo state": "시연 상태로 되돌리기",
+  "Cancels open migrations, ends active disasters, moves traffic and deploys back to the saved snapshot. Audit logs, security exceptions and settings are kept. Safe to run again.": "열린 이전을 취소하고 진행 중 재난을 끝낸 뒤, 트래픽과 배포를 저장해 둔 스냅샷으로 되돌립니다. 감사 로그 · 보안 예외 · 설정은 그대로 둡니다. 여러 번 실행해도 안전합니다.",
+  "Preview only. Nothing was changed.": "미리 보기입니다. 아무것도 바꾸지 않았습니다.",
+  "Restored to the snapshot.": "스냅샷 상태로 되돌렸습니다.",
+  "Not fully restored yet.": "아직 다 되돌리지 못했습니다.",
+  "Some steps are still running. Run it again in a moment.": "아직 진행 중인 단계가 있습니다. 잠시 뒤 다시 실행하세요.",
+  "Manual step needed: {{steps}}": "수동 필요: {{steps}}",
+  "Preview": "미리 보기",
+  "Preview first": "먼저 미리 보기를 실행하세요",
+  "Working…": "처리 중…",
+  "Restore": "되돌리기"
+}
