@@ -306,5 +306,13 @@
   "After 100% of traffic is on {{target}}, EchoPort runs the DB cutover job. Writes pause for a few seconds.": "トラフィックが{{target}}に100%移った後、EchoPortがDB切り替えJobを実行します。書き込みが数秒止まります。",
   "Acknowledge the promotion warning first": "先に昇格の警告に同意してください",
   "This plan promotes the target database": "この計画は移行先データベースを昇格します",
-  "I understand the promotion cannot be undone and unreplicated writes may be lost": "昇格は元に戻せず、複製されていない書き込みが失われる可能性があることを理解しました"
+  "I understand the promotion cannot be undone and unreplicated writes may be lost": "昇格は元に戻せず、複製されていない書き込みが失われる可能性があることを理解しました",
+  "observe for at least {{seconds}}s": "最低{{seconds}}秒観察",
+  "Step 1 · 5%": "ステップ1 · 5%",
+  "Step 2 · 10%": "ステップ2 · 10%",
+  "Step 3 · 25%": "ステップ3 · 25%",
+  "Step 4 · 50%": "ステップ4 · 50%",
+  "Step 5 · data sync check": "ステップ5 · データ同期確認",
+  "Step 6 · 75%": "ステップ6 · 75%",
+  "Step 7 · 100%": "ステップ7 · 100%"
 }

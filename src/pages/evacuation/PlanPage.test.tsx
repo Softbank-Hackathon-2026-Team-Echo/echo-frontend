@@ -185,6 +185,8 @@ function serve({
   server.use(
     http.get(`${API}/me`, () => ok(me(allowSelfApproval))),
     http.get(`${API}/orgs/o1/services/s1`, () => ok(service(active, targetSimulated))),
+    http.get(`${API}/orgs/o1/services`, () => ok({ items: [], total: 0, page: 0, size: 100 })),
+    http.get(`${API}/orgs/o1/disasters`, () => ok({ items: [], total: 0, page: 0, size: 50 })),
     http.get(`${API}/orgs/o1/environments`, () => ok({ items: [], total: 0, page: 0, size: 100 })),
     http.get(`${API}/orgs/o1/migration-plans/:id`, () => ok({ ...plan, promoteWarning })),
     http.get(`${API}/orgs/o1/security/compare`, ({ request }) => {
@@ -297,10 +299,39 @@ describe('PlanPage', () => {
     ).toBeInTheDocument();
     expect(calls[0]?.body).toMatchObject({
       targetEnvironmentId: 'e2',
-      requiredRequests: [20, 50, 50],
+      requiredRequests: [7, 10, 20, 30, 30, 30],
       maxWaitSeconds: 30,
       rollbackConditions: { maxErrorRatePercent: 1, maxP95Ms: 800, maxReplicationLagSeconds: 1 },
     });
+  });
+
+  it('6칸 값을 비율 순서대로 보내고 데이터 확인은 50% 뒤에 보인다', async () => {
+    const calls = serve({ allowSelfApproval: false, active: null });
+    renderPage();
+    await screen.findByRole('button', { name: 'Create plan' });
+    const weights = [5, 10, 25, 50, 75, 100];
+    for (const [index, weight] of weights.entries()) {
+      const input = screen.getByLabelText(`${weight}% · requests`);
+      await userEvent.clear(input);
+      await userEvent.type(input, String(index + 11));
+    }
+    const titles = screen.getAllByText(/^(Pre-check|Shift traffic →|Data sync check)/);
+    expect(titles.map((node) => node.textContent?.replace(/ on .*/, ''))).toEqual([
+      'Pre-check',
+      'Shift traffic → 5%',
+      'Shift traffic → 10%',
+      'Shift traffic → 25%',
+      'Shift traffic → 50%',
+      'Data sync check',
+      'Shift traffic → 75%',
+      'Shift traffic → 100%',
+    ]);
+    await userEvent.click(screen.getByRole('button', { name: 'Create plan' }));
+    await expect
+      .poll(() => calls[0]?.body)
+      .toMatchObject({
+        requiredRequests: [11, 12, 13, 14, 15, 16],
+      });
   });
 
   it('도착 환경이 실제 실행기면 실패 주입을 고를 수 없고 이유를 보여 준다', async () => {
@@ -409,7 +440,7 @@ describe('PlanPage', () => {
     expect(create).not.toHaveAttribute('aria-disabled', 'true');
   });
 
-  it('DB 쓰기 담당도 옮기기를 고르면 includeCutover 를 보내고 단계가 6개가 된다', async () => {
+  it('DB 쓰기 담당도 옮기기를 고르면 includeCutover 를 보내고 단계가 9개가 된다', async () => {
     const calls = serve({ allowSelfApproval: false, active: null });
     renderPage();
 
