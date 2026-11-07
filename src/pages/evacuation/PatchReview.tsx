@@ -5,10 +5,12 @@ import { RoleButton } from '@/components/RoleButton';
 import { SimulatedBadge } from '@/components/SimulatedBadge';
 import { StatusBadge } from '@/components/StatusBadge';
 import { parseDiff, usePatchDecision } from '@/lib/api/prechecks';
+import { useDeployRequest } from '@/lib/api/services';
 import type { PrecheckPatch } from '@/lib/api/types';
 import { dateTime } from '@/lib/format';
 import { t } from '@/lib/i18n';
 import {
+  deployStatusView,
   patchBlockReasonLabel,
   patchStatusView,
   precheckFailureLabel,
@@ -39,11 +41,40 @@ type PatchReviewProps = {
   deployLink?: (id: string) => string;
 };
 
+/** 고친 커밋으로 만든 재배포의 지금 상태. 끝날 때까지 배포 상세와 같은 간격으로 다시 부른다 */
+function RedeployStatus({
+  orgId,
+  redeployRequestId,
+  deployLink,
+}: {
+  orgId: string;
+  redeployRequestId: string;
+  deployLink: (id: string) => string;
+}) {
+  const redeploy = useDeployRequest(orgId, redeployRequestId);
+  return (
+    <p className="flex flex-wrap items-center gap-x-2 gap-y-1">
+      <span className="text-fg-secondary">{t('Redeploy with the fix')}</span>
+      {redeploy.data && <StatusBadge {...deployStatusView(redeploy.data.status)} />}
+      {redeploy.data?.commitSha && (
+        <span className="font-mono text-mono" title={redeploy.data.commitSha}>
+          {shortSha(redeploy.data.commitSha)}
+        </span>
+      )}
+      <Link to={deployLink(redeployRequestId)} className="text-brand hover:underline">
+        {t('Open the redeploy')}
+      </Link>
+    </p>
+  );
+}
+
 /** 샌드박스 반영 실행의 결과. 브랜치 · 커밋은 러너 결과가 나온 뒤에만 찬다 */
 function ApplyResult({
+  orgId,
   apply,
   deployLink,
 }: {
+  orgId: string;
   apply: NonNullable<PrecheckPatch['apply']>;
   deployLink?: (id: string) => string;
 }) {
@@ -71,9 +102,11 @@ function ApplyResult({
       </p>
       {apply.pullRequestUrl && <ExternalLink href={apply.pullRequestUrl} />}
       {apply.redeployRequestId && deployLink && (
-        <Link to={deployLink(apply.redeployRequestId)} className="text-brand hover:underline">
-          {t('Open the redeploy')}
-        </Link>
+        <RedeployStatus
+          orgId={orgId}
+          redeployRequestId={apply.redeployRequestId}
+          deployLink={deployLink}
+        />
       )}
       {apply.redeployRejectedCode && (
         <p className="text-warning-fg">
@@ -120,7 +153,7 @@ export function PatchReview({ orgId, precheckId, patch, number, deployLink }: Pa
           </span>
         ))}
       </pre>
-      {patch.apply && <ApplyResult apply={patch.apply} deployLink={deployLink} />}
+      {patch.apply && <ApplyResult orgId={orgId} apply={patch.apply} deployLink={deployLink} />}
       <footer className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
         <span
           className={cn(

@@ -60,5 +60,6 @@
   "Finished {{time}}": "{{time}} 완료",
   "Applying in the sandbox…": "샌드박스에 반영하는 중…",
   "Open the redeploy": "다시 배포 보기",
-  "The redeploy did not start.": "다시 배포가 시작되지 않았습니다."
+  "The redeploy did not start.": "다시 배포가 시작되지 않았습니다.",
+  "Redeploy with the fix": "수정한 커밋으로 다시 배포"
 }
