@@ -3989,6 +3989,8 @@ export interface components {
             requiredRequests: number | null;
             /** Maxwaitseconds */
             maxWaitSeconds: number | null;
+            /** Minobserveseconds (echo-was #133, 서버 배포 뒤 gen:api 재생성으로 확인) */
+            minObserveSeconds?: number | null;
             /** Expectedseconds */
             expectedSeconds: number;
             result: components["schemas"]["StepResultResponse"];

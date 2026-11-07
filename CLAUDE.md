@@ -48,7 +48,7 @@ src/
 │  └─ *.tsx              # 두 화면 이상에서 쓰는 앱 컴포넌트 (Panel, RoleButton, StatusBadge, SimulatedBadge, ProviderLabel, FormField, ConfirmDeleteDialog, ExternalLink, EmptyState, ErrorState, ScreenErrorBoundary, Logo, OrthoGlobe, 등록·배포 다이얼로그(EnvironmentFormDialog · RegisterServiceDialog · DeployDialog · StandbyPicker) …)
 ├─ layouts/AppShell.tsx  # 사이드바(워드마크 · Operate/Resilience/Govern 묶음 · 사용자 메뉴=테마·로그아웃) + 상단 바(브레드크럼 · Org 선택 · Simulate disaster · 알림)
 ├─ pages/                # 화면 단위 폴더 (login/, root/, landing/(L01 소개), onboarding/(O01~O03), dashboard/(조직 개요 · 서비스 Overview 칸), services/(목록 · 서비스 작업 공간 탭), evacuation/, migrations/, security/, audit/, remote/(S01-R 휴대폰 리모컨 · R2b 충격 트리거), history/(과거 재난 조회 재생), settings/, dev/). 한 화면에서만 쓰는 컴포넌트는 그 폴더 안에
-├─ hooks/                # useTheme(테마 3개, localStorage), useRole(현재 조직 역할), useNow(경과 시간), usePrefersReducedMotion, useInViewOnce(처음 화면에 들어오면 true)
+├─ hooks/                # useTheme(테마 3개, localStorage), useRole(현재 조직 역할), useNow(경과 시간), usePrefersReducedMotion, useAnimatedNumber(비율 숫자), useInViewOnce(처음 화면에 들어오면 true)
 ├─ lib/
 │  ├─ api/               # client(api = openapi-fetch + unwrap, 스키마 밖 경로는 apiFetch) · errors · notify · form-errors(422 → 칸 오류)
 │  │                     #   query-client · query-keys · schema.d.ts(gen:api 생성) · types(스키마 별칭)
@@ -264,3 +264,4 @@ docs/                    # api-contract.md, perf.md(성능 측정 방법 · 기�
 | 11/7 | 변수 탭에 "다른 환경으로 복사" 다이얼로그를 둔다(`POST …/variables:copy`). 기본 원본은 서비스 중 환경, 대상은 나머지 전부, 이미 있는 키는 덮어쓰기를 켰을 때만 바꾼다. 결과는 줄마다 실패 이유를 보인다 | 도현 님 개선 목록 5번: AWS · GCP 에 같은 변수를 환경마다 다시 넣었다. 값은 서버 안에서 옮겨 화면을 지나지 않는다. 바뀐 키는 기존 적용 막대가 다시 배포를 안내한다 |
 | 11/7 | 진단 패치가 재배포를 만들면 실패 배포 화면 안에 "수정한 커밋으로 다시 배포" 칸을 열어 그 재배포의 단계 · 로그 · 결과를 잇는다. 원래 실패 · 진단 · 승인은 위에 남긴다. 반영이 끝난 뒤 재배포 id 가 올 때까지 90초 동안 진단을 계속 다시 부르고, 넘으면 다시 확인 버튼을 준다 | 형래 님 분석(11/7 18:47): 서버는 반영 완료 뒤 커밋 · PR 을 만들고 약 6초 뒤에 재배포를 이어서, 반영 완료 시각에 폴링을 멈추면 재배포를 놓쳤다. 시연 B-7 을 화면 이동 없이 보이게 한다 |
 | 11/7 | 실행 중이던 이전 계획이 끝나면(계획 목록 · 상세를 다시 부를 때 실행 중 → 끝으로 바뀐 것을 보면) 그 서비스 · 서비스 목록 · 환경을 다시 부른다 | 11/7 리허설: 이전이 끝난 뒤에도 서비스 개요가 새로고침 전까지 출발 환경 100% 를 그렸다. 트래픽 비율은 서비스 응답에 있다 |
+| 11/7 | 프론트 28은 5·10·25·50·75·100% 6칸 요청(기본 `[7,10,20,30,30,30]`)과 최소 관찰 3초 예상 시간을 쓴다. 막대·숫자는 700ms 동안 바뀌고 움직임 줄이기면 즉시 반영한다. A·B 그래프는 서버 단계 시작 시각의 계단선이다 | 확정 SPEC `specs/fe-28-smooth-canary.md`가 11/5 곡선 결정을 대체한다. 서버 #133 배포 뒤 병합하며 저장된 옛 단계는 그대로 그린다 |
