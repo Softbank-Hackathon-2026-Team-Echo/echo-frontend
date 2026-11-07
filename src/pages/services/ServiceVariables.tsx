@@ -1,6 +1,7 @@
 import {
   ChevronRight,
   ClipboardPaste,
+  Copy,
   KeyRound,
   MoreHorizontal,
   Plus,
@@ -45,6 +46,7 @@ import {
 } from '@/lib/api/variables';
 import { t } from '@/lib/i18n';
 import { hasRole } from '@/lib/roles';
+import { CopyVariablesDialog } from './CopyVariablesDialog';
 import { EnvironmentChecks } from './EnvironmentChecks';
 import { PasteEnvDialog } from './PasteEnvDialog';
 import { VariableDialog } from './VariableDialog';
@@ -336,6 +338,7 @@ export function ServiceVariables({
   const environments = useEnvironments(orgId);
   const [adding, setAdding] = useState(false);
   const [pasting, setPasting] = useState(false);
+  const [copying, setCopying] = useState(false);
   const [writing, setWriting] = useState<CellTarget>();
   const [deleting, setDeleting] = useState<DeleteTarget>();
   const { columns } = matrix;
@@ -373,6 +376,7 @@ export function ServiceVariables({
   const addReason =
     disabledReason ??
     (full ? t('{{max}} variables is the limit', { max: MAX_VARIABLES }) : undefined);
+  const copyReason = disabledReason ?? (empty ? t('No variables to copy yet') : undefined);
 
   return (
     <div className="flex flex-col gap-3">
@@ -382,6 +386,18 @@ export function ServiceVariables({
           {matrix.simulated && <SimulatedBadge />}
         </p>
         <span className="flex items-center gap-2">
+          {columns.length > 1 && (
+            <RoleButton
+              requires="DEVELOPER"
+              variant="outline"
+              size="sm"
+              disabledReason={copyReason}
+              onClick={() => setCopying(true)}
+            >
+              <Copy aria-hidden />
+              {t('Copy to environments')}
+            </RoleButton>
+          )}
           <RoleButton
             requires="DEVELOPER"
             variant="outline"
@@ -485,6 +501,14 @@ export function ServiceVariables({
         </p>
       </details>
 
+      {copying && (
+        <CopyVariablesDialog
+          orgId={orgId}
+          serviceId={service.id}
+          columns={columns}
+          onClose={() => setCopying(false)}
+        />
+      )}
       {pasting && (
         <PasteEnvDialog
           orgId={orgId}

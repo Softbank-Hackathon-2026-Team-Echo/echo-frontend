@@ -314,6 +314,24 @@ export function disasterSourceView(source: string): StatusView {
   return viewOf(DISASTER_SOURCES, source);
 }
 
+const VARIABLE_COPY_FAILURES: Record<string, string> = {
+  ENV_VAR_ALREADY_EXISTS: k('Already set here. Turn on replace to overwrite.'),
+  ENV_VAR_NOT_FOUND: k('Not set in the source environment.'),
+  ENV_SECRET_UNAVAILABLE: k('The source value could not be read.'),
+  ENV_VAR_LIMIT_EXCEEDED: k('This environment would go over the variable limit.'),
+  MIGRATION_IN_PROGRESS: k('A migration is running for this service.'),
+  PUBLIC_HOST_CONFLICT: k('The public address conflicts with another service.'),
+  SERVICE_ENVIRONMENT_NOT_FOUND: k('This service is not in this environment yet.'),
+  SECRET_STORE_UNAVAILABLE: k('The secret store is not responding.'),
+  SECRET_STORE_FORBIDDEN: k('EchoPort cannot write to the secret store.'),
+};
+
+/** 변수 복사에서 줄마다 실패한 이유. 모르는 코드는 그대로 보인다 */
+export function variableCopyFailureLabel(code: string): string {
+  const label = VARIABLE_COPY_FAILURES[code];
+  return label ? t(label) : code;
+}
+
 /** 사전 점검 처리 위치. 기록이 없다고 밖으로 안 나갔다는 뜻은 아니다 */
 export function processingView(processing: PrecheckProcessing | null | undefined): StatusView {
   if (!processing) return { label: t('No processing record'), tone: 'neutral' };
