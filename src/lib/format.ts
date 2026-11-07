@@ -45,3 +45,26 @@ export function dateTime(iso: string | null | undefined): string {
     minute: '2-digit',
   });
 }
+
+/** 과거 사건처럼 해가 다를 수 있는 시각. 시간대를 받으면 그 시간대로 그린다 */
+export function fullDateTime(iso: string | null | undefined, timeZone?: string | null): string {
+  if (!iso) return '—';
+  const options: Intl.DateTimeFormatOptions = {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    timeZoneName: 'short',
+  };
+  try {
+    return new Date(iso).toLocaleString(currentLocale(), {
+      ...options,
+      ...(timeZone ? { timeZone } : {}),
+    });
+  } catch {
+    // 모르는 시간대 이름이 와도 화면은 그린다
+    return new Date(iso).toLocaleString(currentLocale(), options);
+  }
+}

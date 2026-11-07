@@ -59,6 +59,7 @@
 | Services | `/o/:slug/services` · `/o/:slug/services/:serviceId?tab={overview,deployments,variables,migration,settings}` · `/o/:slug/services/:serviceId/deploys/:deployRequestId` | SVC 목록 · 서비스 작업 공간 · 배포 진행 |
 | Evacuation | `/o/:slug/evacuation` | E01-1 ~ E01-3 |
 | Migrations | `/o/:slug/migrations` | M01 · M02 |
+| Disaster history | `/o/:slug/history` (조회 전용) | — |
 | Security | `/o/:slug/security` | SEC |
 | Audit log | `/o/:slug/audit` | AUD |
 | Settings | `/o/:slug/settings/{environments,members}` | SET |
