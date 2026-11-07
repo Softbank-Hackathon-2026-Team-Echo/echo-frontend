@@ -485,4 +485,69 @@ describe('PlanPage', () => {
       ),
     ).toBeInTheDocument();
   });
+
+  it('취소 후 새 계획을 만들면 이전 계획의 승격 동의를 쓰지 않고 다시 동의를 받는다', async () => {
+    serve({ allowSelfApproval: true, active: plan.id, promoteWarning: 'First promotion warning.' });
+    let cancelled = false;
+    const second = { ...plan, id: 'plan-second', promoteWarning: 'Second promotion warning.' };
+    const approvals: { id: unknown; body: unknown }[] = [];
+    server.use(
+      http.get(`${API}/orgs/o1/services`, () => ok({ items: [], total: 0, page: 0, size: 100 })),
+      http.get(`${API}/orgs/o1/services/s1`, () => ok(service(cancelled ? null : plan.id))),
+      http.get(`${API}/orgs/o1/migration-plans/:id`, ({ params }) =>
+        ok(
+          params.id === second.id
+            ? second
+            : {
+                ...plan,
+                status: cancelled ? 'CANCELLED' : 'PENDING_APPROVAL',
+                promoteWarning: 'First promotion warning.',
+              },
+        ),
+      ),
+      http.post(`${API}/orgs/o1/migration-plans/:id/cancel`, () => {
+        cancelled = true;
+        return ok({ ...plan, status: 'CANCELLED' });
+      }),
+      http.post(`${API}/orgs/o1/services/s1/migration-plans`, () => ok(second, 201)),
+      http.post(`${API}/orgs/o1/migration-plans/:id/approve`, async ({ params, request }) => {
+        const text = await request.text();
+        approvals.push({ id: params.id, body: text ? JSON.parse(text) : undefined });
+        return ok({ ...second, status: 'APPROVED' }, 202);
+      }),
+    );
+    renderRoute(<PlanPage />, {
+      path: '/o/:slug/*',
+      url: `/o/echo-demo/evacuation/plan?service=s1&target=e2&plan=${plan.id}`,
+    });
+
+    // 첫 계획에 동의한 뒤 취소하고, 컷오버를 포함한 새 계획을 만든다
+    await userEvent.click(
+      await screen.findByLabelText(/I understand the promotion cannot be undone/),
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Cancel this plan' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Create a new plan' }));
+    await userEvent.click(await screen.findByLabelText(/Also move the DB writer/));
+    await userEvent.click(await screen.findByRole('button', { name: 'Create plan' }));
+
+    // 새 계획의 고지에는 아직 동의하지 않았으므로 체크가 꺼져 있고 승인이 잠긴다
+    expect(await screen.findByText('Second promotion warning.')).toBeInTheDocument();
+    const checkbox = screen.getByLabelText<HTMLInputElement>(
+      /I understand the promotion cannot be undone/,
+    );
+    expect(checkbox.checked).toBe(false);
+    expect(screen.getByRole('button', { name: 'Approve plan' })).toHaveAttribute(
+      'aria-disabled',
+      'true',
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Approve plan' }));
+    expect(approvals).toEqual([]);
+
+    // 새 계획에 다시 동의해야 그 계획 id 로 동의 본문이 나간다
+    await userEvent.click(checkbox);
+    await userEvent.click(screen.getByRole('button', { name: 'Approve plan' }));
+    await expect
+      .poll(() => approvals)
+      .toEqual([{ id: 'plan-second', body: { acknowledgePromote: true } }]);
+  });
 });
