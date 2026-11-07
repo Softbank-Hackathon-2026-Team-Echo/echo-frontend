@@ -7,6 +7,7 @@ import { ExternalLink } from '@/components/ExternalLink';
 import { ProviderLabel } from '@/components/ProviderLabel';
 import { SimulatedBadge } from '@/components/SimulatedBadge';
 import { StatusBadge } from '@/components/StatusBadge';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useNow } from '@/hooks/useNow';
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
@@ -56,7 +57,27 @@ const STAGE_CLASSES: Record<StageState, string> = {
   skipped: 'bg-subtle text-fg-muted',
 };
 
-function StepCircle({ state, index }: { state: StageState; index: number }) {
+function StepCircle({
+  state,
+  index,
+  stalled,
+}: {
+  state: StageState;
+  index: number;
+  stalled?: boolean;
+}) {
+  // 조회 오류 동안 진행 중 단계는 스피너 대신 멈춘 "확인 지연" 표시로 그린다
+  if (stalled && state === 'current') {
+    return (
+      <span
+        role="img"
+        aria-label={t('Check delayed')}
+        className="flex size-7 shrink-0 items-center justify-center rounded-full bg-warning-solid text-fg-on-brand"
+      >
+        <CircleAlert aria-hidden className="size-4" />
+      </span>
+    );
+  }
   return (
     <span
       className={cn(
@@ -138,6 +159,7 @@ function Stepper({
   syncs,
   now,
   requestLink,
+  stalled = false,
 }: {
   request: DeployRequestDetail;
   service: ServiceDetail | undefined;
@@ -145,6 +167,8 @@ function Stepper({
   now: number;
   /** 다른 배포 요청 화면 주소를 만든다 (예비 동기화 배포로 가는 링크) */
   requestLink: (deployRequestId: string) => string;
+  /** 상태 조회가 실패해 마지막 확인 상태를 보이는 중이면 진행 중 표시를 멈춘다 */
+  stalled?: boolean;
 }) {
   const standby = standbyStep(request, service, syncs);
   const states = stageStates(request);
@@ -181,13 +205,17 @@ function Stepper({
     <ol className="flex items-center gap-2 overflow-x-auto rounded-lg border border-line bg-surface p-4">
       {steps.map((step, index) => (
         <li key={step.label} className="flex min-w-0 flex-1 items-center gap-2">
-          <StepCircle state={step.state} index={index} />
+          <StepCircle state={step.state} index={index} stalled={stalled} />
           <span className="flex min-w-0 flex-col">
             <span className="truncate text-body-medium">{step.label}</span>
             <span
               className={cn(
                 'truncate text-caption',
-                step.state === 'current' ? 'text-migrating-fg' : 'text-fg-muted',
+                step.state !== 'current'
+                  ? 'text-fg-muted'
+                  : stalled
+                    ? 'text-warning-fg'
+                    : 'text-migrating-fg',
               )}
             >
               {'href' in step && step.href ? (
@@ -357,9 +385,18 @@ function RedeployFollow({
   service: ServiceDetail | undefined;
   requestLink: (id: string) => string;
 }) {
-  const { data: redeploy } = useDeployRequest(orgId, redeployRequestId);
+  const {
+    data: redeploy,
+    isError,
+    error,
+    refetch,
+    isFetching,
+    dataUpdatedAt,
+  } = useDeployRequest(orgId, redeployRequestId);
   const syncs = useStandbySyncs(orgId, service?.id, redeploy);
-  const now = useNow(Boolean(redeploy && !isTerminalStatus(redeploy.status)));
+  const clock = useNow(Boolean(redeploy && !isError && !isTerminalStatus(redeploy.status)));
+  // 조회 오류는 배포 실패가 아니다. 마지막 성공 GET 시각까지만 경과 시간을 표시한다.
+  const now = isError ? dataUpdatedAt : clock;
   const reduceMotion = usePrefersReducedMotion();
   const sectionRef = useRef<HTMLElement>(null);
 
@@ -384,7 +421,10 @@ function RedeployFollow({
             <>
               <span className="font-mono">{shortSha(redeploy.commitSha)}</span>
               <StatusBadge {...deployStatusView(redeploy.status)} />
-              <span className="font-mono text-mono text-fg-secondary tabular-nums">
+              <span
+                title={isError ? t('Elapsed at last confirmation') : undefined}
+                className="font-mono text-mono text-fg-secondary tabular-nums"
+              >
                 {elapsed(redeploy.stageTimes.queuedAt, redeploy.stageTimes.finishedAt, now)}
               </span>
             </>
@@ -394,6 +434,31 @@ function RedeployFollow({
           {t('Open the redeploy')}
         </Link>
       </header>
+      {isError && (
+        <div aria-busy={isFetching}>
+          {/* 캐시가 있으면 경고 문구와 작은 다시 시도 버튼만, 큰 ErrorState 는 최초 실패(캐시 없음)에만 둔다 */}
+          {redeploy ? (
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div role="alert" className="text-body text-warning-fg">
+                <p>{t('Status check delayed. Showing the last confirmed state.')}</p>
+                <p>
+                  <time dateTime={new Date(dataUpdatedAt).toISOString()}>
+                    {t('Last confirmed at {{time}}. Elapsed time is frozen.', {
+                      time: dateTime(new Date(dataUpdatedAt).toISOString()),
+                    })}
+                  </time>
+                </p>
+                <p>{t('Logs will reappear when status checking recovers.')}</p>
+              </div>
+              <Button variant="outline" size="sm" onClick={() => !isFetching && refetch()}>
+                {t('Retry')}
+              </Button>
+            </div>
+          ) : (
+            <ErrorState error={error} onRetry={() => !isFetching && refetch()} />
+          )}
+        </div>
+      )}
       {redeploy ? (
         <>
           <Stepper
@@ -402,6 +467,7 @@ function RedeployFollow({
             syncs={syncs.data}
             now={now}
             requestLink={requestLink}
+            stalled={isError}
           />
           {redeploy.status === 'SUCCEEDED' && (
             <p className="text-body text-success-fg">
@@ -415,17 +481,20 @@ function RedeployFollow({
                 : t('The redeploy did not finish.')}
             </p>
           )}
-          <DeploySteps request={redeploy} now={now} />
-          <DeployLogs
-            key={redeploy.id}
-            orgId={orgId}
-            request={redeploy}
-            defaultSource="DEPLOY_JOB"
-          />
+          <DeploySteps request={redeploy} now={now} stalled={isError} />
+          {/* 로그 상태는 유지하되 조회 오류 중에는 Live 수신으로 오인하지 않게 가린다. */}
+          <div hidden={isError}>
+            <DeployLogs
+              key={redeploy.id}
+              orgId={orgId}
+              request={redeploy}
+              defaultSource="DEPLOY_JOB"
+            />
+          </div>
         </>
-      ) : (
+      ) : !isError ? (
         <Skeleton className="h-16 w-full" />
-      )}
+      ) : null}
     </section>
   );
 }
