@@ -231,6 +231,8 @@
   "Showing the latest {{shown}} of {{total}}": "全{{total}}件中 最新{{shown}}件",
   "Policy {{version}} · checked {{time}}": "ポリシー {{version}} · {{time}} 点検",
   "Preparation checks only. The migration gate adds execution checks.": "準備段階の点検のみ表示します。実行直前の点検は移行ゲートが行います。",
+  "Unknown = not checked yet.": "不明 = まだ確認していません。",
+  "Anything not checked yet is not counted as a pass.": "確認していない項目は合格として数えません。",
   "Scans run with each deploy": "検査はデプロイのたびに実行されます",
   "Whole organization": "組織全体",
   "No exceptions": "例外なし",

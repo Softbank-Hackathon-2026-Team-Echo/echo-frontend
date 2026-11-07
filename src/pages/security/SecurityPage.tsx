@@ -169,6 +169,9 @@ export default function SecurityPage() {
                   })}
                   {' · '}
                   {t('Preparation checks only. The migration gate adds execution checks.')}
+                  {' · '}
+                  {t('Unknown = not checked yet.')}{' '}
+                  {t('Anything not checked yet is not counted as a pass.')}
                 </p>
               </>
             )}
