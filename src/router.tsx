@@ -45,6 +45,13 @@ const routes: RouteObject[] = [
     lazy: () => import('@/pages/remote/ShakeRemotePage').then((m) => ({ Component: m.default })),
   },
   {
+    // 노트북 온프레 시연(④) 발표 화면: 손님 주소를 2초마다 불러 응답 환경 · 최근 60건 · 전환을 보인다
+    path: '/o/:slug/remote/onprem',
+    HydrateFallback: RouteLoading,
+    errorElement: <RouteErrorPage />,
+    lazy: () => import('@/pages/remote/OnpremWatchPage').then((m) => ({ Component: m.default })),
+  },
+  {
     // 휴대폰에 치기 쉬운 짧은 주소. 로그인 뒤 첫 조직의 충격 트리거로 보낸다
     path: '/remote',
     HydrateFallback: RouteLoading,
