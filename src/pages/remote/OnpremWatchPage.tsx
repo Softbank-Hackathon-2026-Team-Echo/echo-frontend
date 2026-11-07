@@ -203,7 +203,7 @@ export default function OnpremWatchPage() {
               {' · '}
               {watcher.data.watcher.armed ? t('armed') : t('not armed')}
               {watcher.data.watcher.promotedAt &&
-                ` · ${t('promoted {{time}}', { time: clock(Date.parse(watcher.data.watcher.promotedAt)) })}`}
+                ` · ${t('last promoted {{time}}', { time: clock(Date.parse(watcher.data.watcher.promotedAt)) })}`}
             </p>
           ) : (
             <p className="text-body text-fg-secondary">

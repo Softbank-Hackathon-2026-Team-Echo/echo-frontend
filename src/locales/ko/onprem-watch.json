@@ -20,7 +20,7 @@
   "epoch {{n}}": "epoch {{n}}",
   "armed": "무장",
   "not armed": "무장 안 함",
-  "promoted {{time}}": "{{time}} 승격",
+  "last promoted {{time}}": "마지막 승격 {{time}}",
   "Watcher not reachable ({{reason}}).": "감시자에 닿지 않습니다({{reason}}).",
   "Requests go through app.echoport.uk/onprem-probe because the guest address does not allow other sites to read it. Nothing is stored on the EchoPort server.": "손님 주소가 다른 사이트의 읽기를 허용하지 않아 app.echoport.uk/onprem-probe 를 거쳐 부릅니다. EchoPort 서버에는 아무것도 저장하지 않습니다."
 }

@@ -20,7 +20,7 @@
   "epoch {{n}}": "epoch {{n}}",
   "armed": "有効",
   "not armed": "無効",
-  "promoted {{time}}": "{{time}} 昇格",
+  "last promoted {{time}}": "最後の昇格 {{time}}",
   "Watcher not reachable ({{reason}}).": "監視役に届きません({{reason}})。",
   "Requests go through app.echoport.uk/onprem-probe because the guest address does not allow other sites to read it. Nothing is stored on the EchoPort server.": "ゲストのアドレスは他サイトからの読み取りを許可していないため、app.echoport.uk/onprem-probe 経由で呼び出します。EchoPort サーバーには何も保存しません。"
 }
