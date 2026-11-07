@@ -48,7 +48,10 @@ function reducer(state: WatchState, action: Action): WatchState {
   return action.type === 'reset' ? EMPTY_WATCH : recordSample(state, action.sample);
 }
 
-/** 손님 주소의 /api/info 를 2초마다(앞 요청이 끝난 뒤) 불러 기록을 쌓는다. 주소가 바뀌면 기록을 비운다 */
+/**
+ * 손님 주소의 /api/info 를 직렬로 불러 기록을 쌓는다. 요청 시작 간격은 2초이고, 응답이 2초보다 늦으면 응답 직후 다음 요청을 보낸다.
+ * 주소가 바뀌면 기록을 비운다
+ */
 export function useOnpremWatch(host: string): WatchState {
   const [state, dispatch] = useReducer(reducer, EMPTY_WATCH);
   useEffect(() => {

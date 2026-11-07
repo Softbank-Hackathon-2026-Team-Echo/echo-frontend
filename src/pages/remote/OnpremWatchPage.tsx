@@ -10,32 +10,11 @@ import {
   DEFAULT_WATCHER_HOST,
   hostOf,
   WATCH_STRIP_SIZE,
-  type WatchKind,
   watchKind,
 } from '@/lib/onprem-watch';
 import { cn } from '@/lib/utils';
-
-const KIND_BG: Record<WatchKind, string> = {
-  onprem: 'bg-onprem',
-  aws: 'bg-aws',
-  gcp: 'bg-gcp',
-  other: 'bg-fg-muted',
-};
-
-function kindLabel(kind: WatchKind) {
-  if (kind === 'onprem') return t('On-prem');
-  if (kind === 'aws') return 'AWS';
-  if (kind === 'gcp') return 'GCP';
-  return t('Other');
-}
-
-const clock = (at: number) =>
-  new Date(at).toLocaleTimeString(undefined, {
-    hour12: false,
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  });
+import { Legend, Stat, WatcherPanel } from './OnpremWatchParts';
+import { clock, KIND_BG, kindLabel } from './onprem-watch-view';
 
 /**
  * 노트북 온프레 시연(④)의 발표 화면. 손님 주소를 2초마다 불러 응답 환경 · 최근 60건 · 실패 수 · 마지막 전환을 보인다.
@@ -192,32 +171,7 @@ export default function OnpremWatchPage() {
         </div>
       </section>
 
-      {watcherHost && (
-        <section className="flex flex-col gap-1 rounded-xl border border-line bg-surface p-4">
-          <h2 className="text-title">{t('Watcher (cloud side)')}</h2>
-          {watcher.data?.watcher ? (
-            <p className="text-body">
-              <span className="font-mono">{watcher.data.watcher.state ?? '—'}</span>
-              {' · '}
-              {t('epoch {{n}}', { n: watcher.data.watcher.epoch ?? '—' })}
-              {' · '}
-              {watcher.data.watcher.armed ? t('armed') : t('not armed')}
-              {watcher.data.watcher.promotedAt &&
-                ` · ${t('last promoted {{time}}', { time: clock(Date.parse(watcher.data.watcher.promotedAt)) })}`}
-            </p>
-          ) : (
-            <p className="text-body text-fg-secondary">
-              {watcher.isPending
-                ? t('Checking…')
-                : t('Watcher not reachable ({{reason}}).', {
-                    reason: watcher.data?.result.status
-                      ? `HTTP ${watcher.data.result.status}`
-                      : t('no response'),
-                  })}
-            </p>
-          )}
-        </section>
-      )}
+      {watcherHost && <WatcherPanel watcher={watcher} />}
 
       <p className="text-caption text-fg-muted">
         {t(
@@ -225,52 +179,5 @@ export default function OnpremWatchPage() {
         )}
       </p>
     </main>
-  );
-}
-
-function Stat({
-  label,
-  value,
-  caption,
-  tone,
-}: {
-  label: string;
-  value: string;
-  caption?: string;
-  tone?: 'danger' | 'success';
-}) {
-  return (
-    <div className="flex flex-col gap-1 rounded-xl border border-line bg-surface p-4">
-      <span className="text-caption text-fg-muted">{label}</span>
-      <span
-        className={cn(
-          'font-mono text-h1 tabular-nums',
-          tone === 'danger' && 'text-danger-fg',
-          tone === 'success' && 'text-success-fg',
-        )}
-      >
-        {value}
-      </span>
-      {caption && <span className="text-small text-fg-secondary">{caption}</span>}
-    </div>
-  );
-}
-
-function Legend() {
-  const items: { bg: string; label: string }[] = [
-    { bg: KIND_BG.onprem, label: t('On-prem') },
-    { bg: KIND_BG.aws, label: 'AWS' },
-    { bg: KIND_BG.gcp, label: 'GCP' },
-    { bg: 'bg-danger-solid', label: t('Failed') },
-  ];
-  return (
-    <span className="flex flex-wrap items-center gap-3 text-small text-fg-secondary">
-      {items.map((item) => (
-        <span key={item.label} className="inline-flex items-center gap-1.5">
-          <span aria-hidden className={cn('size-3 rounded-sm', item.bg)} />
-          {item.label}
-        </span>
-      ))}
-    </span>
   );
 }
