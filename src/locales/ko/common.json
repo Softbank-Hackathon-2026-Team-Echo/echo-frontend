@@ -52,6 +52,8 @@
   "Every environment failed its last connection check. Fix one in Settings first.": "모든 환경이 마지막 연결 확인에 실패했습니다. 설정에서 먼저 하나를 고치세요.",
   "Choose an environment": "환경 선택",
   "connection failed": "연결 실패",
+  "Standby environments (optional)": "예비 환경 (선택)",
+  "Also deploy to these environments as standby, up to {{max}}. Leaving this empty does not stop existing standbys.": "이 환경들에도 예비로 배포합니다(최대 {{max}}개). 비워 두어도 이미 있는 예비는 멈추지 않습니다.",
   "Branch": "브랜치",
   "Commit SHA": "커밋 SHA",
   "Commit": "커밋",

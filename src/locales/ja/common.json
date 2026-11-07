@@ -52,6 +52,8 @@
   "Every environment failed its last connection check. Fix one in Settings first.": "すべての環境が直近の接続確認に失敗しました。先に設定で1つ修正してください。",
   "Choose an environment": "環境を選択",
   "connection failed": "接続失敗",
+  "Standby environments (optional)": "スタンバイ環境（任意）",
+  "Also deploy to these environments as standby, up to {{max}}. Leaving this empty does not stop existing standbys.": "これらの環境にもスタンバイとしてデプロイします（最大 {{max}} 件）。空のままでも既存のスタンバイは停止しません。",
   "Branch": "ブランチ",
   "Commit SHA": "コミットSHA",
   "Commit": "コミット",

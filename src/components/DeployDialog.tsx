@@ -2,6 +2,7 @@ import { type FormEvent, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { FormError, FormField } from '@/components/FormField';
 import { ProviderLabel } from '@/components/ProviderLabel';
+import { StandbyPicker } from '@/components/StandbyPicker';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -57,8 +58,11 @@ export function DeployDialog({
   const [refKind, setRefKind] = useState<RefKind>('branch');
   const [ref, setRef] = useState('main');
   const [failAt, setFailAt] = useState<string>(NO_FAILURE);
+  const [pickedStandbys, setPickedStandbys] = useState<string[]>([]);
   const errors = fieldErrors(deploy.error);
   const items = environments.data?.items ?? [];
+  // 주 환경을 바꾸면 그 환경은 예비가 될 수 없다(서버가 주 환경 포함을 거절한다)
+  const standbyEnvironmentIds = pickedStandbys.filter((id) => id !== environmentId);
   const noEnvironments = environments.isSuccess && items.length === 0;
   const allFailed = items.length > 0 && items.every((item) => item.connectionStatus === 'FAILED');
 
@@ -71,6 +75,7 @@ export function DeployDialog({
           ? { branch: ref.trim() }
           : { commitSha: ref.trim().toLowerCase() }),
         simulate: failAt === NO_FAILURE ? null : { failAt: failAt as SimulatedFailureStage },
+        standbyEnvironmentIds,
       },
       {
         onSuccess: (request) => {
@@ -153,6 +158,16 @@ export function DeployDialog({
                 </SelectContent>
               </Select>
             </FormField>
+          )}
+
+          {environmentId && (
+            <StandbyPicker
+              environments={items}
+              primaryEnvironmentId={environmentId}
+              value={standbyEnvironmentIds}
+              onChange={setPickedStandbys}
+              error={errors.standbyEnvironmentIds}
+            />
           )}
 
           <FormField
