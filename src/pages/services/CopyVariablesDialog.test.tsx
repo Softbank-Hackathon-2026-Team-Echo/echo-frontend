@@ -167,4 +167,22 @@ describe('CopyVariablesDialog', () => {
     await userEvent.click(within(dialog).getByRole('button', { name: 'Copy 2 keys' }));
     expect(await within(dialog).findByText(/not responding/i)).toBeInTheDocument();
   });
+  it('덮어쓰기가 꺼져 있고 고른 키가 대상에 모두 있으면 보내지 않고 이유를 보인다', async () => {
+    const bodies = serve({ copied: [], failed: [], simulated: false });
+    const dialog = await openDialog();
+    await userEvent.click(within(dialog).getByRole('checkbox', { name: 'API_KEY' }));
+    await userEvent.click(within(dialog).getByRole('checkbox', { name: 'onprem' }));
+    expect(
+      within(dialog).getByText(
+        'Every picked key already exists there. Turn on replace to overwrite.',
+      ),
+    ).toBeInTheDocument();
+    expect(within(dialog).getByRole('button', { name: 'Copy 1 key' })).toBeDisabled();
+
+    await userEvent.click(
+      within(dialog).getByRole('checkbox', { name: 'Replace keys that already exist' }),
+    );
+    expect(within(dialog).getByRole('button', { name: 'Copy 1 key' })).toBeEnabled();
+    expect(bodies).toEqual([]);
+  });
 });

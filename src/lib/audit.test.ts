@@ -7,5 +7,8 @@ describe('재난 · 진단 행동 문구 (11/7 리허설)', () => {
     expect(auditActionLabel('DISASTER_ENDED')).toBe('ended disaster');
     expect(auditActionLabel('DIAGNOSIS_REQUESTED')).toBe('requested AI diagnosis');
     expect(auditActionLabel('SERVICE_VARIABLE_COPIED')).toBe('copied app variable');
+    expect(auditActionLabel('DISASTER_EVACUATION_SKIPPED')).toBe(
+      'skipped evacuation (no safe standby)',
+    );
   });
 });

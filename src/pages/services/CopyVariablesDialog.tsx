@@ -77,6 +77,11 @@ export function CopyVariablesDialog({
   }
 
   const tooMany = targets.length > MAX_TARGETS || keys.length > MAX_VARIABLES;
+  // 덮어쓰기가 꺼져 있으면 이미 있는 키는 서버가 건너뛴다. 실제로 복사될 키가 없으면 보내지 않는다
+  const willCopy = overwrite
+    ? keys.length * targets.length
+    : targets.reduce((sum, column) => sum + keys.length - skippedIn(column), 0);
+  const nothingToCopy = keys.length > 0 && targets.length > 0 && willCopy === 0;
 
   return (
     <Dialog open onOpenChange={(next) => !next && onClose()}>
@@ -187,6 +192,11 @@ export function CopyVariablesDialog({
                 })}
               />
             )}
+            {nothingToCopy && (
+              <FormError
+                message={t('Every picked key already exists there. Turn on replace to overwrite.')}
+              />
+            )}
             {copy.isError && <FormError message={describeApiError(copy.error)} />}
           </div>
         )}
@@ -201,7 +211,12 @@ export function CopyVariablesDialog({
               </Button>
               <Button
                 disabled={
-                  copy.isPending || !source || keys.length === 0 || targets.length === 0 || tooMany
+                  copy.isPending ||
+                  !source ||
+                  keys.length === 0 ||
+                  targets.length === 0 ||
+                  tooMany ||
+                  nothingToCopy
                 }
                 onClick={handleCopy}
               >

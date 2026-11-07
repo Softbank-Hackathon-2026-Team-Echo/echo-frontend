@@ -38,6 +38,8 @@ const ACTIONS: Record<string, string> = {
   MIGRATION_DB_CUTOVER_FINISHED: k('finished DB writer cutover'),
   DISASTER_DECLARED: k('declared disaster'),
   DISASTER_ENDED: k('ended disaster'),
+  // echo-was #132: 예비가 없어 이전을 만들지 않은 서비스는 선언과 다른 행동으로 남긴다
+  DISASTER_EVACUATION_SKIPPED: k('skipped evacuation (no safe standby)'),
   DISASTER_EVACUATION_REQUESTED: k('requested evacuation plan'),
   DISASTER_FEED_INJECTED: k('injected feed event'),
   DIAGNOSIS_REQUESTED: k('requested AI diagnosis'),
