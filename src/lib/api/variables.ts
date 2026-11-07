@@ -209,6 +209,38 @@ export function useSaveVariables(orgId: string, serviceId: string) {
   });
 }
 
+export type VariableCopy = {
+  sourceEnvironmentId: string;
+  targetEnvironmentIds: string[];
+  keys: string[];
+  overwrite: boolean;
+};
+
+/** 원본 환경의 키를 다른 환경으로 복사한다(echo-was #100). 값은 서버 안에서만 옮겨지고 요청 · 응답 어디에도 없다 */
+export function useCopyVariables(orgId: string, serviceId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: VariableCopy) =>
+      unwrap(
+        api.POST('/api/v1/orgs/{org_id}/services/{service_id}/variables:copy', {
+          params: { path: { org_id: orgId, service_id: serviceId } },
+          body,
+        }),
+      ),
+    onSettled: (_result, _error, body) =>
+      Promise.all([
+        ...body.targetEnvironmentIds.map((environmentId) =>
+          queryClient.invalidateQueries({
+            queryKey: queryKeys.serviceVariables(orgId, serviceId, environmentId),
+          }),
+        ),
+        queryClient.invalidateQueries({ queryKey: queryKeys.service(orgId, serviceId) }),
+      ]),
+    // 다이얼로그가 오류를 보여 준다
+    meta: { skipGlobalErrorToast: true },
+  });
+}
+
 export function useDeleteVariable(target: Target) {
   const invalidate = useInvalidateVariables(target);
   return useMutation({
