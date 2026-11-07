@@ -38,6 +38,21 @@ const routes: RouteObject[] = [
     lazy: () => import('@/pages/remote/RemotePage').then((m) => ({ Component: m.default })),
   },
   {
+    // R2b 시연용 충격 트리거: 휴대폰을 흔들거나 떨어뜨리면 재난을 선언한다(모의 재난)
+    path: '/o/:slug/remote/shake',
+    HydrateFallback: RouteLoading,
+    errorElement: <RouteErrorPage />,
+    lazy: () => import('@/pages/remote/ShakeRemotePage').then((m) => ({ Component: m.default })),
+  },
+  {
+    // 휴대폰에 치기 쉬운 짧은 주소. 로그인 뒤 첫 조직의 충격 트리거로 보낸다
+    path: '/remote',
+    HydrateFallback: RouteLoading,
+    errorElement: <RouteErrorPage />,
+    lazy: () =>
+      import('@/pages/remote/RemoteShakeRedirect').then((m) => ({ Component: m.default })),
+  },
+  {
     path: '/o/:slug',
     HydrateFallback: RouteLoading,
     element: <AppShell />,
