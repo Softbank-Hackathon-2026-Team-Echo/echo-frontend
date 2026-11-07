@@ -60,5 +60,6 @@
   "Finished {{time}}": "{{time}} 完了",
   "Applying in the sandbox…": "サンドボックスに適用中…",
   "Open the redeploy": "再デプロイを開く",
-  "The redeploy did not start.": "再デプロイは開始されませんでした。"
+  "The redeploy did not start.": "再デプロイは開始されませんでした。",
+  "Redeploy with the fix": "修正コミットで再デプロイ"
 }
