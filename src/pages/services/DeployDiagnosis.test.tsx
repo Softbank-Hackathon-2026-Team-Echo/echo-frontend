@@ -219,6 +219,9 @@ describe('DeployDiagnosis', () => {
         calls.approved += 1;
         return ok({});
       }),
+      http.get(`${API}/orgs/o1/deploy-requests/r2`, () =>
+        ok({ id: 'r2', status: 'SUCCEEDED', commitSha: '7cd47f470e6150f5' }),
+      ),
     );
     await userEvent.click(screen.getByRole('button', { name: 'Approve patch' }));
 
@@ -226,6 +229,8 @@ describe('DeployDiagnosis', () => {
       'href',
       '/o/echo-demo/services/s1/deploys/r2',
     );
+    expect(await screen.findByText('Succeeded')).toBeInTheDocument();
+    expect(screen.getByText('7cd47f4')).toBeInTheDocument();
     expect(calls.approved).toBe(1);
   });
 
