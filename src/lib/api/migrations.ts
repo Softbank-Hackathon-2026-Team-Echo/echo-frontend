@@ -1,5 +1,6 @@
 // 이전 계획 (API 서버 8, echo-was docs/api/migration-plans.md). 승인 = 실행 시작이다
 import {
+  type QueryClient,
   type UseQueryResult,
   useInfiniteQuery,
   useMutation,
@@ -29,6 +30,30 @@ export function isOpenPlan(status: MigrationPlanStatus | undefined): boolean {
   return status !== undefined && OPEN.includes(status);
 }
 
+type PlanState = Pick<MigrationPlanSummary, 'id' | 'serviceId' | 'status'>;
+
+/**
+ * 실행 중이던 계획이 끝나면 서비스 · 환경을 다시 부른다. 트래픽 비율과 서비스 중 환경은 서비스 응답에 있고,
+ * 계획만 다시 부르면 화면이 끝난 뒤에도 옛 비율(이전 전 환경 100%)을 그린다(11/7 리허설)
+ */
+export function refreshAfterFinishedPlans(
+  queryClient: QueryClient,
+  orgId: string,
+  before: readonly PlanState[] | undefined,
+  after: readonly PlanState[],
+) {
+  const finished = after.filter((plan) => {
+    const previous = before?.find((item) => item.id === plan.id);
+    return previous && isActivePlan(previous.status) && !isActivePlan(plan.status);
+  });
+  if (finished.length === 0) return;
+  for (const serviceId of new Set(finished.map((plan) => plan.serviceId))) {
+    void queryClient.invalidateQueries({ queryKey: queryKeys.service(orgId, serviceId) });
+  }
+  void queryClient.invalidateQueries({ queryKey: queryKeys.services(orgId), exact: true });
+  void queryClient.invalidateQueries({ queryKey: queryKeys.environments(orgId) });
+}
+
 // 모듈 함수라 참조가 그대로여서 TanStack Query 가 결과가 바뀔 때만 다시 합친다
 function combinePlans(results: UseQueryResult<{ items: MigrationPlanSummary[] }>[]) {
   return {
@@ -42,18 +67,24 @@ function combinePlans(results: UseQueryResult<{ items: MigrationPlanSummary[] }>
 
 /** 조직 전체 이전 기록(M01). 조직 단위 목록 API 가 없어 서비스마다 목록을 불러 합친다 */
 export function useOrgMigrationPlans(orgId: string | undefined, serviceIds: string[]) {
+  const queryClient = useQueryClient();
   return useQueries({
     queries: serviceIds.map((serviceId) => ({
       queryKey: queryKeys.migrationPlans(orgId ?? '', serviceId),
-      queryFn: () =>
-        unwrap(
+      queryFn: async () => {
+        const key = queryKeys.migrationPlans(orgId ?? '', serviceId);
+        const before = queryClient.getQueryData<{ items: MigrationPlanSummary[] }>(key)?.items;
+        const page = await unwrap(
           api.GET('/api/v1/orgs/{org_id}/services/{service_id}/migration-plans', {
             params: {
               path: { org_id: orgId ?? '', service_id: serviceId },
               query: { page: 0, size: 20 },
             },
           }),
-        ),
+        );
+        refreshAfterFinishedPlans(queryClient, orgId ?? '', before, page.items);
+        return page;
+      },
       enabled: Boolean(orgId),
       // 실행 중인 계획이 있으면 끝나는 순간을 잡으려고 2초마다 다시 부른다(대시보드 완료 카드)
       refetchInterval: (query: { state: { data?: { items: MigrationPlanSummary[] } } }) =>
@@ -64,14 +95,20 @@ export function useOrgMigrationPlans(orgId: string | undefined, serviceIds: stri
 }
 
 export function useMigrationPlan(orgId: string | undefined, planId: string | undefined) {
+  const queryClient = useQueryClient();
   return useQuery({
     queryKey: queryKeys.migrationPlan(orgId ?? '', planId ?? ''),
-    queryFn: () =>
-      unwrap(
+    queryFn: async () => {
+      const key = queryKeys.migrationPlan(orgId ?? '', planId ?? '');
+      const before = queryClient.getQueryData<PlanState>(key);
+      const plan = await unwrap(
         api.GET('/api/v1/orgs/{org_id}/migration-plans/{plan_id}', {
           params: { path: { org_id: orgId ?? '', plan_id: planId ?? '' } },
         }),
-      ),
+      );
+      refreshAfterFinishedPlans(queryClient, orgId ?? '', before ? [before] : undefined, [plan]);
+      return plan;
+    },
     enabled: Boolean(orgId && planId),
     refetchInterval: (query) => {
       const plan = query.state.data;

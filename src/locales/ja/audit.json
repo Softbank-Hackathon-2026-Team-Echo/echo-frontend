@@ -49,5 +49,17 @@
   "updated environment": "環境を更新",
   "updated service": "サービスを更新",
   "approved AI patch": "AIパッチを承認",
-  "rejected AI patch": "AIパッチを却下"
+  "rejected AI patch": "AIパッチを却下",
+  "Failback plan {{id}}": "フェイルバック計画 {{id}}",
+  "started DB writer cutover": "DB書き込み切り替え開始",
+  "finished DB writer cutover": "DB書き込み切り替え終了",
+  "declared disaster": "災害を宣言",
+  "ended disaster": "災害を終了",
+  "requested evacuation plan": "避難計画を要求",
+  "injected feed event": "フィードイベントを注入",
+  "requested AI diagnosis": "AI診断を要求",
+  "requested CVE diagnosis": "CVE診断を要求",
+  "checked CVE watch": "CVE監視を確認",
+  "injected CVE advisory": "CVEアドバイザリを注入",
+  "copied app variable": "アプリ変数をコピー"
 }
