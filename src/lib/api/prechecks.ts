@@ -15,6 +15,48 @@ export function isActivePrecheck(status: PrecheckStatus | undefined): boolean {
   return status !== undefined && ACTIVE.includes(status);
 }
 
+/**
+ * 진단 패치는 샌드박스 반영이 끝난 뒤 서버가 수정 커밋 · PR 을 만들고 나서야 재배포를 잇는다(약 6초).
+ * 그 사이에도 다시 불러야 재배포 id 를 놓치지 않는다. 끝없이 기다리지 않게 반영 완료 뒤 이만큼만 기다린다
+ */
+export const REDEPLOY_LINK_WAIT_MS = 90_000;
+
+type ApplyLink = Pick<
+  NonNullable<PrecheckPatch['apply']>,
+  'status' | 'finishedAt' | 'redeployRequestId' | 'redeployRejectedCode'
+>;
+
+/** 반영은 성공했는데 재배포가 아직 이어지지 않았다 */
+export function isAwaitingRedeploy(apply: ApplyLink | null | undefined): boolean {
+  return Boolean(
+    apply &&
+      apply.status === 'SUCCEEDED' &&
+      apply.finishedAt &&
+      !apply.redeployRequestId &&
+      !apply.redeployRejectedCode,
+  );
+}
+
+/** 재배포를 기다리는 시간이 남았는가. 넘으면 화면이 다시 확인 버튼을 준다 */
+export function isRedeployWaitOver(apply: ApplyLink, now = Date.now()): boolean {
+  return now - new Date(apply.finishedAt ?? 0).getTime() >= REDEPLOY_LINK_WAIT_MS;
+}
+
+function waitingForRedeploy(precheck: PrecheckDetail | undefined): boolean {
+  if (precheck?.kind !== 'CHANGE_PROPOSAL') return false;
+  return precheck.patches.some(
+    (patch) => isAwaitingRedeploy(patch.apply) && !isRedeployWaitOver(patch.apply as ApplyLink),
+  );
+}
+
+/** 진단 실행이 만든 재배포 id. 패치 하나가 재배포 하나를 만든다 */
+export function redeployRequestIdOf(precheck: PrecheckDetail | undefined): string | null {
+  return (
+    precheck?.patches.find((patch) => patch.apply?.redeployRequestId)?.apply?.redeployRequestId ??
+    null
+  );
+}
+
 export function usePrecheck(orgId: string | undefined, precheckId: string | undefined) {
   return useQuery({
     queryKey: queryKeys.precheck(orgId ?? '', precheckId ?? ''),
@@ -29,7 +71,9 @@ export function usePrecheck(orgId: string | undefined, precheckId: string | unde
     refetchInterval: (query) => {
       const precheck = query.state.data;
       const applying = precheck?.patches.some((patch) => patch.apply && !patch.apply.finishedAt);
-      return isActivePrecheck(precheck?.status) || applying ? PRECHECK_POLL_MS : false;
+      return isActivePrecheck(precheck?.status) || applying || waitingForRedeploy(precheck)
+        ? PRECHECK_POLL_MS
+        : false;
     },
   });
 }

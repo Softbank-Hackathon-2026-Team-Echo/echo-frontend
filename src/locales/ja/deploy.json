@@ -22,5 +22,11 @@
   "The app answers {{path}} on port {{port}}": "アプリがポート {{port}} の {{path}} に応答すること",
   "View logs": "ログを表示",
   "Search loaded logs": "読み込んだログを検索",
-  "No lines match.": "一致する行はありません。"
+  "No lines match.": "一致する行はありません。",
+  "Sandbox check passed. Committing the fix and starting the redeploy…": "サンドボックス検証に合格しました。修正コミットを作成して再デプロイを開始しています…",
+  "The redeploy has not started yet.": "再デプロイはまだ開始されていません。",
+  "Check again": "再確認",
+  "The fix is live. The health check passed.": "修正版が反映されました。ヘルスチェックに合格しました。",
+  "The redeploy did not finish.": "再デプロイは完了しませんでした。",
+  "Original deploy {{sha}}": "元のデプロイ {{sha}}"
 }
