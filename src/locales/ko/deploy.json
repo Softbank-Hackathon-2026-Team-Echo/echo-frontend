@@ -32,5 +32,6 @@
   "Status check delayed. Showing the last confirmed state.": "상태 확인이 지연되고 있습니다. 마지막으로 확인한 상태입니다.",
   "Last confirmed at {{time}}. Elapsed time is frozen.": "마지막 확인: {{time}}. 경과 시간은 이 시각에 멈춰 있습니다.",
   "Elapsed at last confirmation": "마지막 확인 시각까지의 경과 시간",
-  "Logs will reappear when status checking recovers.": "상태 조회가 복구되면 로그가 다시 표시됩니다."
+  "Logs will reappear when status checking recovers.": "상태 조회가 복구되면 로그가 다시 표시됩니다.",
+  "Check delayed": "확인 지연"
 }

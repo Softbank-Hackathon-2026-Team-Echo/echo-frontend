@@ -267,3 +267,76 @@ describe('RedeployFollow GET 오류와 복구', () => {
     },
   );
 });
+
+describe('RedeployFollow 캐시 뒤 GET 오류 표시 (리뷰 반영)', () => {
+  async function cachedThenError(kind: '503' | 'network') {
+    const f = fixture(false, kind);
+    const region = await screen.findByRole('region', { name: 'Redeploy with the fix' });
+    await within(region).findByText('LOG_FOR_r2');
+    f.disconnect();
+    await act(async () => {
+      await f.client.invalidateQueries({ queryKey: followKey });
+    });
+    await waitFor(() => expect(f.client.getQueryState(followKey)?.status).toBe('error'));
+    return { f, region };
+  }
+
+  it.each(['503', 'network'] as const)(
+    '캐시가 있으면 %s 오류에 ErrorState 대신 경고와 작은 다시 시도 버튼만 보인다',
+    async (kind) => {
+      const { f, region } = await cachedThenError(kind);
+      try {
+        expect(within(region).getByRole('alert')).toHaveTextContent(
+          'Status check delayed. Showing the last confirmed state.',
+        );
+        expect(within(region).queryByText("Couldn't load this")).not.toBeInTheDocument();
+        expect(region.querySelector('.border-dashed')).toBeNull();
+        const retry = within(region).getByRole('button', { name: 'Retry' });
+        expect(retry).toBeVisible();
+        const beforeRetry = f.gets.length;
+        f.recover();
+        await userEvent.click(retry);
+        await waitFor(() => expect(f.gets.length).toBeGreaterThan(beforeRetry));
+        await waitFor(() =>
+          expect(within(region).getByRole('heading', { level: 2 })).toHaveTextContent('Deploying'),
+        );
+        expect(within(region).queryByRole('alert')).not.toBeInTheDocument();
+        expect(f.posts).toEqual([]);
+      } finally {
+        f.cleanup();
+      }
+    },
+  );
+
+  it('조회 오류 동안 단계 스피너를 멈추고 확인 지연으로 그리며, 회복하면 다시 돈다', async () => {
+    const f = fixture(false, '503');
+    try {
+      const region = await screen.findByRole('region', { name: 'Redeploy with the fix' });
+      await within(region).findByText('LOG_FOR_r2');
+      const stepper = region.querySelector('ol');
+      expect(stepper?.querySelector('.animate-spin')).not.toBeNull();
+      f.disconnect();
+      await act(async () => {
+        await f.client.invalidateQueries({ queryKey: followKey });
+      });
+      await waitFor(() => expect(f.client.getQueryState(followKey)?.status).toBe('error'));
+      expect(region.querySelector('.animate-spin')).toBeNull();
+      expect(
+        within(region.querySelector('ol') as HTMLElement).getByRole('img', {
+          name: 'Check delayed',
+        }),
+      ).toBeInTheDocument();
+      expect(within(region).queryByText('Building the image…')).not.toBeInTheDocument();
+      f.recover();
+      await userEvent.click(within(region).getByRole('button', { name: 'Retry' }));
+      await waitFor(() =>
+        expect(within(region).getByRole('heading', { level: 2 })).toHaveTextContent('Deploying'),
+      );
+      expect(region.querySelector('ol')?.querySelector('.animate-spin')).not.toBeNull();
+      expect(within(region).queryByRole('img', { name: 'Check delayed' })).not.toBeInTheDocument();
+      expect(f.posts).toEqual([]);
+    } finally {
+      f.cleanup();
+    }
+  });
+});

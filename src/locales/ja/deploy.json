@@ -32,5 +32,6 @@
   "Status check delayed. Showing the last confirmed state.": "状態の確認が遅れています。最後に確認した状態を表示しています。",
   "Last confirmed at {{time}}. Elapsed time is frozen.": "最終確認: {{time}}。経過時間はこの時刻で停止しています。",
   "Elapsed at last confirmation": "最終確認時点の経過時間",
-  "Logs will reappear when status checking recovers.": "状態の取得が復旧するとログが再表示されます。"
+  "Logs will reappear when status checking recovers.": "状態の取得が復旧するとログが再表示されます。",
+  "Check delayed": "確認遅延"
 }

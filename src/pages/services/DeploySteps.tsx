@@ -1,4 +1,4 @@
-import { Check, Circle, Loader2, X } from 'lucide-react';
+import { Check, Circle, CircleAlert, Loader2, X } from 'lucide-react';
 import type { DeployRequestDetail } from '@/lib/api/types';
 import { STAGES, type StageState, stageDuration, stageStates } from '@/lib/deploy-stages';
 import { k, t } from '@/lib/i18n';
@@ -22,8 +22,17 @@ const ICON: Record<StageState, React.ReactNode> = {
 
 /**
  * 단계 목록 (Railway 배포 카드): 단계마다 ✓/✗ 와 걸린 시간, 실패한 단계 바로 밑에 에러 문장을 고정폭으로 붙인다
+ * stalled 면(상태 조회 오류로 마지막 확인 상태를 보이는 중) 진행 중 단계의 스피너와 하위 문구를 멈춘다
  */
-export function DeploySteps({ request, now }: { request: DeployRequestDetail; now: number }) {
+export function DeploySteps({
+  request,
+  now,
+  stalled = false,
+}: {
+  request: DeployRequestDetail;
+  now: number;
+  stalled?: boolean;
+}) {
   const states = stageStates(request);
   return (
     <ol className="flex flex-col divide-y divide-line rounded-lg border border-line bg-surface">
@@ -33,7 +42,11 @@ export function DeploySteps({ request, now }: { request: DeployRequestDetail; no
         return (
           <li key={stage.status} className="flex flex-col gap-1.5 px-4 py-2.5">
             <div className="flex items-center gap-2.5">
-              {ICON[state]}
+              {stalled && state === 'current' ? (
+                <CircleAlert aria-hidden className="size-4 text-warning-fg" />
+              ) : (
+                ICON[state]
+              )}
               <span
                 className={cn(
                   'text-body-medium',
@@ -43,7 +56,7 @@ export function DeploySteps({ request, now }: { request: DeployRequestDetail; no
               >
                 {t(stage.label)}
               </span>
-              {state === 'current' && SUBSTEPS[stage.status] && (
+              {state === 'current' && !stalled && SUBSTEPS[stage.status] && (
                 <span className="text-small text-migrating-fg">
                   {t(SUBSTEPS[stage.status] ?? '')}
                 </span>
