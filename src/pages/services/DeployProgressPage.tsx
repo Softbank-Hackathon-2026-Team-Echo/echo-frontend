@@ -357,9 +357,18 @@ function RedeployFollow({
   service: ServiceDetail | undefined;
   requestLink: (id: string) => string;
 }) {
-  const { data: redeploy } = useDeployRequest(orgId, redeployRequestId);
+  const {
+    data: redeploy,
+    isError,
+    error,
+    refetch,
+    isFetching,
+    dataUpdatedAt,
+  } = useDeployRequest(orgId, redeployRequestId);
   const syncs = useStandbySyncs(orgId, service?.id, redeploy);
-  const now = useNow(Boolean(redeploy && !isTerminalStatus(redeploy.status)));
+  const clock = useNow(Boolean(redeploy && !isError && !isTerminalStatus(redeploy.status)));
+  // 조회 오류는 배포 실패가 아니다. 마지막 성공 GET 시각까지만 경과 시간을 표시한다.
+  const now = isError ? dataUpdatedAt : clock;
   const reduceMotion = usePrefersReducedMotion();
   const sectionRef = useRef<HTMLElement>(null);
 
@@ -384,7 +393,10 @@ function RedeployFollow({
             <>
               <span className="font-mono">{shortSha(redeploy.commitSha)}</span>
               <StatusBadge {...deployStatusView(redeploy.status)} />
-              <span className="font-mono text-mono text-fg-secondary tabular-nums">
+              <span
+                title={isError ? t('Elapsed at last confirmation') : undefined}
+                className="font-mono text-mono text-fg-secondary tabular-nums"
+              >
                 {elapsed(redeploy.stageTimes.queuedAt, redeploy.stageTimes.finishedAt, now)}
               </span>
             </>
@@ -394,6 +406,24 @@ function RedeployFollow({
           {t('Open the redeploy')}
         </Link>
       </header>
+      {isError && (
+        <div aria-busy={isFetching}>
+          {redeploy && (
+            <div role="alert" className="text-body text-warning-fg">
+              <p>{t('Status check delayed. Showing the last confirmed state.')}</p>
+              <p>
+                <time dateTime={new Date(dataUpdatedAt).toISOString()}>
+                  {t('Last confirmed at {{time}}. Elapsed time is frozen.', {
+                    time: dateTime(new Date(dataUpdatedAt).toISOString()),
+                  })}
+                </time>
+              </p>
+              <p>{t('Logs will reappear when status checking recovers.')}</p>
+            </div>
+          )}
+          <ErrorState error={error} onRetry={() => !isFetching && refetch()} />
+        </div>
+      )}
       {redeploy ? (
         <>
           <Stepper
@@ -416,16 +446,19 @@ function RedeployFollow({
             </p>
           )}
           <DeploySteps request={redeploy} now={now} />
-          <DeployLogs
-            key={redeploy.id}
-            orgId={orgId}
-            request={redeploy}
-            defaultSource="DEPLOY_JOB"
-          />
+          {/* 로그 상태는 유지하되 조회 오류 중에는 Live 수신으로 오인하지 않게 가린다. */}
+          <div hidden={isError}>
+            <DeployLogs
+              key={redeploy.id}
+              orgId={orgId}
+              request={redeploy}
+              defaultSource="DEPLOY_JOB"
+            />
+          </div>
         </>
-      ) : (
+      ) : !isError ? (
         <Skeleton className="h-16 w-full" />
-      )}
+      ) : null}
     </section>
   );
 }

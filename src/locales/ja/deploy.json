@@ -28,5 +28,9 @@
   "Check again": "再確認",
   "The fix is live. The health check passed.": "修正版が反映されました。ヘルスチェックに合格しました。",
   "The redeploy did not finish.": "再デプロイは完了しませんでした。",
-  "Original deploy {{sha}}": "元のデプロイ {{sha}}"
+  "Original deploy {{sha}}": "元のデプロイ {{sha}}",
+  "Status check delayed. Showing the last confirmed state.": "状態の確認が遅れています。最後に確認した状態を表示しています。",
+  "Last confirmed at {{time}}. Elapsed time is frozen.": "最終確認: {{time}}。経過時間はこの時刻で停止しています。",
+  "Elapsed at last confirmation": "最終確認時点の経過時間",
+  "Logs will reappear when status checking recovers.": "状態の取得が復旧するとログが再表示されます。"
 }
