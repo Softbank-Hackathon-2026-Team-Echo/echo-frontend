@@ -88,6 +88,7 @@ const tokyoQuake: Disaster = {
   startedAt: '2026-11-07T03:00:00Z',
   endedAt: null,
   simulated: true,
+  feedEvent: null,
 };
 
 const byName = (id: string) => environments.find((item) => item.id === id)?.name;

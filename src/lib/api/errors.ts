@@ -70,6 +70,13 @@ const CONFLICT_MESSAGES: Record<string, string> = {
   PATCH_ALREADY_DECIDED: k('Someone already decided this patch.'),
   PATCH_BLOCKED: k('This patch is blocked and cannot be approved.'),
   SECRET_STORE_NOT_CONFIGURED: k('The secret store is not set up, so the value was not saved.'),
+  DB_CUTOVER_DISABLED: k(
+    'Moving the DB writer is turned off on the server. Create the plan without it.',
+  ),
+  // 422 이지만 칸 오류가 아니라 승인 조건이라 같은 표에서 고른다 (echo-was API 서버 17)
+  PROMOTE_ACK_REQUIRED: k(
+    'This plan promotes the target database. Tick the acknowledgement above and approve again.',
+  ),
 };
 
 /** 화면에 보여 줄 한 줄 문구. 모르는 코드는 서버 message 를 그대로 쓴다 */
