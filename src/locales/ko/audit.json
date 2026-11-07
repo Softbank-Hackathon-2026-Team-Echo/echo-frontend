@@ -49,5 +49,17 @@
   "updated environment": "환경 수정",
   "updated service": "서비스 수정",
   "approved AI patch": "AI 패치 승인",
-  "rejected AI patch": "AI 패치 거절"
+  "rejected AI patch": "AI 패치 거절",
+  "Failback plan {{id}}": "복귀 계획 {{id}}",
+  "started DB writer cutover": "DB 쓰기 전환 시작",
+  "finished DB writer cutover": "DB 쓰기 전환 종료",
+  "declared disaster": "재난 선언",
+  "ended disaster": "재난 종료",
+  "requested evacuation plan": "대피 계획 요청",
+  "injected feed event": "피드 재난 주입",
+  "requested AI diagnosis": "AI 진단 요청",
+  "requested CVE diagnosis": "CVE 진단 요청",
+  "checked CVE watch": "CVE 감시 확인",
+  "injected CVE advisory": "CVE 권고 주입",
+  "copied app variable": "앱 변수 복사"
 }
