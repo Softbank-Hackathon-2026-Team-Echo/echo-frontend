@@ -300,6 +300,16 @@ describe('SecurityPage', () => {
 
     const sheet = await screen.findByRole('dialog');
     expect(within(sheet).getByText('No evidence collected')).toBeInTheDocument();
+    expect(
+      within(sheet).getByText('Anything not checked yet is not counted as a pass.'),
+    ).toBeInTheDocument();
+  });
+
+  it('매트릭스 아래에 미확인은 통과로 세지 않는다고 적는다', async () => {
+    serve(ENVIRONMENTS);
+    renderPage();
+
+    expect(await screen.findByText(/not counted as a pass/)).toBeInTheDocument();
   });
 
   it('증거 표의 행을 누르면 그 증거가 열린다', async () => {

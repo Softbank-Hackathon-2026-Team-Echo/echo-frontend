@@ -152,6 +152,11 @@ function ControlCheck({
       {control.reasons.length > 0 && (
         <p className="text-body">{control.reasons.map(securityReasonLabel).join(' · ')}</p>
       )}
+      {control.result === 'UNKNOWN' && (
+        <p className="text-small text-fg-secondary">
+          {t('Anything not checked yet is not counted as a pass.')}
+        </p>
+      )}
       {control.exception && <ExceptionNote exception={control.exception} />}
       {findings.map((finding) => (
         <FindingDetail key={finding.id} finding={finding} />
@@ -160,9 +165,10 @@ function ControlCheck({
   );
 }
 
+// 확인 안 된 칸을 통과로 읽지 않게 시트 · 매트릭스 아래에 같은 문장을 둔다
 function emptyText(result: string | undefined) {
   if (result === 'UNKNOWN')
-    return t('This control has not been collected yet, so it has no verdict.');
+    return `${t('This control has not been collected yet, so it has no verdict.')} ${t('Anything not checked yet is not counted as a pass.')}`;
   if (result === 'NA') return t('This control does not apply to this environment.');
   return t('No findings. This control passed the last check.');
 }
