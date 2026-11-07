@@ -1,6 +1,7 @@
 import { ArrowRight, MapPinOff, ShieldCheck, TriangleAlert } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
+import { LiveFeedBadge } from '@/components/disaster/LiveFeedBadge';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorState } from '@/components/ErrorState';
 import { PageHeader } from '@/components/PageHeader';
@@ -78,7 +79,7 @@ export default function EvacuationPage() {
   if (!disaster) {
     return (
       <>
-        <PageHeader title={t('Evacuation')} />
+        <PageHeader title={t('Evacuation')} actions={<LiveFeedBadge orgId={orgId} />} />
         <EmptyState
           icon={ShieldCheck}
           title={t('No active disaster')}
@@ -102,7 +103,11 @@ export default function EvacuationPage() {
   if (atRisk.length === 0) {
     return (
       <>
-        <PageHeader title={t('Evacuation')} description={`${disasterTitle} · simulated`} />
+        <PageHeader
+          title={t('Evacuation')}
+          description={disaster.simulated ? `${disasterTitle} · simulated` : disasterTitle}
+          actions={<LiveFeedBadge orgId={orgId} />}
+        />
         <EmptyState
           icon={ShieldCheck}
           title={details.isPending ? t('Checking services…') : t('No services at risk')}
@@ -136,6 +141,7 @@ export default function EvacuationPage() {
         )}
         actions={
           <>
+            <LiveFeedBadge orgId={orgId} />
             <Button asChild variant="outline">
               <Link to={`/o/${organization.slug}`}>{t('Back to dashboard')}</Link>
             </Button>
@@ -150,7 +156,7 @@ export default function EvacuationPage() {
 
       <div className="flex flex-wrap items-center gap-3">
         <span className="text-small text-fg-secondary">{disasterTitle}</span>
-        <SimulatedBadge />
+        {disaster.simulated && <SimulatedBadge />}
         {details.data.length > 1 && (
           <Select
             value={service.id}

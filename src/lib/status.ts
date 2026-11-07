@@ -293,6 +293,27 @@ export function patchStatusView(status: string): StatusView | null {
   return viewOf(PATCH_STATUSES, status);
 }
 
+const LIVE_FEED_VIEWS: Record<string, StatusView> = {
+  CONNECTED: { label: k('Connected'), tone: 'success' },
+  WAITING: { label: k('Waiting'), tone: 'neutral' },
+  DISABLED: { label: k('Off'), tone: 'neutral' },
+  ERROR: { label: k('Error'), tone: 'danger' },
+};
+
+export function liveFeedView(status: string): StatusView {
+  return viewOf(LIVE_FEED_VIEWS, status);
+}
+
+const DISASTER_SOURCES: Record<string, StatusView> = {
+  SIMULATED: { label: k('Manual (simulated)'), tone: 'neutral' },
+  LIVE_FEED: { label: k('Real earthquake · USGS'), tone: 'danger' },
+  FEED_INJECTED: { label: k('Demo injection'), tone: 'warning' },
+};
+
+export function disasterSourceView(source: string): StatusView {
+  return viewOf(DISASTER_SOURCES, source);
+}
+
 /** 사전 점검 처리 위치. 기록이 없다고 밖으로 안 나갔다는 뜻은 아니다 */
 export function processingView(processing: PrecheckProcessing | null | undefined): StatusView {
   if (!processing) return { label: t('No processing record'), tone: 'neutral' };
@@ -376,6 +397,7 @@ const MIGRATION_ERRORS: Record<string, string> = {
   DB_CUTOVER_TIMEOUT: k('DB writer cutover timed out'),
   DB_CUTOVER_PARTIAL: k('DB writer cutover stopped halfway'),
   DATA_INTEGRITY_FAILED: k('Rows are missing or duplicated after the cutover'),
+  DB_CUTOVER_UNKNOWN: k('DB writer state is unknown · a person has to check'),
   WORKER_LOST: k('The worker stopped responding'),
   INTERNAL_ERROR: k('Internal error'),
 };

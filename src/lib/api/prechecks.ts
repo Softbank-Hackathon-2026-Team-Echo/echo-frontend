@@ -103,6 +103,21 @@ export function useCancelPrecheck(orgId: string) {
 type PatchDecision = { patch: PrecheckPatch; decision: 'approve' | 'reject' };
 
 /** 패치 승인 · 거절. 서버 반영 스위치가 꺼져 있으면 승인해도 반영 대기로 남는다 */
+/** 실패한 배포의 AI 진단을 시작한다. 이미 있으면 서버가 같은 실행을 돌려준다 */
+export function useCreateDiagnosis(orgId: string, deployRequestId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () =>
+      unwrap(
+        api.POST('/api/v1/orgs/{org_id}/deploy-requests/{deploy_request_id}/diagnosis', {
+          params: { path: { org_id: orgId, deploy_request_id: deployRequestId } },
+        }),
+      ),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: queryKeys.deployRequest(orgId, deployRequestId) }),
+  });
+}
+
 export function usePatchDecision(orgId: string, precheckId: string) {
   const queryClient = useQueryClient();
   return useMutation({

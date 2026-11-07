@@ -128,8 +128,6 @@
   "No threshold yet. Every typhoon counts.": "基準はまだありません。すべての台風が対象です。",
   "Source": "ソース",
   "Manual (simulated)": "手動(simulated)",
-  "Live feed ({{name}}) connected": "ライブフィード({{name}})接続済み",
-  "Live feed ({{name}}) not connected yet": "ライブフィード({{name}})未接続",
   "{{total}} environment affected": "影響を受ける環境 {{total}}件",
   "{{total}} environments affected": "影響を受ける環境 {{total}}件",
   "{{total}} safe target": "安全な移行先 {{total}}件",
@@ -151,5 +149,15 @@
   "Loading": "読み込み中",
   "Exception": "例外",
   "Exception: {{reason}}": "例外: {{reason}}",
-  "Expires {{time}}": "期限 {{time}}"
+  "Expires {{time}}": "期限 {{time}}",
+  "Live feed ({{name}})": "ライブフィード({{name}})",
+  "Checked {{time}}": "最終確認 {{time}}",
+  "Place": "場所",
+  "Occurred": "発生時刻",
+  "Nearest environment": "最寄りの環境",
+  "Feed threshold met": "フィード基準を満たす",
+  "Create evacuation plans": "避難計画を作成",
+  "Create plans": "計画を作成",
+  "If self-approval is on, the migration starts right away.": "自己承認が有効な場合、移行はすぐに始まります。",
+  "End disaster": "災害を終了"
 }

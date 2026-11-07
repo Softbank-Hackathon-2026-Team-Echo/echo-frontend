@@ -34,6 +34,9 @@ export type MigrationPlanSummary = Schemas['MigrationPlanSummaryResponse'];
 export type MigrationPlanStatus = Schemas['MigrationPlanStatus'];
 export type MigrationStep = Schemas['MigrationStepResponse'];
 export type CreateMigrationPlan = Schemas['CreateMigrationPlanRequest'];
+export type ApproveMigrationPlan = Schemas['ApproveMigrationPlanRequest'];
+/** DB 쓰기 전환 단계(DB_CUTOVER)의 Job 과 결과. 그 밖의 단계는 null (echo-was API 서버 17) */
+export type StepCutover = Schemas['StepCutoverResponse'];
 export type RollbackConditions = Schemas['RollbackConditionsRequest'];
 export type Invitation = Schemas['InvitationResponse'];
 export type AgentToken = Schemas['AgentTokenResponse'];
@@ -94,39 +97,14 @@ export type SimulatedFailureStage = Schemas['SimulatedFailureStage'];
 export type ServiceMetricsSeries = Schemas['EnvironmentMetricsSeriesResponse'];
 export type LogLine = Schemas['LogLineResponse'];
 
-/**
- * 배포 실패 진단 (echo-was API 서버 4-1, PR #97). 운영 OpenAPI 에 아직 없어 모양대로 손으로 쓴다.
- * FAILED 일 때만 차고, 그 전 기록·배포 전 서버에서는 칸이 없다
- */
-// TODO(김도영, 2026-11-07): echo-was #97 배포 뒤 gen:api 로 교체
-export type DeployFailure = {
-  code: string;
-  message: string;
-  container: string | null;
-  containerReason: string | null;
-  terminationReason: string | null;
-  exitCode: number | null;
-  restartCount: number | null;
-  logTail: string[];
-  logTruncated: boolean;
-  previousVersionRunning: boolean | null;
-};
+export type DeployFailure = Schemas['FailureResponse'];
+export type DiagnosisCategory = Schemas['DiagnosisCategory'];
+export type PrecheckDiagnosis = Schemas['PrecheckDiagnosisResponse'];
+export type DisasterSource = Schemas['DisasterSource'];
+export type LiveFeedStatus = Schemas['LiveFeedStatusResponse'];
+export type LiveFeedConnectionStatus = Schemas['LiveFeedConnectionStatus'];
 
-/** 응답에 failure 칸이 있으면 꺼낸다. 서버가 아직 주지 않으면 null */
-export function deployFailure(request: object): DeployFailure | null {
-  const value = (request as { failure?: unknown }).failure;
-  if (!value || typeof value !== 'object') return null;
-  const failure = value as Partial<DeployFailure>;
-  return {
-    code: failure.code ?? '',
-    message: failure.message ?? '',
-    container: failure.container ?? null,
-    containerReason: failure.containerReason ?? null,
-    terminationReason: failure.terminationReason ?? null,
-    exitCode: failure.exitCode ?? null,
-    restartCount: failure.restartCount ?? null,
-    logTail: Array.isArray(failure.logTail) ? failure.logTail : [],
-    logTruncated: failure.logTruncated ?? false,
-    previousVersionRunning: failure.previousVersionRunning ?? null,
-  };
+/** 실패 진단 칸. 예전 기록에는 없다 */
+export function deployFailure(request: { failure?: DeployFailure | null }): DeployFailure | null {
+  return request.failure ?? null;
 }

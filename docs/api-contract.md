@@ -141,9 +141,12 @@ data: {"seq": 1042, "ts": "2026-11-07T03:05:40Z", "orgId": "…", "resource": {"
 | 만들기 | `POST …/disasters` `{type, epicenter{lat, lng}, magnitude}` → 201 `Disaster` (개발자, 사람만) |
 | 조회 | `GET …/disasters?status=ACTIVE\|ENDED&page&size` · `GET …/disasters/{id}` |
 | 종료 | `POST …/disasters/{id}/end` → `ENDED`. 복귀 잠금이 풀린다 |
+| 피드 상태 | `GET …/disasters/feed` → `{provider, connectionStatus, lastPolledAt, lastErrorCode, threshold{minMagnitude, radiusKm}, evacuation …}`. 30초마다 다시 부른다 |
+| 대피 계획 | `POST …/disasters/{id}/evacuate` → 200 `Disaster`. 피드 재난은 `plans = []` 로 생겨 사람이 부른다. 409 `DISASTER_NOT_ACTIVE` |
 
 - `Disaster`: `{id, type, source, simulated, magnitude, epicenter, radiusKm, meetsThreshold, status, affectedEnvironmentIds[], safeEnvironmentIds[], unknownEnvironmentIds[], createdBy, endedBy, startedAt, endedAt, plans[{serviceId, planId, outcome, reason, targetEnvironmentId, planStatus}]}`.
 - 건너뛴 서비스는 만들기 응답의 `plans` 에만 있어서 화면은 그 순간 토스트로 알린다. `epicenterLabel` 은 서버에 없어 좌표로 만든다.
+- `source` 는 `SIMULATED` · `LIVE_FEED`(`simulated: false`) · `FEED_INJECTED` 다. 피드 재난은 `createdBy` 가 `null` 이고 `feedEvent {provider, eventId, place, occurredAt, depthKm, url, nearestDistanceKm}` 가 있다.
 - 지진 M7.0 이상, 태풍은 늘 기준을 넘는다. 기준 미달은 저장만 하고 복귀 · 도착을 막지 않는다. M7.2 반경은 302km 다.
 - 계획 요약 · 상세에 `disasterId`, 상세에 `failback {allowed, reason, disasterId}` 가 있다. 복귀 버튼은 `failback.allowed` 를 따른다. 끝나지 않은 재난의 피해 환경으로 계획을 만들면 409 `DISASTER_ACTIVE` 다.
 - 실시간 채널이 없어 진행 중인 재난은 5초마다 다시 부른다.
@@ -190,6 +193,8 @@ data: {"seq": 1042, "ts": "2026-11-07T03:05:40Z", "orgId": "…", "resource": {"
 ### 4-6. 이전 계획·실행·결과·복귀 (F6~F10, F17)
 
 > 11/3: E01-3 은 운영 API 서버 8(`POST /services/{id}/migration-plans` · `GET/approve/reject/cancel/abort/logs`)에 붙였다. 서버 단계는 고정(PREFLIGHT · SHIFT 10/50/100 · DATA_SYNC_CHECK)이고 쓰기 전환 단계는 아직 없다. 건수 기준 판정(API 서버 8-1, echo-was #22)도 붙였다: 만들기 `requiredRequests`[10%·50%·100%] · `maxWaitSeconds`(`observeSeconds` 는 없어졌다), 실행 중 `progress`(건수·5xx·남은 초)를 1초마다, 데모 실패 주입 `simulate{reason, failAtStep}`, 승인 409 `PLAN_STALE` 의 `details[].field` 로 바뀐 항목 표시. 11/4: 복귀 표시는 서버가 만들 때 판정한 응답 `mode`(`PLANNED` · `FAILBACK` · `EMERGENCY`, echo-was `specs/api-8-3-plan-mode.md`)를 쓴다. 복귀의 복귀는 `PLANNED` 다. 데모 실패 주입은 실제 실행기에서 서버가 거절하므로 도착 연결의 `simulated: false` 면 고르지 못한다.
+>
+> 11/7: DB 쓰기 전환(echo-was API 서버 17, #106). 만들기 `includeCutover`(체크박스 「DB 쓰기 담당도 함께 옮기기」, 기본 false) → 비율 100% 뒤 `DB_CUTOVER`(index 5) 단계와 `steps[5].cutover`(Job 상태·`reason`·`writer`·`run`) 표시, `DB_CUTOVER_UNKNOWN` 은 빨간 「사람 확인 필요」 배지. 서버 실행기가 꺼져 있으면 409 `DB_CUTOVER_DISABLED`. 상세 `promoteWarning` 이 있으면(재난 긴급 이전 + DB 쓰기 전환) 경고·동의 체크 뒤 승인 본문 `{"acknowledgePromote": true}`, 없이 승인하면 422 `PROMOTE_ACK_REQUIRED`. 그 밖의 승인은 본문 없이 보낸다.
 
 | 동작 | 제안 |
 |---|---|
@@ -253,6 +258,13 @@ data: {"seq": 1042, "ts": "2026-11-07T03:05:40Z", "orgId": "…", "resource": {"
 | W5 | `PUT …/variables` 일괄 저장 (선택) | 화면이 키 × 환경 수만큼 부른다 |
 
 W3 은 ai-agent #22 의 실패 로그 입력과 같은 값이다.
+
+### 4-10. 배포 실패 진단 ✅
+
+- 시작: `POST …/deploy-requests/{id}/diagnosis` → 201 `PrecheckDetail`(`kind: CHANGE_PROPOSAL`), 이미 있으면 200. 409 `DEPLOY_NOT_FAILED` · `SERVICE_DELETING` · `PRECHECK_IN_PROGRESS`
+- 배포 상세의 `diagnosis {runId, status}` 로 다시 들어와도 같은 실행을 본다. 결과는 `GET …/prechecks/{id}` 의 `diagnosis {result, category, cause, fixable, unfixableReason, evidence[]}` 와 `patches[]` 다
+- 패치 승인 뒤 `apply.redeployRequestId` 가 차면 그 배포로 잇고, `redeployRejectedCode` 면 코드를 보인다. `pullRequestUrl` 은 아직 `null` 이다
+- 러너가 꺼져 있으면 서버가 가짜 진단을 주고 `simulated: true` 다
 
 ## 5. 열린 질문
 

@@ -58,5 +58,7 @@
   "The image scan found problems in the sandbox.": "サンドボックスのイメージスキャンで問題が見つかりました。",
   "The app failed its health check in the sandbox.": "サンドボックスでアプリのヘルスチェックに失敗しました。",
   "Finished {{time}}": "{{time}} 完了",
-  "Applying in the sandbox…": "サンドボックスに適用中…"
+  "Applying in the sandbox…": "サンドボックスに適用中…",
+  "Open the redeploy": "再デプロイを開く",
+  "The redeploy did not start.": "再デプロイは開始されませんでした。"
 }

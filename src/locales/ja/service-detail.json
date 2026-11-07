@@ -81,7 +81,6 @@
   "Roll back to the last good version, then check the runtime log.": "最後の正常バージョンにロールバックしてから実行ログを確認してください。",
   "Roll back to {{sha}}?": "{{sha}}にロールバックしますか?",
   "Rolling back…": "ロールバック中…",
-  "Rule-based preview until the AI diagnosis API is connected.": "AI診断APIを接続するまでのルールベースのプレビューです。",
   "Run automatically": "自動実行",
   "Runtime error": "実行時エラー",
   "SLO 99.9%": "SLO 99.9%",
@@ -124,5 +123,16 @@
   "{{shown}} of {{total}} lines": "{{total}}行中{{shown}}行",
   "{{title}} by environment": "環境別の{{title}}",
   "~{{amount}}/mo est.": "月約{{amount}}(見積)",
-  "… earlier lines cut": "… それ以前の行は省略"
+  "… earlier lines cut": "… それ以前の行は省略",
+  "Code error": "コードエラー",
+  "Rule-based hint": "ルールベースのヒント",
+  "Log line {{n}}": "ログ {{n}} 行目",
+  "Log": "ログ",
+  "Config": "設定",
+  "There is not enough evidence to name a cause.": "原因を特定できるだけの根拠がありません。",
+  "No failure evidence was found in the logs.": "ログに失敗の根拠が見つかりませんでした。",
+  "Approving applies the fix in the sandbox, then starts a real redeploy.": "承認するとサンドボックスで修正を適用し、その後実際に再デプロイします。",
+  "Starting diagnosis…": "診断を開始しています…",
+  "Waiting for the AI agent": "AI エージェントを待機中",
+  "The diagnosis stopped.": "診断が停止しました。"
 }

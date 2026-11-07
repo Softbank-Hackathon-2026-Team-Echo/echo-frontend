@@ -188,5 +188,10 @@
   "Copy": "コピー",
   "capacity": "キャパシティ",
   "patch #3": "パッチ #3",
-  "Replication lag could not be read. A failback needs the DB cutover first": "レプリケーション遅延を読み取れませんでした。フェイルバックの前にDB書き込み切り替えが必要です"
+  "Replication lag could not be read. A failback needs the DB cutover first": "レプリケーション遅延を読み取れませんでした。フェイルバックの前にDB書き込み切り替えが必要です",
+  "Waiting": "待機中",
+  "Off": "オフ",
+  "Error": "エラー",
+  "Real earthquake · USGS": "実際の地震 · USGS",
+  "Demo injection": "デモ注入"
 }
