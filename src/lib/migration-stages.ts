@@ -12,8 +12,8 @@ export const DEFAULT_CONDITIONS = {
 };
 // 비율 단계는 필요 건수와 최소 관찰 시간을 모두 채워야 통과한다(echo-was #133)
 export const SHIFT_WEIGHTS = [5, 10, 25, 50, 75, 100] as const;
-export const DEFAULT_REQUIRED_REQUESTS = [10, 10, 20, 30, 30, 30] as const;
-export const DEFAULT_MIN_OBSERVE_SECONDS = 4;
+export const DEFAULT_REQUIRED_REQUESTS = [7, 10, 20, 30, 30, 30] as const;
+export const DEFAULT_MIN_OBSERVE_SECONDS = 3;
 export const DEFAULT_MAX_WAIT_SECONDS = 30;
 // DB 쓰기 전환 단계 예상 시간(echo-was migration-plans.md 단계 표: 2 + 30)
 const DB_CUTOVER_EXPECTED_SECONDS = STEP_OVERHEAD_SECONDS + 30;

@@ -299,7 +299,7 @@ describe('PlanPage', () => {
     ).toBeInTheDocument();
     expect(calls[0]?.body).toMatchObject({
       targetEnvironmentId: 'e2',
-      requiredRequests: [10, 10, 20, 30, 30, 30],
+      requiredRequests: [7, 10, 20, 30, 30, 30],
       maxWaitSeconds: 30,
       rollbackConditions: { maxErrorRatePercent: 1, maxP95Ms: 800, maxReplicationLagSeconds: 1 },
     });

@@ -105,19 +105,19 @@ export function canaryPlan(extra: Partial<MigrationPlan> = {}): MigrationPlan {
     step(0, 'PREFLIGHT', null, 'PASSED', null, AT),
     ...[5, 10, 25, 50].map((weight, ordinal) => ({
       ...step(ordinal + 1, 'SHIFT', weight),
-      requiredRequests: [10, 10, 20, 30][ordinal] ?? 30,
-      minObserveSeconds: 4,
-      expectedSeconds: 6,
+      requiredRequests: [7, 10, 20, 30][ordinal] ?? 30,
+      minObserveSeconds: 3,
+      expectedSeconds: 5,
     })),
     step(5, 'DATA_SYNC_CHECK', null),
     ...[75, 100].map((weight, ordinal) => ({
       ...step(ordinal + 6, 'SHIFT', weight),
       requiredRequests: 30,
-      minObserveSeconds: 4,
-      expectedSeconds: 6,
+      minObserveSeconds: 3,
+      expectedSeconds: 5,
     })),
   ];
-  return migrationPlan({ steps, currentStep: 0, expectedSeconds: 40, ...extra });
+  return migrationPlan({ steps, currentStep: 0, expectedSeconds: 34, ...extra });
 }
 
 /** 11/5 운영 리허설 값 (echo-was #63) */

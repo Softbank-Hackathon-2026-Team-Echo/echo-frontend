@@ -40,15 +40,15 @@ describe('draftSteps', () => {
       steps
         .filter((item) => item.kind === 'SHIFT')
         .map((item) => [item.requiredRequests, item.minObserveSeconds, item.expectedSeconds]),
-    ).toEqual([10, 10, 20, 30, 30, 30].map((count) => [count, 4, 6]));
-    expect(steps.reduce((sum, item) => sum + item.expectedSeconds, 0)).toBe(40);
+    ).toEqual([7, 10, 20, 30, 30, 30].map((count) => [count, 3, 5]));
+    expect(steps.reduce((sum, item) => sum + item.expectedSeconds, 0)).toBe(34);
   });
 
-  it('예상 시간은 건수 대기를 최대 대기로 제한한 뒤 최소 관찰 시간 4초와 여유 2초를 더한다', () => {
+  it('예상 시간은 건수 대기를 최대 대기로 제한한 뒤 최소 관찰 시간 3초와 여유 2초를 더한다', () => {
     expect(draftSteps([100, 100, 100, 100, 100, 100], 10).map((s) => s.expectedSeconds)).toEqual([
-      2, 12, 12, 10, 6, 2, 6, 6,
+      2, 12, 12, 10, 6, 2, 5, 5,
     ]);
-    expect(draftSteps([1000], 1)[1]?.expectedSeconds).toBe(6);
+    expect(draftSteps([1000], 1)[1]?.expectedSeconds).toBe(5);
   });
 
   it('includeCutover 면 비율 100% 뒤에 DB_CUTOVER(index 8, 32초)가 붙는다', () => {
@@ -62,8 +62,8 @@ describe('planStages 호환', () => {
   it('새 계획은 최소 관찰 시간을 표시하고 서버 예상 시간을 그대로 쓴다', () => {
     const stages = planStages(canaryPlan().steps, CONDITIONS, 'gcp-seoul');
     expect(stages).toHaveLength(8);
-    expect(stages[1]?.meta).toContain('6s');
-    expect(stages[1]?.meta).toContain('observe for at least 4s');
+    expect(stages[1]?.meta).toContain('5s');
+    expect(stages[1]?.meta).toContain('observe for at least 3s');
     expect(stages[5]?.title).toBe('Data sync check');
   });
 
