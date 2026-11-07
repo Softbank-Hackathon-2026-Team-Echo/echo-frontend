@@ -51,6 +51,15 @@ function serve({
         size: 100,
       }),
     ),
+    http.get(`${API}/orgs/o1/disasters/feed`, () =>
+      ok({
+        provider: 'USGS',
+        connectionStatus: 'DISABLED',
+        lastPolledAt: null,
+        lastErrorCode: null,
+        threshold: { minMagnitude: 6, radiusKm: 300 },
+      }),
+    ),
     http.get(`${API}/orgs/o1/disasters/preview`, () =>
       ok({ radiusKm: 302, meetsThreshold, affected, safe: ['e2'], unknown: [] }),
     ),
@@ -69,13 +78,14 @@ function renderDialog(onCreated = vi.fn()) {
 }
 
 describe('DisasterDialog', () => {
-  it('이전 기준(규모)과 출처(시뮬레이션 · 실제 피드 자리)를 보여 준다', async () => {
+  it('이전 기준(규모)과 출처(시뮬레이션 · 실제 피드 상태)를 보여 준다', async () => {
     serve();
     renderDialog();
 
     expect(await screen.findByText('Magnitude 7.0 or above')).toBeInTheDocument();
     expect(screen.getByText('Manual (simulated)')).toBeInTheDocument();
-    expect(screen.getByText(/Live feed \(P2P地震情報\) not connected yet/)).toBeInTheDocument();
+    expect(await screen.findByText('Live feed (USGS)')).toBeInTheDocument();
+    expect(screen.getByText('Off')).toBeInTheDocument();
   });
 
   it('기준을 넘으면 실제 이전이라고 밝히고 확인해야 보낸다', async () => {

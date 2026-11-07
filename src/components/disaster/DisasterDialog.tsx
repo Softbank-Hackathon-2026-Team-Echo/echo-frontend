@@ -1,6 +1,7 @@
 import { Activity, TriangleAlert, Wind } from 'lucide-react';
 import { type FormEvent, lazy, Suspense, useState } from 'react';
 import { toast } from 'sonner';
+import { LiveFeedBadge } from '@/components/disaster/LiveFeedBadge';
 import { ProviderLabel } from '@/components/ProviderLabel';
 import { SimulatedBadge } from '@/components/SimulatedBadge';
 import { StatusBadge } from '@/components/StatusBadge';
@@ -28,7 +29,6 @@ import {
   type DisasterType,
   EPICENTER_PRESETS,
   EVACUATION_MIN_MAGNITUDE,
-  LIVE_FEED,
   radiusForMagnitude,
   useCreateDisaster,
   useDisasterPreview,
@@ -238,12 +238,7 @@ export function DisasterDialog({
               <dt className="text-fg-secondary">{t('Source')}</dt>
               <dd className="flex flex-wrap items-center gap-2">
                 <StatusBadge label={t('Manual (simulated)')} tone="neutral" />
-                {/* 실제 지진 피드를 붙이면 이 자리에서 고른다 (11/2 2부: 시간이 되면 연동) */}
-                <span className="text-fg-muted">
-                  {LIVE_FEED.ready
-                    ? t('Live feed ({{name}}) connected', { name: LIVE_FEED.name })
-                    : t('Live feed ({{name}}) not connected yet', { name: LIVE_FEED.name })}
-                </span>
+                <LiveFeedBadge orgId={orgId} />
               </dd>
             </div>
           </dl>

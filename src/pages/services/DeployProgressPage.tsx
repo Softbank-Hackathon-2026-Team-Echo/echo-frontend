@@ -241,11 +241,13 @@ export function hadPreviousVersion(
 }
 
 function Outcome({
+  orgId,
   request,
   requestLink,
   hadPrevious,
   actions,
 }: {
+  orgId: string;
   request: DeployRequestDetail;
   requestLink: (id: string) => string;
   hadPrevious: boolean | null;
@@ -300,7 +302,12 @@ function Outcome({
             </pre>
           </details>
         )}
-        <DeployDiagnosis request={request} actions={actions} />
+        <DeployDiagnosis
+          orgId={orgId}
+          request={request}
+          actions={actions}
+          deployLink={requestLink}
+        />
       </div>
     );
   }
@@ -436,6 +443,7 @@ export default function DeployProgressPage() {
         requestLink={(id) => `/o/${slug}/services/${serviceId}/deploys/${id}`}
       />
       <Outcome
+        orgId={organization?.id ?? ''}
         request={request}
         requestLink={(id) => `/o/${slug}/services/${serviceId}/deploys/${id}`}
         hadPrevious={hadPreviousVersion(request, history.data?.items)}
