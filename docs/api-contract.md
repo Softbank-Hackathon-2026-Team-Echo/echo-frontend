@@ -196,6 +196,8 @@ data: {"seq": 1042, "ts": "2026-11-07T03:05:40Z", "orgId": "…", "resource": {"
 >
 > 11/7: DB 쓰기 전환(echo-was API 서버 17, #106). 만들기 `includeCutover`(체크박스 「DB 쓰기 담당도 함께 옮기기」, 기본 false) → 비율 100% 뒤 `DB_CUTOVER`(index 5) 단계와 `steps[5].cutover`(Job 상태·`reason`·`writer`·`run`) 표시, `DB_CUTOVER_UNKNOWN` 은 빨간 「사람 확인 필요」 배지. 서버 실행기가 꺼져 있으면 409 `DB_CUTOVER_DISABLED`. 상세 `promoteWarning` 이 있으면(재난 긴급 이전 + DB 쓰기 전환) 경고·동의 체크 뒤 승인 본문 `{"acknowledgePromote": true}`, 없이 승인하면 422 `PROMOTE_ACK_REQUIRED`. 그 밖의 승인은 본문 없이 보낸다.
 
+> 프론트 28 / 서버 24 확정 계약(서버 #133 배포 뒤 병합): 새 요청은 `requiredRequests`를 5·10·25·50·75·100% 순 6개로 보낸다(기본 `[10,10,20,30,30,30]`). 단계는 `0 PREFLIGHT → 1~4 SHIFT 5·10·25·50 → 5 DATA_SYNC_CHECK → 6~7 SHIFT 75·100 → 선택 8 DB_CUTOVER`다. 비율 응답에 선택 칸 `minObserveSeconds`(기본 4)가 추가되며 저장된 옛 계획에는 없을 수 있다. 예상 시간은 `2 + max(minObserve, min(maxWait, ceil(N / (50 × weight/100))))`초다. 옛 계획은 응답의 순서·시간 그대로 그린다. 상세 계약은 [확정 SPEC](../specs/fe-28-smooth-canary.md)을 따른다. 위 11/3·11/7 기록의 단계 번호는 이전 계약이다.
+
 | 동작 | 제안 |
 |---|---|
 | 계획 만들기 | `POST /orgs/{orgId}/migrations` `{serviceId, targetEnvironmentId, mode: PLANNED \| EMERGENCY \| FAILBACK, precheckId?, disasterId?}` → `Migration(status = PLANNED)` |

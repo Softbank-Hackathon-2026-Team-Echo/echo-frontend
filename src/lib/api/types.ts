@@ -32,6 +32,7 @@ export type Member = Schemas['MemberResponse'];
 export type MigrationPlan = Schemas['MigrationPlanDetailResponse'];
 export type MigrationPlanSummary = Schemas['MigrationPlanSummaryResponse'];
 export type MigrationPlanStatus = Schemas['MigrationPlanStatus'];
+/** minObserveSeconds 는 새 비율 단계에만 있다. 옛 계획은 칸이 없거나 null 이다 */
 export type MigrationStep = Schemas['MigrationStepResponse'];
 export type CreateMigrationPlan = Schemas['CreateMigrationPlanRequest'];
 export type ApproveMigrationPlan = Schemas['ApproveMigrationPlanRequest'];

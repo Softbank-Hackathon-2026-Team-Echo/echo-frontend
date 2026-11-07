@@ -40,6 +40,7 @@ export function step(
   };
 }
 
+/** minObserveSeconds 가 없는 옛 5단계 계획. 하위 호환 시험용으로 유지한다 */
 export function migrationPlan(extra: Partial<MigrationPlan> = {}): MigrationPlan {
   return {
     id: 'plan-1234abcd',
@@ -96,6 +97,27 @@ export function migrationPlan(extra: Partial<MigrationPlan> = {}): MigrationPlan
     errorMessage: null,
     ...extra,
   };
+}
+
+/** API 서버 24 새 계획. 서버 응답 순서와 최소 관찰 시간의 시험용 사본 */
+export function canaryPlan(extra: Partial<MigrationPlan> = {}): MigrationPlan {
+  const steps = [
+    step(0, 'PREFLIGHT', null, 'PASSED', null, AT),
+    ...[5, 10, 25, 50].map((weight, ordinal) => ({
+      ...step(ordinal + 1, 'SHIFT', weight),
+      requiredRequests: [10, 10, 20, 30][ordinal] ?? 30,
+      minObserveSeconds: 4,
+      expectedSeconds: 6,
+    })),
+    step(5, 'DATA_SYNC_CHECK', null),
+    ...[75, 100].map((weight, ordinal) => ({
+      ...step(ordinal + 6, 'SHIFT', weight),
+      requiredRequests: 30,
+      minObserveSeconds: 4,
+      expectedSeconds: 6,
+    })),
+  ];
+  return migrationPlan({ steps, currentStep: 0, expectedSeconds: 40, ...extra });
 }
 
 /** 11/5 운영 리허설 값 (echo-was #63) */

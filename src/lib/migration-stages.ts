@@ -2,7 +2,7 @@ import type { Stage, StageState } from '@/components/StageList';
 import type { MigrationPlan, MigrationStep, StepCutover } from '@/lib/api/types';
 import { k, t } from './i18n';
 
-// API 서버 8 단계는 고정이다: 사전 확인 → 90/10 → 50/50 → 데이터 동기화 확인 → 0/100
+// API 서버 24: 사전 확인 → 5·10·25·50% → 데이터 확인 → 75·100% → 선택 DB 전환
 const STEP_OVERHEAD_SECONDS = 2;
 
 export const DEFAULT_CONDITIONS = {
@@ -10,8 +10,10 @@ export const DEFAULT_CONDITIONS = {
   maxP95Ms: 800,
   maxReplicationLagSeconds: 1,
 };
-// API 서버 8-1: 비율 단계는 "도착에서 요청 N건 처리"로 판정한다. 기본 10%·50%·100% = 20·50·50건, 단계마다 최대 30초
-export const DEFAULT_REQUIRED_REQUESTS: [number, number, number] = [20, 50, 50];
+// 비율 단계는 필요 건수와 최소 관찰 시간을 모두 채워야 통과한다(echo-was #133)
+export const SHIFT_WEIGHTS = [5, 10, 25, 50, 75, 100] as const;
+export const DEFAULT_REQUIRED_REQUESTS = [10, 10, 20, 30, 30, 30] as const;
+export const DEFAULT_MIN_OBSERVE_SECONDS = 4;
 export const DEFAULT_MAX_WAIT_SECONDS = 30;
 // DB 쓰기 전환 단계 예상 시간(echo-was migration-plans.md 단계 표: 2 + 30)
 const DB_CUTOVER_EXPECTED_SECONDS = STEP_OVERHEAD_SECONDS + 30;
@@ -21,49 +23,56 @@ const EXPECTED_RPS = 50;
 type StepLike = Pick<MigrationStep, 'index' | 'kind' | 'targetWeight' | 'expectedSeconds'> & {
   requiredRequests?: number | null;
   maxWaitSeconds?: number | null;
+  minObserveSeconds?: number | null;
   result?: MigrationStep['result'] | null;
   cutover?: StepCutover | null;
 };
 
 function shiftSeconds(required: number, weight: number, maxWait: number) {
   return (
-    STEP_OVERHEAD_SECONDS + Math.min(maxWait, Math.ceil(required / ((EXPECTED_RPS * weight) / 100)))
+    STEP_OVERHEAD_SECONDS +
+    Math.max(
+      DEFAULT_MIN_OBSERVE_SECONDS,
+      Math.min(maxWait, Math.ceil(required / ((EXPECTED_RPS * weight) / 100))),
+    )
   );
 }
 
 /**
  * 계획을 만들기 전 미리 보는 단계 (서버가 만드는 것과 같은 표·같은 예상 시간 식).
- * includeCutover 면 비율 100% 뒤에 DB 쓰기 전환(index 5)이 붙는다(echo-was API 서버 17)
+ * includeCutover 면 비율 100% 뒤에 DB 쓰기 전환(index 8)이 붙는다(echo-was API 서버 17)
  */
 export function draftSteps(
   required: readonly number[],
   maxWait: number,
   includeCutover = false,
 ): StepLike[] {
-  const [first = 20, second = 50, last = 50] = required;
-  const shift = (index: number, weight: number, count: number): StepLike => ({
-    index,
-    kind: 'SHIFT',
-    targetWeight: weight,
-    requiredRequests: count,
-    maxWaitSeconds: maxWait,
-    expectedSeconds: shiftSeconds(count, weight, maxWait),
+  const shifts = SHIFT_WEIGHTS.map((weight, ordinal): StepLike => {
+    const count = required[ordinal] ?? DEFAULT_REQUIRED_REQUESTS[ordinal] ?? 30;
+    return {
+      index: ordinal < 4 ? ordinal + 1 : ordinal + 2,
+      kind: 'SHIFT',
+      targetWeight: weight,
+      requiredRequests: count,
+      maxWaitSeconds: maxWait,
+      minObserveSeconds: DEFAULT_MIN_OBSERVE_SECONDS,
+      expectedSeconds: shiftSeconds(count, weight, maxWait),
+    };
   });
   return [
     { index: 0, kind: 'PREFLIGHT', targetWeight: null, expectedSeconds: STEP_OVERHEAD_SECONDS },
-    shift(1, 10, first),
-    shift(2, 50, second),
+    ...shifts.slice(0, 4),
     {
-      index: 3,
+      index: 5,
       kind: 'DATA_SYNC_CHECK',
       targetWeight: null,
       expectedSeconds: STEP_OVERHEAD_SECONDS,
     },
-    shift(4, 100, last),
+    ...shifts.slice(4),
     ...(includeCutover
       ? [
           {
-            index: 5,
+            index: 8,
             kind: 'DB_CUTOVER' as const,
             targetWeight: null,
             expectedSeconds: DB_CUTOVER_EXPECTED_SECONDS,
@@ -217,6 +226,9 @@ export function planStages(
               seconds: step.maxWaitSeconds,
             })
           : t('{{required}} requests on {{target}}', { required, target: targetName }),
+        step.minObserveSeconds != null &&
+          step.minObserveSeconds > 0 &&
+          t('observe for at least {{seconds}}s', { seconds: step.minObserveSeconds }),
         step.result?.metrics?.lowTraffic && t('low traffic'),
         failure,
       ),

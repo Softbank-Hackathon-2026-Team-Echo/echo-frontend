@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import type { MigrationStep } from '@/lib/api/types';
-import { step } from '@/test/migration-fixtures';
-import { cutoverJobState, draftSteps, planStages } from './migration-stages';
+import { canaryPlan, migrationPlan, step } from '@/test/migration-fixtures';
+import {
+  cutoverJobState,
+  DEFAULT_REQUIRED_REQUESTS,
+  draftSteps,
+  planStages,
+} from './migration-stages';
 
 const CONDITIONS = { maxReplicationLagSeconds: 1 };
 
@@ -19,20 +24,62 @@ function cutoverStep(
 }
 
 describe('draftSteps', () => {
-  it('DB 쓰기 담당을 옮기지 않으면 지금과 같은 5단계다', () => {
-    expect(draftSteps([20, 50, 50], 30).map((item) => item.kind)).toEqual([
-      'PREFLIGHT',
-      'SHIFT',
-      'SHIFT',
-      'DATA_SYNC_CHECK',
-      'SHIFT',
+  it('6개 비율 단계 사이 50% 뒤에 데이터 확인을 둔다', () => {
+    const steps = draftSteps(DEFAULT_REQUIRED_REQUESTS, 30);
+    expect(steps.map(({ index, kind, targetWeight }) => [index, kind, targetWeight])).toEqual([
+      [0, 'PREFLIGHT', null],
+      [1, 'SHIFT', 5],
+      [2, 'SHIFT', 10],
+      [3, 'SHIFT', 25],
+      [4, 'SHIFT', 50],
+      [5, 'DATA_SYNC_CHECK', null],
+      [6, 'SHIFT', 75],
+      [7, 'SHIFT', 100],
     ]);
+    expect(
+      steps
+        .filter((item) => item.kind === 'SHIFT')
+        .map((item) => [item.requiredRequests, item.minObserveSeconds, item.expectedSeconds]),
+    ).toEqual([10, 10, 20, 30, 30, 30].map((count) => [count, 4, 6]));
+    expect(steps.reduce((sum, item) => sum + item.expectedSeconds, 0)).toBe(40);
   });
 
-  it('includeCutover 면 비율 100% 뒤에 DB_CUTOVER(index 5, 32초)가 붙는다', () => {
-    const steps = draftSteps([20, 50, 50], 30, true);
-    expect(steps).toHaveLength(6);
-    expect(steps[5]).toMatchObject({ index: 5, kind: 'DB_CUTOVER', expectedSeconds: 32 });
+  it('예상 시간은 건수 대기를 최대 대기로 제한한 뒤 최소 관찰 시간 4초와 여유 2초를 더한다', () => {
+    expect(draftSteps([100, 100, 100, 100, 100, 100], 10).map((s) => s.expectedSeconds)).toEqual([
+      2, 12, 12, 10, 6, 2, 6, 6,
+    ]);
+    expect(draftSteps([1000], 1)[1]?.expectedSeconds).toBe(6);
+  });
+
+  it('includeCutover 면 비율 100% 뒤에 DB_CUTOVER(index 8, 32초)가 붙는다', () => {
+    const steps = draftSteps(DEFAULT_REQUIRED_REQUESTS, 30, true);
+    expect(steps).toHaveLength(9);
+    expect(steps[8]).toMatchObject({ index: 8, kind: 'DB_CUTOVER', expectedSeconds: 32 });
+  });
+});
+
+describe('planStages 호환', () => {
+  it('새 계획은 최소 관찰 시간을 표시하고 서버 예상 시간을 그대로 쓴다', () => {
+    const stages = planStages(canaryPlan().steps, CONDITIONS, 'gcp-seoul');
+    expect(stages).toHaveLength(8);
+    expect(stages[1]?.meta).toContain('6s');
+    expect(stages[1]?.meta).toContain('observe for at least 4s');
+    expect(stages[5]?.title).toBe('Data sync check');
+  });
+
+  it('옛 5단계 계획은 저장된 순서·시간 그대로이고 최소 관찰 시간을 붙이지 않는다', () => {
+    const stages = planStages(migrationPlan().steps, CONDITIONS, 'gcp-seoul');
+    expect(stages.map((stage) => stage.title)).toEqual([
+      'Pre-check',
+      'Shift traffic → 10% on gcp-seoul',
+      'Shift traffic → 50% on gcp-seoul',
+      'Data sync check',
+      'Shift traffic → 100% on gcp-seoul',
+    ]);
+    expect(stages[1]?.meta).toContain('7s');
+    expect(stages.every(({ meta }) => typeof meta === 'string' && !meta.includes('observe'))).toBe(
+      true,
+    );
   });
 });
 
