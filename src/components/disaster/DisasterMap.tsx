@@ -13,6 +13,28 @@ import {
   useLand,
 } from './map-base';
 
+// 같은 도시에 있는 환경(서울의 GCP · 온프레)은 점이 겹친다. 이름은 한 줄씩 아래로 내려 겹치지 않게 한다
+const LABEL_LINE = 13;
+const SAME_PLACE_PX = 12;
+
+function stackLabels(environments: EnvironmentSummary[]) {
+  const placed: {
+    environment: EnvironmentSummary;
+    point: { x: number; y: number };
+    stack: number;
+  }[] = [];
+  for (const environment of environments) {
+    const coordinates = environmentCoordinates(environment);
+    if (!coordinates) continue;
+    const point = project(coordinates);
+    const stack = placed.filter(
+      (item) => Math.hypot(item.point.x - point.x, item.point.y - point.y) < SAME_PLACE_PX,
+    ).length;
+    placed.push({ environment, point, stack });
+  }
+  return placed;
+}
+
 type DisasterMapProps = {
   epicenter: LatLng;
   radiusKm: number;
@@ -32,6 +54,7 @@ export function DisasterMap({
   const land = useLand();
   const center = project(epicenter);
   const radiusPath = useMemo(() => circlePath(epicenter, radiusKm), [epicenter, radiusKm]);
+  const placed = useMemo(() => stackLabels(environments), [environments]);
 
   function handleClick(event: MouseEvent<SVGSVGElement>) {
     const rect = event.currentTarget.getBoundingClientRect();
@@ -79,10 +102,7 @@ export function DisasterMap({
         fillOpacity={0.6}
         strokeDasharray="4 3"
       />
-      {environments.map((environment) => {
-        const coordinates = environmentCoordinates(environment);
-        if (!coordinates) return null;
-        const point = project(coordinates);
+      {placed.map(({ environment, point, stack }) => {
         const risky = affected.has(environment.id);
         return (
           <g key={environment.id}>
@@ -95,7 +115,11 @@ export function DisasterMap({
               }
               strokeWidth={1.5}
             />
-            <text x={point.x + 8} y={point.y + 12} className="fill-fg text-caption">
+            <text
+              x={point.x + 8}
+              y={point.y + 12 + stack * LABEL_LINE}
+              className="fill-fg text-caption"
+            >
               {environment.name}
             </text>
           </g>

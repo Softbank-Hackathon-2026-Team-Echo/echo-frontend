@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HttpResponse, http } from 'msw';
 import { describe, expect, it } from 'vitest';
@@ -291,6 +291,84 @@ describe('DeployProgressPage 화면', () => {
 
     expect(await screen.findByText('build step')).toBeInTheDocument();
     expect(screen.queryByText(buildNotice)).not.toBeInTheDocument();
+  });
+
+  it('진단 패치가 만든 재배포를 같은 화면에서 단계 · 결과 · 로그로 잇고 원래 실패는 남긴다', async () => {
+    Element.prototype.scrollIntoView = () => {};
+    const finished = { ...times, queuedAt: AT, buildingAt: AT, deployingAt: AT, finishedAt: AT };
+    renderDeploy(
+      request({
+        status: 'FAILED',
+        errorCode: 'CONTAINER_START_FAILED',
+        isCurrent: false,
+        stageTimes: finished,
+        diagnosis: { runId: 'run1', status: 'SUCCEEDED' },
+      } as Partial<DeployRequestDetail>),
+    );
+    server.use(
+      http.get(`${API}/orgs/o1/prechecks/run1`, () =>
+        ok({
+          id: 'run1',
+          kind: 'CHANGE_PROPOSAL',
+          status: 'SUCCEEDED',
+          simulated: false,
+          failureCode: null,
+          steps: [],
+          diagnosis: null,
+          patches: [
+            {
+              id: 'p1',
+              status: 'APPLIED',
+              origin: 'AI',
+              files: ['app/main.py'],
+              reason: 'close the parenthesis',
+              blockReason: null,
+              diff: '',
+              patchHash: 'h',
+              verification: { passed: 4, total: 4 },
+              apply: {
+                runId: 'a1',
+                status: 'SUCCEEDED',
+                failureCode: null,
+                finishedAt: AT,
+                appliedCommitSha: 'd387b612d83f97c0',
+                branch: 'echoport/fix-a1',
+                simulated: false,
+                pullRequestUrl: null,
+                redeployRequestId: 'r4',
+                redeployRejectedCode: null,
+              },
+            },
+          ],
+        }),
+      ),
+      http.get(`${API}/orgs/o1/deploy-requests/r4`, () =>
+        ok(
+          request({
+            id: 'r4',
+            commitSha: 'd387b612d83f97c0d77be660ffddfeb7f18751e4',
+            ref: { type: 'COMMIT', value: 'd387b612d83f97c0d77be660ffddfeb7f18751e4' },
+            status: 'DEPLOYING',
+            stageTimes: { ...times, queuedAt: AT, buildingAt: AT, deployingAt: AT },
+          }),
+        ),
+      ),
+      http.get(`${API}/orgs/o1/deploy-requests/r4/logs`, () =>
+        ok({
+          items: [{ at: AT, level: 'INFO', message: 'fixed image deploying' }],
+          hasMore: false,
+          nextCursor: null,
+          simulated: false,
+        }),
+      ),
+    );
+
+    const follow = await screen.findByRole('region', { name: 'Redeploy with the fix' });
+    expect(await within(follow).findByText('d387b61')).toBeInTheDocument();
+    expect(within(follow).getAllByText('Deploying').length).toBeGreaterThan(0);
+    expect(await within(follow).findByText(/fixed image deploying/)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Original deploy 0ff0d44' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('0ff0d44');
   });
 });
 

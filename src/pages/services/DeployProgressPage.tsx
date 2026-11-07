@@ -1,5 +1,5 @@
 import { Check, CircleAlert, Loader2, Minus, X } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { DeployDialog } from '@/components/DeployDialog';
 import { ErrorState } from '@/components/ErrorState';
@@ -9,7 +9,9 @@ import { SimulatedBadge } from '@/components/SimulatedBadge';
 import { StatusBadge } from '@/components/StatusBadge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useNow } from '@/hooks/useNow';
+import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 import { useCurrentOrg } from '@/lib/api/me';
+import { redeployRequestIdOf, usePrecheck } from '@/lib/api/prechecks';
 import {
   isTerminalStatus,
   useDeployRequest,
@@ -340,6 +342,94 @@ function UrlCard({ request }: { request: DeployRequestDetail }) {
   );
 }
 
+/**
+ * AI 진단 패치가 만든 재배포를 실패 화면 안에서 이어 보인다. 원래 실패 · 진단 · 승인 기록은 위에 그대로 두고,
+ * 지금 진행 중인 재배포의 단계 · 로그 · 결과를 여기서 따로 그린다
+ */
+function RedeployFollow({
+  orgId,
+  redeployRequestId,
+  service,
+  requestLink,
+}: {
+  orgId: string;
+  redeployRequestId: string;
+  service: ServiceDetail | undefined;
+  requestLink: (id: string) => string;
+}) {
+  const { data: redeploy } = useDeployRequest(orgId, redeployRequestId);
+  const syncs = useStandbySyncs(orgId, service?.id, redeploy);
+  const now = useNow(Boolean(redeploy && !isTerminalStatus(redeploy.status)));
+  const reduceMotion = usePrefersReducedMotion();
+  const sectionRef = useRef<HTMLElement>(null);
+
+  // 승인한 사람이 화면을 옮기지 않아도 재배포가 시작된 것이 보이게 한 번만 내려 준다
+  useEffect(() => {
+    sectionRef.current?.scrollIntoView({
+      behavior: reduceMotion ? 'auto' : 'smooth',
+      block: 'start',
+    });
+  }, [reduceMotion]);
+
+  return (
+    <section
+      ref={sectionRef}
+      aria-label={t('Redeploy with the fix')}
+      className="flex flex-col gap-4 rounded-lg border border-ai-solid bg-ai-bg p-4"
+    >
+      <header className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="flex flex-wrap items-center gap-2 text-h3">
+          {t('Redeploy with the fix')}
+          {redeploy && (
+            <>
+              <span className="font-mono">{shortSha(redeploy.commitSha)}</span>
+              <StatusBadge {...deployStatusView(redeploy.status)} />
+              <span className="font-mono text-mono text-fg-secondary tabular-nums">
+                {elapsed(redeploy.stageTimes.queuedAt, redeploy.stageTimes.finishedAt, now)}
+              </span>
+            </>
+          )}
+        </h2>
+        <Link to={requestLink(redeployRequestId)} className="text-body text-brand hover:underline">
+          {t('Open the redeploy')}
+        </Link>
+      </header>
+      {redeploy ? (
+        <>
+          <Stepper
+            request={redeploy}
+            service={service}
+            syncs={syncs.data}
+            now={now}
+            requestLink={requestLink}
+          />
+          {redeploy.status === 'SUCCEEDED' && (
+            <p className="text-body text-success-fg">
+              {t('The fix is live. The health check passed.')}
+            </p>
+          )}
+          {(redeploy.status === 'FAILED' || redeploy.status === 'CANCELLED') && (
+            <p className="text-body text-danger-fg">
+              {redeploy.errorCode
+                ? deployErrorLabel(redeploy.errorCode)
+                : t('The redeploy did not finish.')}
+            </p>
+          )}
+          <DeploySteps request={redeploy} now={now} />
+          <DeployLogs
+            key={redeploy.id}
+            orgId={orgId}
+            request={redeploy}
+            defaultSource="DEPLOY_JOB"
+          />
+        </>
+      ) : (
+        <Skeleton className="h-16 w-full" />
+      )}
+    </section>
+  );
+}
+
 /** SVC 배포 진행: 가로 스테퍼 · 로그 · 공개 주소. 실시간이 생기기 전까지 2초 폴링 */
 export default function DeployProgressPage() {
   const { slug, serviceId, deployRequestId } = useParams();
@@ -352,6 +442,9 @@ export default function DeployProgressPage() {
     error,
     refetch,
   } = useDeployRequest(organization?.id, deployRequestId);
+  // 진단 패치가 재배포를 만들면 그 id 를 받아 같은 화면에서 잇는다
+  const diagnosisRun = usePrecheck(organization?.id, request?.diagnosis?.runId ?? undefined);
+  const redeployRequestId = redeployRequestIdOf(diagnosisRun.data);
   const syncs = useStandbySyncs(organization?.id, serviceId, request);
   const history = useDeployRequests(organization?.id, serviceId);
   const rollback = useRollback(organization?.id ?? '', serviceId ?? '');
@@ -449,6 +542,20 @@ export default function DeployProgressPage() {
         hadPrevious={hadPreviousVersion(request, history.data?.items)}
         actions={actions}
       />
+
+      {organization && redeployRequestId && (
+        <RedeployFollow
+          orgId={organization.id}
+          redeployRequestId={redeployRequestId}
+          service={service.data}
+          requestLink={(id) => `/o/${slug}/services/${serviceId}/deploys/${id}`}
+        />
+      )}
+      {redeployRequestId && (
+        <h2 className="text-title text-fg-secondary">
+          {t('Original deploy {{sha}}', { sha: shortSha(request.commitSha) })}
+        </h2>
+      )}
 
       <div className="grid grid-cols-[1fr_20rem] items-start gap-4 max-wide:grid-cols-1">
         <div className="flex min-w-0 flex-col gap-4">

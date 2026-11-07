@@ -1,10 +1,18 @@
-import { CircleCheck, CircleX } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
+import { CircleCheck, CircleX, Loader2 } from 'lucide-react';
 import { Link } from 'react-router';
 import { ExternalLink } from '@/components/ExternalLink';
 import { RoleButton } from '@/components/RoleButton';
 import { SimulatedBadge } from '@/components/SimulatedBadge';
 import { StatusBadge } from '@/components/StatusBadge';
-import { parseDiff, usePatchDecision } from '@/lib/api/prechecks';
+import { Button } from '@/components/ui/button';
+import {
+  isAwaitingRedeploy,
+  isRedeployWaitOver,
+  parseDiff,
+  usePatchDecision,
+} from '@/lib/api/prechecks';
+import { queryKeys } from '@/lib/api/query-keys';
 import { useDeployRequest } from '@/lib/api/services';
 import type { PrecheckPatch } from '@/lib/api/types';
 import { dateTime } from '@/lib/format';
@@ -68,13 +76,50 @@ function RedeployStatus({
   );
 }
 
+/** 반영은 끝났고 서버가 수정 커밋 · 재배포를 잇는 중. 오래 걸리면 다시 확인하게 한다 */
+function AwaitingRedeploy({
+  orgId,
+  precheckId,
+  apply,
+}: {
+  orgId: string;
+  precheckId: string;
+  apply: NonNullable<PrecheckPatch['apply']>;
+}) {
+  const queryClient = useQueryClient();
+  if (!isRedeployWaitOver(apply)) {
+    return (
+      <p role="status" className="flex items-center gap-2 text-fg-secondary">
+        <Loader2 aria-hidden className="size-3.5 animate-spin" />
+        {t('Sandbox check passed. Committing the fix and starting the redeploy…')}
+      </p>
+    );
+  }
+  return (
+    <p className="flex flex-wrap items-center gap-2 text-warning-fg">
+      {t('The redeploy has not started yet.')}
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() =>
+          void queryClient.invalidateQueries({ queryKey: queryKeys.precheck(orgId, precheckId) })
+        }
+      >
+        {t('Check again')}
+      </Button>
+    </p>
+  );
+}
+
 /** 샌드박스 반영 실행의 결과. 브랜치 · 커밋은 러너 결과가 나온 뒤에만 찬다 */
 function ApplyResult({
   orgId,
+  precheckId,
   apply,
   deployLink,
 }: {
   orgId: string;
+  precheckId: string;
   apply: NonNullable<PrecheckPatch['apply']>;
   deployLink?: (id: string) => string;
 }) {
@@ -107,6 +152,9 @@ function ApplyResult({
           redeployRequestId={apply.redeployRequestId}
           deployLink={deployLink}
         />
+      )}
+      {deployLink && isAwaitingRedeploy(apply) && (
+        <AwaitingRedeploy orgId={orgId} precheckId={precheckId} apply={apply} />
       )}
       {apply.redeployRejectedCode && (
         <p className="text-warning-fg">
@@ -153,7 +201,14 @@ export function PatchReview({ orgId, precheckId, patch, number, deployLink }: Pa
           </span>
         ))}
       </pre>
-      {patch.apply && <ApplyResult orgId={orgId} apply={patch.apply} deployLink={deployLink} />}
+      {patch.apply && (
+        <ApplyResult
+          orgId={orgId}
+          precheckId={precheckId}
+          apply={patch.apply}
+          deployLink={deployLink}
+        />
+      )}
       <footer className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
         <span
           className={cn(
