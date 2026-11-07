@@ -29,6 +29,7 @@ import {
   useParams,
 } from 'react-router';
 import { CostChip } from '@/components/CostChip';
+import { DisasterArrival } from '@/components/disaster/DisasterArrival';
 import { DisasterDialog } from '@/components/disaster/DisasterDialog';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorState } from '@/components/ErrorState';
@@ -47,10 +48,13 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { useDisasterArrival } from '@/hooks/useDisasterArrival';
 import { useLocale } from '@/hooks/useLocale';
+import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 import { type Theme, useTheme } from '@/hooks/useTheme';
 import { useLogout } from '@/lib/api/auth';
 import { useActiveDisasters } from '@/lib/api/disasters';
+import { useEnvironments } from '@/lib/api/environments';
 import { useOrgEvents } from '@/lib/api/events';
 import { useCurrentOrg } from '@/lib/api/me';
 import type { Organization, User } from '@/lib/api/types';
@@ -58,6 +62,7 @@ import { k, LOCALE_LABELS, t } from '@/lib/i18n';
 import { setMonitoringUser } from '@/lib/monitoring';
 import { roleLabel } from '@/lib/roles';
 import { prefetchRoute } from '@/lib/route-prefetch';
+import { cn } from '@/lib/utils';
 import { CreateOrgDialog } from './CreateOrgDialog';
 
 // 와이어프레임 v2 사이드바: 대시보드 + 묶음 3개, 설정은 아래 (노션 IA 1절)
@@ -335,6 +340,9 @@ export function AppShell() {
   const { slug } = useParams();
   const { data: me, organization, isPending, isError, error, refetch } = useCurrentOrg(slug);
   const disasters = useActiveDisasters(organization?.id);
+  const environments = useEnvironments(organization?.id);
+  const { arrival, dismiss } = useDisasterArrival(disasters.data);
+  const reducedMotion = usePrefersReducedMotion();
   useOrgEvents(organization?.id);
   const githubLogin = me?.user.githubLogin;
   useEffect(() => {
@@ -371,18 +379,31 @@ export function AppShell() {
   }
 
   return (
-    <div className="flex h-dvh overflow-hidden">
-      <Sidebar user={me.user} organization={organization} atRiskCount={atRiskCount} />
-      <div className="flex min-w-0 flex-1 flex-col">
-        <Topbar organizations={me.organizations} organization={organization} />
-        <main className="flex-1 overflow-y-auto">
-          <div className="mx-auto flex max-w-content flex-col gap-6 p-gutter max-compact:p-gutter-compact">
-            <ScreenErrorBoundary>
-              <Outlet />
-            </ScreenErrorBoundary>
-          </div>
-        </main>
+    <>
+      {/* 새 재난이 들어오면 앱 화면 전체가 한 번 흔들린다(연출 창은 흔들리지 않게 이 div 밖에 둔다) */}
+      <div
+        className={cn('flex h-dvh overflow-hidden', arrival && !reducedMotion && 'screen-shake')}
+      >
+        <Sidebar user={me.user} organization={organization} atRiskCount={atRiskCount} />
+        <div className="flex min-w-0 flex-1 flex-col">
+          <Topbar organizations={me.organizations} organization={organization} />
+          <main className="flex-1 overflow-y-auto">
+            <div className="mx-auto flex max-w-content flex-col gap-6 p-gutter max-compact:p-gutter-compact">
+              <ScreenErrorBoundary>
+                <Outlet />
+              </ScreenErrorBoundary>
+            </div>
+          </main>
+        </div>
       </div>
-    </div>
+      {arrival && (
+        <DisasterArrival
+          disaster={arrival}
+          environments={environments.data?.items ?? []}
+          reducedMotion={reducedMotion}
+          onDone={dismiss}
+        />
+      )}
+    </>
   );
 }

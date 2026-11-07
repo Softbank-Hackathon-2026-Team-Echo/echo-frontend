@@ -4,6 +4,7 @@ import { type MouseEvent, useEffect, useMemo, useState } from 'react';
 import type { EnvironmentSummary } from '@/lib/api/types';
 import { environmentCoordinates, type LatLng, MAP_CITIES } from '@/lib/geo';
 import { t } from '@/lib/i18n';
+import { cn } from '@/lib/utils';
 
 // 일본·한국을 덮는 지도(메르카토르). 해안선은 world-atlas 50m 에서 이 둘레만 잘라 둔 것이다
 const BOUNDS = { north: 42, south: 30, west: 124, east: 146 };
@@ -67,18 +68,24 @@ type DisasterMapProps = {
   radiusKm: number;
   environments: EnvironmentSummary[];
   affected: Set<string>;
-  onPick: (point: LatLng) => void;
+  /** 없으면 읽기 전용 지도다(재난 도착 연출) */
+  onPick?: (point: LatLng) => void;
+  /** 진원지에서 영향 반경까지 퍼지는 파동. 움직임 줄이기면 CSS 가 멈춘다 */
+  ripple?: boolean;
 };
 
 const EARTH_RADIUS_KM = 6371;
+/** 파동 세 겹. 한 겹이 1.8초에 반경까지 퍼진다 */
+const RIPPLE_DELAYS_S = [0, 0.6, 1.2];
 
-/** 지도를 눌러 진원지를 정한다. 반경 안의 환경 점은 빨간색 */
+/** 지도를 눌러 진원지를 정한다(onPick 이 있을 때). 반경 안의 환경 점은 빨간색 */
 export function DisasterMap({
   epicenter,
   radiusKm,
   environments,
   affected,
   onPick,
+  ripple = false,
 }: DisasterMapProps) {
   const land = useLand();
   const center = project(epicenter);
@@ -94,6 +101,7 @@ export function DisasterMap({
   );
 
   function handleClick(event: MouseEvent<SVGSVGElement>) {
+    if (!onPick) return;
     const rect = event.currentTarget.getBoundingClientRect();
     const x = ((event.clientX - rect.left) / rect.width) * WIDTH;
     const y = ((event.clientY - rect.top) / rect.height) * HEIGHT;
@@ -105,9 +113,9 @@ export function DisasterMap({
     // biome-ignore lint/a11y/useKeyWithClickEvents: 진원지는 지도 아래 선택 상자로도 고를 수 있다
     <svg
       role="img"
-      aria-label={t('Map. Click to set the epicenter.')}
+      aria-label={onPick ? t('Map. Click to set the epicenter.') : t('Map of the impact radius')}
       viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-      className="w-full cursor-crosshair rounded-md bg-globe-sphere"
+      className={cn('w-full rounded-md bg-globe-sphere', onPick && 'cursor-crosshair')}
       onClick={handleClick}
     >
       <title>{t('Disaster map')}</title>
@@ -139,6 +147,20 @@ export function DisasterMap({
         fillOpacity={0.6}
         strokeDasharray="4 3"
       />
+      {ripple &&
+        RIPPLE_DELAYS_S.map((delay) => (
+          <path
+            key={delay}
+            d={radiusPath}
+            data-testid="disaster-ripple"
+            className="disaster-ripple fill-none stroke-danger-solid"
+            strokeWidth={2}
+            style={{
+              transformOrigin: `${center.x}px ${center.y}px`,
+              animationDelay: `${delay}s`,
+            }}
+          />
+        ))}
       {environments.map((environment) => {
         const coordinates = environmentCoordinates(environment);
         if (!coordinates) return null;

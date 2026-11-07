@@ -14,8 +14,11 @@ export type Disaster = ServerDisaster & { epicenterLabel: string };
 
 export type DisasterInput = { type: DisasterType; magnitude: number; epicenter: LatLng };
 
-/** 다른 기기(휴대폰 리모컨)에서 낸 재난도 보이게 다시 부른다. 실시간 채널이 없다 */
-export const DISASTER_POLL_MS = 5_000;
+/**
+ * 다른 기기(휴대폰 리모컨)에서 낸 재난도 보이게 다시 부른다. 실시간 채널이 없다.
+ * 시연에서 휴대폰을 흔든 뒤 큰 화면이 바로 반응하게 1.5초로 둔다(5초 → 1.5초, 탭마다 초당 1회 미만)
+ */
+export const DISASTER_POLL_MS = 1_500;
 
 const ACTIVE_PAGE_SIZE = 50;
 
