@@ -92,8 +92,12 @@ export default function PlanPage() {
   const approve = usePlanAction(orgId ?? '', serviceId ?? '', 'approve');
   const reject = usePlanAction(orgId ?? '', serviceId ?? '', 'reject');
   const cancel = usePlanAction(orgId ?? '', serviceId ?? '', 'cancel');
-  // 승격 위험 고지(promoteWarning)에 동의했는가. 동의 없이 승인하면 서버가 422 PROMOTE_ACK_REQUIRED 를 준다
-  const [promoteAcknowledged, setPromoteAcknowledged] = useState(false);
+  // 승격 위험 고지(promoteWarning)에 동의한 계획·고지. 동의 없이 승인하면 서버가 422 PROMOTE_ACK_REQUIRED 를 준다.
+  // 동의는 그 계획 id·고지 문장에만 묶는다 — 취소 뒤 새 계획을 만들면(같은 화면) 다시 동의해야 한다
+  const [acknowledgedPromote, setAcknowledgedPromote] = useState<{
+    planId: string;
+    warning: string;
+  } | null>(null);
   const disasters = useActiveDisasters(orgId);
   // 끝낸 점검에서 왔을 때만 주소에 id 가 있다. 그 밖은 점검을 건너뛴 것이다
   const precheckSkipped = !searchParams.has('precheck');
@@ -182,6 +186,10 @@ export default function PlanPage() {
   const selfBlocked = mine && !organization.allowSelfApproval;
   const mismatches = security.data?.rows.filter((row) => row.blocksMigration) ?? [];
   const promoteWarning = current.promoteWarning ?? null;
+  const promoteAcknowledged =
+    promoteWarning !== null &&
+    acknowledgedPromote?.planId === current.id &&
+    acknowledgedPromote.warning === promoteWarning;
   const approveReason = riskReason
     ? riskReason
     : selfBlocked
@@ -297,7 +305,11 @@ export default function PlanPage() {
                 type="checkbox"
                 className="mt-0.5 size-4 accent-brand"
                 checked={promoteAcknowledged}
-                onChange={(event) => setPromoteAcknowledged(event.target.checked)}
+                onChange={(event) =>
+                  setAcknowledgedPromote(
+                    event.target.checked ? { planId: current.id, warning: promoteWarning } : null,
+                  )
+                }
               />
               {t('I understand the promotion cannot be undone and unreplicated writes may be lost')}
             </label>
