@@ -1,4 +1,5 @@
 import { TrafficChart } from '@/components/TrafficChart';
+import { useAnimatedNumber } from '@/hooks/useAnimatedNumber';
 import type { MigrationPlan } from '@/lib/api/types';
 import { t } from '@/lib/i18n';
 import {
@@ -89,6 +90,8 @@ export function LiveTab({
   now: number;
 }) {
   const weights = currentWeights(plan);
+  const displayedTarget = useAnimatedNumber(weights.target);
+  const displayedSource = 100 - displayedTarget;
   const failed = failedRequests(plan);
   const lag = maxReplicationLag(plan);
   const p95 = latestP95(plan);
@@ -154,21 +157,23 @@ export function LiveTab({
             <span className="flex items-center gap-1.5">
               <span aria-hidden className="size-2 rounded-full bg-chart-3" />
               {sourceName}{' '}
-              <span className="text-body-medium text-fg tabular-nums">{weights.source}%</span>
+              <span className="text-body-medium text-fg tabular-nums">{displayedSource}%</span>
             </span>
             <span className="flex items-center gap-1.5">
               <span aria-hidden className="size-2 rounded-full bg-chart-1" />
               {targetName}{' '}
-              <span className="text-body-medium text-fg tabular-nums">{weights.target}%</span>
+              <span className="text-body-medium text-fg tabular-nums">{displayedTarget}%</span>
             </span>
           </div>
-          <div className="flex h-2.5 gap-0.5 overflow-hidden rounded-full" aria-hidden>
-            {weights.source > 0 && (
-              <span className="bg-chart-3" style={{ flexGrow: weights.source }} />
-            )}
-            {weights.target > 0 && (
-              <span className="bg-chart-1" style={{ flexGrow: weights.target }} />
-            )}
+          <div className="flex h-2.5 overflow-hidden rounded-full" aria-hidden>
+            <span
+              className="min-w-0 basis-0 bg-chart-3 transition-[flex-grow] duration-700 ease-out motion-reduce:transition-none"
+              style={{ flexGrow: weights.source }}
+            />
+            <span
+              className="min-w-0 basis-0 bg-chart-1 transition-[flex-grow] duration-700 ease-out motion-reduce:transition-none"
+              style={{ flexGrow: weights.target }}
+            />
           </div>
           <p className="text-caption text-fg-secondary">
             {next

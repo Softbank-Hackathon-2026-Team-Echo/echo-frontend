@@ -16,6 +16,7 @@ import {
   draftSteps,
   duration,
   planStages,
+  SHIFT_WEIGHTS,
 } from '@/lib/migration-stages';
 import { FailureInjection, type Simulate } from './FailureInjection';
 import { WizardSteps } from './WizardSteps';
@@ -171,11 +172,11 @@ export function PlanDraft({
         <section className="flex w-96 shrink-0 flex-col gap-3 rounded-xl border border-line bg-surface p-4 max-wide:w-full">
           <h2 className="text-title">{t('Each traffic step passes when')}</h2>
           <div className="grid grid-cols-3 gap-2">
-            {(['10%', '50%', '100%'] as const).map((label, index) => (
+            {SHIFT_WEIGHTS.map((weight, index) => (
               <NumberField
-                key={label}
+                key={weight}
                 id={`plan-required-${index}`}
-                label={t('{{weight}} · requests', { weight: label })}
+                label={t('{{weight}} · requests', { weight: `${weight}%` })}
                 value={required[index] ?? 0}
                 error={index === 0 ? errors.requiredRequests : undefined}
                 onChange={(value) =>

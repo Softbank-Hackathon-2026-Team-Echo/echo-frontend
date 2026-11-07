@@ -22,6 +22,7 @@ import { LoaderCircle, TriangleAlert } from 'lucide-react';
 import { type CSSProperties, memo, useEffect, useMemo, useRef, useState } from 'react';
 import { ProviderLabel } from '@/components/ProviderLabel';
 import { StatusBadge } from '@/components/StatusBadge';
+import { useAnimatedNumber } from '@/hooks/useAnimatedNumber';
 import { useInViewOnce } from '@/hooks/useInViewOnce';
 import type { EnvironmentSummary } from '@/lib/api/types';
 import { regionGroupLabel } from '@/lib/geo';
@@ -70,6 +71,7 @@ function EnvironmentNode({ data }: NodeProps<Node<EnvNodeData, 'environment'>>) 
   const { environment, links, atRisk, receiving } = data;
   const primary = links.find((item) => item.link.role === 'SERVING') ?? links[0];
   const weight = links.reduce((sum, item) => sum + item.link.trafficWeight, 0);
+  const displayedWeight = useAnimatedNumber(weight);
   const role = primary?.link.role;
   const roleText =
     role === 'SERVING'
@@ -144,11 +146,11 @@ function EnvironmentNode({ data }: NodeProps<Node<EnvNodeData, 'environment'>>) 
       <span className="flex items-center gap-2">
         <span className="h-1 flex-1 overflow-hidden rounded-full bg-subtle">
           <span
-            className="block h-full rounded-full bg-brand transition-all"
+            className="block h-full rounded-full bg-brand transition-[width] duration-700 ease-out motion-reduce:transition-none"
             style={{ width: `${weight}%` }}
           />
         </span>
-        <span className="w-9 text-right font-mono text-mono tabular-nums">{weight}%</span>
+        <span className="w-9 text-right font-mono text-mono tabular-nums">{displayedWeight}%</span>
       </span>
     </div>
   );
@@ -209,7 +211,7 @@ function FlowPulse({
     <path
       d={path}
       pathLength={1}
-      className="flow-pulse"
+      className="flow-pulse transition-[stroke-width] duration-700 ease-out motion-reduce:transition-none"
       style={
         {
           '--flow-duration': `${seconds}s`,
@@ -240,12 +242,16 @@ function TrafficEdge(props: EdgeProps<Edge<TrafficEdgeData>>) {
   const labelX = curve?.labelX ?? trafficLabelX + (straight ? STRAIGHT_LABEL_OFFSET : 0);
   const labelY = curve?.labelY ?? trafficLabelY;
   const weight = data?.weight ?? 0;
+  const displayedWeight = useAnimatedNumber(weight);
   const lineWidth = weight > 0 ? 3 + weight / 14 : 2;
   return (
     <>
       <BaseEdge
         path={path}
-        className={weight > 0 ? 'flow-rail' : undefined}
+        className={cn(
+          'transition-[stroke-width] duration-700 ease-out motion-reduce:transition-none',
+          weight > 0 && 'flow-rail',
+        )}
         style={{
           stroke: replication
             ? 'var(--ep-color-text-muted)'
@@ -254,7 +260,6 @@ function TrafficEdge(props: EdgeProps<Edge<TrafficEdgeData>>) {
               : 'var(--ep-color-brand-default)',
           strokeWidth: replication ? 2 : lineWidth,
           strokeDasharray: replication || weight === 0 ? '5 4' : undefined,
-          transition: 'stroke-width 400ms ease',
         }}
       />
       {replication ? (
@@ -274,7 +279,7 @@ function TrafficEdge(props: EdgeProps<Edge<TrafficEdgeData>>) {
           className="nodrag nopan absolute rounded-sm bg-surface px-1 font-mono text-caption text-fg-muted shadow-xs"
           style={{ transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)` }}
         >
-          {replication ? t('repl.') : t('traffic {{weight}}%', { weight })}
+          {replication ? t('repl.') : t('traffic {{weight}}%', { weight: displayedWeight })}
         </span>
       </EdgeLabelRenderer>
     </>
@@ -443,6 +448,7 @@ function TopologyCanvas({
       {
         id: 'proxy',
         type: 'proxy',
+        measured: { width: PROXY_WIDTH, height: PROXY_HEIGHT },
         position: positions.get('proxy') ?? { x: 0, y: 0 },
         data: { url: edgeUrl },
         draggable: false,
@@ -466,6 +472,8 @@ function TopologyCanvas({
         list.push({
           id: environment.id,
           type: 'environment',
+          // 고정 크기를 남겨 비율 갱신 때 핸들 재측정으로 선이 사라졌다 다시 생기지 않게 한다
+          measured: { width: ENV_WIDTH, height: ENV_HEIGHT },
           parentId: groupId,
           extent: 'parent',
           position: positions.get(environment.id) ?? { x: 0, y: 0 },

@@ -12,21 +12,28 @@ import { k, t } from '@/lib/i18n';
 export type Simulate = NonNullable<CreateMigrationPlan['simulate']>;
 type Reason = Simulate['reason'];
 
-// API 서버 8-1 simulate 표: 이유마다 고를 수 있는 단계(1·2·4 = 비율 단계, 3 = 데이터 확인)
+// API 서버 24 simulate 표: 1·2·3·4·6·7 = 비율 단계, 5 = 데이터 확인
 const REASONS: { value: Reason; label: string; steps: number[] }[] = [
-  { value: 'ERROR_RATE', label: k('Too many 5xx on the target'), steps: [1, 2, 4] },
+  { value: 'ERROR_RATE', label: k('Too many 5xx on the target'), steps: [1, 2, 3, 4, 6, 7] },
   { value: 'TARGET_NOT_RECEIVING', label: k('Target receives no traffic'), steps: [1, 2] },
-  { value: 'HEALTH', label: k('Health check fails'), steps: [1, 2, 4] },
-  { value: 'TRAFFIC', label: k('Traffic weight cannot be applied'), steps: [1, 2, 4] },
-  { value: 'DATA_LAG', label: k('Replication lag too high'), steps: [3] },
-  { value: 'LOW_TRAFFIC', label: k('Quiet service (passes as low traffic)'), steps: [1, 2, 4] },
+  { value: 'HEALTH', label: k('Health check fails'), steps: [1, 2, 3, 4, 6, 7] },
+  { value: 'TRAFFIC', label: k('Traffic weight cannot be applied'), steps: [1, 2, 3, 4, 6, 7] },
+  { value: 'DATA_LAG', label: k('Replication lag too high'), steps: [5] },
+  {
+    value: 'LOW_TRAFFIC',
+    label: k('Quiet service (passes as low traffic)'),
+    steps: [1, 2, 3, 4, 6, 7],
+  },
 ];
 
 const STEP_LABELS: Record<number, string> = {
-  1: k('Step 1 · 10%'),
-  2: k('Step 2 · 50%'),
-  3: k('Step 3 · data sync check'),
-  4: k('Step 4 · 100%'),
+  1: k('Step 1 · 5%'),
+  2: k('Step 2 · 10%'),
+  3: k('Step 3 · 25%'),
+  4: k('Step 4 · 50%'),
+  5: k('Step 5 · data sync check'),
+  6: k('Step 6 · 75%'),
+  7: k('Step 7 · 100%'),
 };
 
 const NONE = 'none';

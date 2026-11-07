@@ -3,6 +3,7 @@ import { Panel } from '@/components/Panel';
 import { SimulatedBadge } from '@/components/SimulatedBadge';
 import { StatusBadge } from '@/components/StatusBadge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useAnimatedNumber } from '@/hooks/useAnimatedNumber';
 import { useMigrationPlan } from '@/lib/api/migrations';
 import type { MigrationStep } from '@/lib/api/types';
 import { t } from '@/lib/i18n';
@@ -36,6 +37,9 @@ export function MigrationStatusCard({
   className?: string;
 }) {
   const plan = useMigrationPlan(orgId, planId);
+  const weights = currentWeights(plan.data ?? { steps: [], status: 'RUNNING' });
+  const target = useAnimatedNumber(weights.target);
+  const source = 100 - target;
   if (!plan.data) {
     return (
       <Panel title={t('Migration')} className={className}>
@@ -43,7 +47,6 @@ export function MigrationStatusCard({
       </Panel>
     );
   }
-  const { source, target } = currentWeights(plan.data);
   const sourceName = names.get(plan.data.sourceEnvironmentId) ?? t('source');
   const targetName = names.get(plan.data.targetEnvironmentId) ?? t('target');
   const step = plan.data.steps[plan.data.currentStep];
@@ -73,11 +76,17 @@ export function MigrationStatusCard({
       </div>
       <div
         role="img"
-        aria-label={`${sourceName} ${source}%, ${targetName} ${target}%`}
+        aria-label={`${sourceName} ${weights.source}%, ${targetName} ${weights.target}%`}
         className="flex h-2 overflow-hidden rounded-full bg-subtle"
       >
-        <span className="h-full bg-chart-3 transition-all" style={{ width: `${source}%` }} />
-        <span className="h-full bg-chart-1 transition-all" style={{ width: `${target}%` }} />
+        <span
+          className="h-full bg-chart-3 transition-[width] duration-700 ease-out motion-reduce:transition-none"
+          style={{ width: `${weights.source}%` }}
+        />
+        <span
+          className="h-full bg-chart-1 transition-[width] duration-700 ease-out motion-reduce:transition-none"
+          style={{ width: `${weights.target}%` }}
+        />
       </div>
       <p className="flex flex-wrap items-center gap-1.5 text-small text-fg-secondary">
         <StatusBadge {...migrationPlanStatusView(plan.data.status)} />

@@ -1,6 +1,6 @@
 import { t } from '@/lib/i18n';
 import type { WeightPoint } from '@/lib/migration-metrics';
-import { monotonePath, spreadPositions } from '@/lib/monotone-path';
+import { spreadPositions } from '@/lib/monotone-path';
 
 const WIDTH = 560;
 const HEIGHT = 180;
@@ -30,10 +30,14 @@ export function TrafficChart({
   const y = (value: number) => PAD.top + (1 - value / 100) * (HEIGHT - PAD.top - PAD.bottom);
   const errors = points.filter((point) => point.errorRate !== null);
   const line = (value: (point: WeightPoint) => number) =>
-    monotonePath(points.map((point) => ({ x: x(point.at), y: y(value(point)) })));
+    points
+      .map((point, index) =>
+        index === 0 ? `M${x(point.at)},${y(value(point))}` : `H${x(point.at)} V${y(value(point))}`,
+      )
+      .join(' ');
   const sourceLine = line((point) => point.source);
   const targetLine = line((point) => point.target);
-  // 서버가 비율을 적용한 시각만 점으로 찍는다. 곡선은 이 점들을 이은 것이고 그 사이 값은 재지 않았다
+  // 적용 시각 전까지 직전 비율을 유지한다. 막대·숫자와 달리 그래프는 보간하지 않는다
   const applied = points.filter(
     (point, index) => index > 0 && point.target !== points[index - 1]?.target,
   );
