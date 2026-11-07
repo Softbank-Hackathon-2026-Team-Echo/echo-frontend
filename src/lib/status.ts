@@ -376,6 +376,7 @@ const MIGRATION_ERRORS: Record<string, string> = {
   DB_CUTOVER_TIMEOUT: k('DB writer cutover timed out'),
   DB_CUTOVER_PARTIAL: k('DB writer cutover stopped halfway'),
   DATA_INTEGRITY_FAILED: k('Rows are missing or duplicated after the cutover'),
+  DB_CUTOVER_UNKNOWN: k('DB writer state is unknown · a person has to check'),
   WORKER_LOST: k('The worker stopped responding'),
   INTERNAL_ERROR: k('Internal error'),
 };

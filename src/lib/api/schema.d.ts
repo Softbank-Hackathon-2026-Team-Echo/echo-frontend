@@ -428,6 +428,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/orgs/{org_id}/services/{service_id}/variables:copy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Copy Service Variables */
+        post: operations["copy_service_variables_api_v1_orgs__org_id__services__service_id__variables_copy_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/orgs/{org_id}/deploy-requests/{deploy_request_id}": {
         parameters: {
             query?: never;
@@ -456,6 +473,26 @@ export interface paths {
         put?: never;
         /** Create Rollback */
         post: operations["create_rollback_api_v1_orgs__org_id__deploy_requests__deploy_request_id__rollback_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/orgs/{org_id}/deploy-requests/{deploy_request_id}/diagnosis": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create Diagnosis
+         * @description 실패한 배포의 AI 진단(SPEC api-98). 본문은 비워도 된다. 이미 있으면 200 으로 같은 실행.
+         */
+        post: operations["create_diagnosis_api_v1_orgs__org_id__deploy_requests__deploy_request_id__diagnosis_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -526,6 +563,9 @@ export interface paths {
         /**
          * Approve Migration Plan
          * @description 승인하면 바로 실행이 시작된다(별도 실행 버튼 없음).
+         *
+         *     본문은 선택이다. 재난 긴급 이전 + DB 쓰기 전환 계획(상세 promoteWarning 이 있음)은
+         *     `{"acknowledgePromote": true}` 가 없으면 422 PROMOTE_ACK_REQUIRED 다.
          */
         post: operations["approve_migration_plan_api_v1_orgs__org_id__migration_plans__plan_id__approve_post"];
         delete?: never;
@@ -605,6 +645,48 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/orgs/{org_id}/disasters/feed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get Live Feed Status
+         * @description 실제 재난 피드(USGS) 상태: 스위치·연결·마지막 조회·피드 지진 수·이 조직 기준.
+         */
+        get: operations["get_live_feed_status_api_v1_orgs__org_id__disasters_feed_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/orgs/{org_id}/disasters/feed:inject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Inject Feed Event
+         * @description 시연용 가짜 지진을 피드 경로로 이 조직에 흘린다. 기준에 맞으면 재난(FEED_INJECTED)이 생긴다.
+         *
+         *     피드 스위치와 상관없이 동작하고 피드 상태는 바꾸지 않는다. 대피 계획은 피드와 같이 제안만 한다.
+         */
+        post: operations["inject_feed_event_api_v1_orgs__org_id__disasters_feed_inject_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/orgs/{org_id}/disasters/preview": {
         parameters: {
             query?: never;
@@ -657,6 +739,26 @@ export interface paths {
         get: operations["get_disaster_api_v1_orgs__org_id__disasters__disaster_id__get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/orgs/{org_id}/disasters/{disaster_id}/evacuate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Evacuate Disaster
+         * @description 제안된 긴급 이전을 이 사람으로 시작한다(버튼 재난과 같은 트리거). 결과는 plans[] 에 있다.
+         */
+        post: operations["evacuate_disaster_api_v1_orgs__org_id__disasters__disaster_id__evacuate_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -751,6 +853,68 @@ export interface paths {
         get: operations["search_security_findings_api_v1_orgs__org_id__security_findings_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/orgs/{org_id}/security/cve-watch:check": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Check Cve Watch
+         * @description 지금 바로 OSV 로 조회한다(주기 감시와 같은 길). 스위치가 꺼져 있으면 409.
+         */
+        post: operations["check_cve_watch_api_v1_orgs__org_id__security_cve_watch_check_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/orgs/{org_id}/security/cve-watch:inject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Inject Cve Advisory
+         * @description 가짜 권고 한 건을 주입해 맞춰 본다(시연용, simulated 증거 — 판정에 쓰지 않음).
+         */
+        post: operations["inject_cve_advisory_api_v1_orgs__org_id__security_cve_watch_inject_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/orgs/{org_id}/security/findings/{finding_id}/diagnosis": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Request Finding Diagnosis
+         * @description 증거의 고칠 방법(DEPENDENCY_BUMP)으로 AI 진단 실행을 만든다.
+         *
+         *     이슈 #98(CHANGE_PROPOSAL) 병합 전이라 지금은 404·409 검사 뒤 501 `NOT_IMPLEMENTED` 다.
+         */
+        post: operations["request_finding_diagnosis_api_v1_orgs__org_id__security_findings__finding_id__diagnosis_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1024,7 +1188,10 @@ export interface paths {
         put?: never;
         /**
          * Submit Run Result
-         * @description 본문 모양은 실행 종류로 고른다: APPLY_PATCH 면 ApplyPatchResult, 그 밖은 RunResult(PD-9).
+         * @description 본문 모양은 실행 종류로 고른다(PD-9): APPLY_PATCH 면 ApplyPatchResult, 그 밖은 RunResult.
+         *     RunResult 의 diagnosis 칸은 CHANGE_PROPOSAL(SPEC api-98)만 받는다 — 사전 점검이 보내면 422.
+         *
+         *     진단에서 온 반영이 성공하면 같은 환경에 재배포 요청을 만든다(접수 거절은 결과 응답에 영향 없음).
          */
         post: operations["submit_run_result_api_v1_runner_runs__run_id__result_post"];
         delete?: never;
@@ -1094,6 +1261,8 @@ export interface components {
          * @enum {string}
          */
         ActorType: "USER" | "AGENT" | "SYSTEM";
+        /** @enum {string} */
+        AdvisorySeverity: "CRITICAL" | "HIGH" | "MEDIUM" | "LOW";
         /**
          * AgentPatchDecision
          * @description AI 패치에 대한 사람의 결정. BLOCKED 패치는 승인할 수 없다(API 가 막는다).
@@ -1117,7 +1286,7 @@ export interface components {
         AgentRunDataClass: "CONFIG" | "FINDINGS" | "SOURCE_CODE" | "LOGS" | "SECRETS";
         /**
          * AgentRunKind
-         * @description AI 실행 종류. CHANGE_PROPOSAL 은 P1.
+         * @description AI 실행 종류. CHANGE_PROPOSAL 은 실패한 배포의 AI 진단 + 수정안(SPEC api-98).
          * @enum {string}
          */
         AgentRunKind: "PRECHECK" | "APPLY_PATCH" | "CHANGE_PROPOSAL";
@@ -1405,6 +1574,21 @@ export interface components {
             /** Details */
             details?: components["schemas"]["ErrorDetail"][] | null;
         };
+        /** ApiResponse[CveWatchRunResponse] */
+        ApiResponse_CveWatchRunResponse_: {
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Code */
+            code?: string | null;
+            /** Message */
+            message?: string | null;
+            data?: components["schemas"]["CveWatchRunResponse"] | null;
+            /** Details */
+            details?: components["schemas"]["ErrorDetail"][] | null;
+        };
         /** ApiResponse[DeployRequestDetailResponse] */
         ApiResponse_DeployRequestDetailResponse_: {
             /**
@@ -1480,6 +1664,21 @@ export interface components {
             /** Details */
             details?: components["schemas"]["ErrorDetail"][] | null;
         };
+        /** ApiResponse[InjectFeedEventResponse] */
+        ApiResponse_InjectFeedEventResponse_: {
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Code */
+            code?: string | null;
+            /** Message */
+            message?: string | null;
+            data?: components["schemas"]["InjectFeedEventResponse"] | null;
+            /** Details */
+            details?: components["schemas"]["ErrorDetail"][] | null;
+        };
         /** ApiResponse[InvitationResponse] */
         ApiResponse_InvitationResponse_: {
             /**
@@ -1507,6 +1706,21 @@ export interface components {
             /** Message */
             message?: string | null;
             data?: components["schemas"]["IssuedAgentTokenResponse"] | null;
+            /** Details */
+            details?: components["schemas"]["ErrorDetail"][] | null;
+        };
+        /** ApiResponse[LiveFeedStatusResponse] */
+        ApiResponse_LiveFeedStatusResponse_: {
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Code */
+            code?: string | null;
+            /** Message */
+            message?: string | null;
+            data?: components["schemas"]["LiveFeedStatusResponse"] | null;
             /** Details */
             details?: components["schemas"]["ErrorDetail"][] | null;
         };
@@ -1915,6 +2129,21 @@ export interface components {
             /** Details */
             details?: components["schemas"]["ErrorDetail"][] | null;
         };
+        /** ApiResponse[ServiceVariableCopyResponse] */
+        ApiResponse_ServiceVariableCopyResponse_: {
+            /**
+             * Success
+             * @default true
+             */
+            success: boolean;
+            /** Code */
+            code?: string | null;
+            /** Message */
+            message?: string | null;
+            data?: components["schemas"]["ServiceVariableCopyResponse"] | null;
+            /** Details */
+            details?: components["schemas"]["ErrorDetail"][] | null;
+        };
         /** ApiResponse[ServiceVariableListResponse] */
         ApiResponse_ServiceVariableListResponse_: {
             /**
@@ -1975,6 +2204,20 @@ export interface components {
             data?: components["schemas"]["EnvironmentKindResponse"][] | null;
             /** Details */
             details?: components["schemas"]["ErrorDetail"][] | null;
+        };
+        /**
+         * ApproveMigrationPlanRequest
+         * @description 승인 본문(선택). 재난 긴급 이전 + DB 쓰기 전환 계획은 acknowledgePromote: true 가
+         *     있어야 한다.
+         *
+         *     그 밖의 계획은 본문 없이 승인해도 된다(지금과 같다).
+         */
+        ApproveMigrationPlanRequest: {
+            /**
+             * Acknowledgepromote
+             * @default false
+             */
+            acknowledgePromote: boolean;
         };
         /** AuditActorResponse */
         AuditActorResponse: {
@@ -2204,6 +2447,42 @@ export interface components {
             /** Lng */
             lng: number;
         };
+        /** CopiedServiceVariableResponse */
+        CopiedServiceVariableResponse: {
+            /**
+             * Environmentid
+             * Format: uuid
+             */
+            environmentId: string;
+            /** Key */
+            key: string;
+            /** Version */
+            version: number;
+            /** Pendingredeploy */
+            pendingRedeploy: boolean;
+        };
+        /**
+         * CopyServiceVariablesRequest
+         * @description 원본 환경의 키를 대상 환경으로 복사한다(이슈 #99). 값은 본문·응답 어디에도 없다.
+         *
+         *     같은 환경을 원본·대상에 함께 넣거나 중복된 대상·키는 서비스가 VALIDATION_ERROR 로 거절한다.
+         */
+        CopyServiceVariablesRequest: {
+            /**
+             * Sourceenvironmentid
+             * Format: uuid
+             */
+            sourceEnvironmentId: string;
+            /** Targetenvironmentids */
+            targetEnvironmentIds: string[];
+            /** Keys */
+            keys: string[];
+            /**
+             * Overwrite
+             * @default false
+             */
+            overwrite: boolean;
+        };
         /**
          * CostComponentKind
          * @description 비용 자원 항목의 묶음(운영 1).
@@ -2261,6 +2540,15 @@ export interface components {
             /** Commitsha */
             commitSha?: string | null;
             simulate?: components["schemas"]["SimulateRequest"] | null;
+            /** Standbyenvironmentids */
+            standbyEnvironmentIds?: string[];
+        };
+        /**
+         * CreateDiagnosisRequest
+         * @description 진단 만들기 본문(비워도 된다). simulate 밖의 칸은 422 다.
+         */
+        CreateDiagnosisRequest: {
+            simulate?: components["schemas"]["DiagnosisSimulateRequest"] | null;
         };
         /**
          * CreateDisasterRequest
@@ -2313,6 +2601,11 @@ export interface components {
             maxWaitSeconds?: number | null;
             rollbackConditions?: components["schemas"]["RollbackConditionsRequest"];
             simulate?: components["schemas"]["MigrationSimulateRequest"] | null;
+            /**
+             * Includecutover
+             * @default false
+             */
+            includeCutover: boolean;
         };
         /**
          * CreateOrganizationRequest
@@ -2411,6 +2704,97 @@ export interface components {
          * @enum {string}
          */
         CutoverKind: "CUTOVER" | "ROLLBACK";
+        /** CveWatchInjectRequest */
+        CveWatchInjectRequest: {
+            advisory?: components["schemas"]["SimulatedAdvisoryRequest"];
+            /** Serviceid */
+            serviceId?: string | null;
+        };
+        /** CveWatchMatchResponse */
+        CveWatchMatchResponse: {
+            /**
+             * Findingid
+             * Format: uuid
+             */
+            findingId: string;
+            /** Created */
+            created: boolean;
+            /**
+             * Serviceid
+             * Format: uuid
+             */
+            serviceId: string;
+            /**
+             * Environmentid
+             * Format: uuid
+             */
+            environmentId: string;
+            /** Imagedigest */
+            imageDigest: string;
+            /** Advisoryid */
+            advisoryId: string;
+            /** Aliases */
+            aliases: string[];
+            /** Severity */
+            severity: string;
+            /** Summary */
+            summary: string | null;
+            /** Ecosystem */
+            ecosystem: string;
+            /** Package */
+            package: string;
+            /** Installedversion */
+            installedVersion: string;
+            /** Fixedversion */
+            fixedVersion: string | null;
+            result: components["schemas"]["SecurityResult"];
+        };
+        /** CveWatchRunResponse */
+        CveWatchRunResponse: {
+            /** Simulated */
+            simulated: boolean;
+            /**
+             * Checkedat
+             * Format: date-time
+             */
+            checkedAt: string;
+            /** Targets */
+            targets: number;
+            /** Targetswithoutdependencies */
+            targetsWithoutDependencies: number;
+            /** Packages */
+            packages: number;
+            /** Created */
+            created: number;
+            /** Duplicates */
+            duplicates: number;
+            /** Skippedlowseverity */
+            skippedLowSeverity: number;
+            /** Skippedknown */
+            skippedKnown: number;
+            /**
+             * Deferredadvisories
+             * @default 0
+             */
+            deferredAdvisories: number;
+            /**
+             * Feederrors
+             * @default 0
+             */
+            feedErrors: number;
+            /**
+             * Retiredsimulated
+             * @default 0
+             */
+            retiredSimulated: number;
+            /**
+             * Omittedsimulated
+             * @default 0
+             */
+            omittedSimulated: number;
+            /** Matches */
+            matches: components["schemas"]["CveWatchMatchResponse"][];
+        };
         /**
          * DecidePrecheckPatchRequest
          * @description 승인·거절 본문. patchHash 는 화면이 본 패치의 해시다.
@@ -2420,6 +2804,18 @@ export interface components {
             patchHash: string;
             /** Reason */
             reason?: string | null;
+        };
+        /**
+         * DeployDiagnosisResponse
+         * @description 이 요청의 AI 진단 실행(SPEC api-98). 결과는 GET /prechecks/{runId} 의 diagnosis 칸이다.
+         */
+        DeployDiagnosisResponse: {
+            /**
+             * Runid
+             * Format: uuid
+             */
+            runId: string;
+            status: components["schemas"]["AgentRunStatus"];
         };
         /**
          * DeployRequestCancelReason
@@ -2469,10 +2865,16 @@ export interface components {
             supersededById: string | null;
             /** Errormessage */
             errorMessage: string | null;
+            failure?: components["schemas"]["FailureResponse"] | null;
+            diagnosis?: components["schemas"]["DeployDiagnosisResponse"] | null;
             build: components["schemas"]["BuildRefResponse"] | null;
             /** Deploymentid */
             deploymentId: string | null;
             urls: components["schemas"]["UrlsResponse"];
+            /** Standbyenvironmentids */
+            standbyEnvironmentIds?: string[];
+            /** Standbydeployrequestids */
+            standbyDeployRequestIds?: string[];
         };
         /**
          * DeployRequestErrorCode
@@ -2533,6 +2935,36 @@ export interface components {
          */
         DeployRequestTrigger: "MANUAL" | "STANDBY_SYNC" | "ROLLBACK";
         /**
+         * DiagnosisCategory
+         * @description 진단한 원인의 분류.
+         * @enum {string}
+         */
+        DiagnosisCategory: "CODE" | "CONFIG" | "BUILD" | "RUNTIME" | "PLATFORM";
+        /**
+         * DiagnosisEvidenceSource
+         * @description 진단 근거 한 줄의 출처. LOG 는 실패 로그 줄, FILE 은 저장소 파일 줄, CONFIG 는 설정 값.
+         * @enum {string}
+         */
+        DiagnosisEvidenceSource: "LOG" | "FILE" | "CONFIG";
+        /**
+         * DiagnosisResult
+         * @description 배포 실패 진단(CHANGE_PROPOSAL)의 결론(SPEC api-98).
+         * @enum {string}
+         */
+        DiagnosisResult: "DIAGNOSED" | "INSUFFICIENT_EVIDENCE" | "NO_FAILURE_EVIDENCE";
+        /**
+         * DiagnosisSimulateRequest
+         * @description 배포 실패 진단의 가짜 결과 모양(SPEC api-98). 러너 없이 WAS 가 바로 끝낸다(simulated).
+         */
+        DiagnosisSimulateRequest: {
+            /**
+             * Result
+             * @default DIAGNOSED
+             * @enum {string}
+             */
+            result: "DIAGNOSED" | "INSUFFICIENT_EVIDENCE";
+        };
+        /**
          * DisasterPlanOutcome
          * @description 재난 응답 plans[] 한 줄의 요약. 실제 상태는 planStatus 와 계획 API 로 본다.
          * @enum {string}
@@ -2578,7 +3010,11 @@ export interface components {
         };
         /**
          * DisasterResponse
-         * @description 재난 한 건. 재난은 늘 시뮬레이션(simulated=true)이고, 이전 계획의 simulated 는 따로다.
+         * @description 재난 한 건. simulated 는 source 가 LIVE_FEED 가 아니면 true 다(버튼·시연 주입).
+         *
+         *     피드 재난(LIVE_FEED·FEED_INJECTED)은 createdBy 가 null 이고 feedEvent 가 있다. 이전 계획의
+         *     simulated 는
+         *     따로다.
          */
         DisasterResponse: {
             /**
@@ -2604,7 +3040,7 @@ export interface components {
             safeEnvironmentIds: string[];
             /** Unknownenvironmentids */
             unknownEnvironmentIds: string[];
-            createdBy: components["schemas"]["UserRefResponse"];
+            createdBy: components["schemas"]["UserRefResponse"] | null;
             endedBy: components["schemas"]["UserRefResponse"] | null;
             /**
              * Startedat
@@ -2615,13 +3051,19 @@ export interface components {
             endedAt: string | null;
             /** Plans */
             plans: components["schemas"]["DisasterPlanResponse"][];
+            feedEvent: components["schemas"]["FeedEventResponse"] | null;
         };
         /**
          * DisasterSource
-         * @description 재난 정보 출처. 지금은 사람이 버튼으로 낸 시뮬레이션뿐이다.
+         * @description 재난 정보 출처(API 서버 9·18).
+         *
+         *     - SIMULATED: 사람이 재난 버튼으로 낸 시뮬레이션(simulated=true, 만든 사람 있음).
+         *     - LIVE_FEED: 실제 지진 피드(USGS)에서 서버가 만든 재난(simulated=false, 만든 사람 없음).
+         *     - FEED_INJECTED: 시연용으로 피드에 넣은 가짜 지진이 피드와 같은 경로로 만든
+         *       재난(simulated=true).
          * @enum {string}
          */
-        DisasterSource: "SIMULATED";
+        DisasterSource: "SIMULATED" | "LIVE_FEED" | "FEED_INJECTED";
         /**
          * DisasterStatus
          * @description ACTIVE 이고 기준을 넘은 재난의 피해 환경은 이전 도착으로 고를 수 없다(복귀 차단).
@@ -2833,6 +3275,68 @@ export interface components {
             /** Note */
             note: string;
         };
+        /** FailedServiceVariableCopyResponse */
+        FailedServiceVariableCopyResponse: {
+            /**
+             * Environmentid
+             * Format: uuid
+             */
+            environmentId: string;
+            /** Key */
+            key: string;
+            /** Code */
+            code: string;
+        };
+        /**
+         * FailureResponse
+         * @description 실패한 요청의 원인(API 서버 4-1). 에러 수정 에이전트(echo-ai-agent #22)가 그대로 읽는다.
+         *
+         *     message 는 errorMessage 고정 문장 뒤에 원인 한 줄(`Last error: …`)을 붙인 것이다. 컨테이너 칸은
+         *     실행기가 컨테이너 실패를 판정해 진단을 남겼을 때만 값이 있다(없으면 null·빈 목록·false).
+         *     logTail 은 비밀값(그 배포의 환경 변수 값·접속 문자열 비밀번호·토큰 모양)을 가린
+         *     마지막 50줄 이하다.
+         */
+        FailureResponse: {
+            code: components["schemas"]["DeployRequestErrorCode"];
+            /** Message */
+            message: string;
+            /** Container */
+            container: string | null;
+            /** Containerreason */
+            containerReason: string | null;
+            /** Terminationreason */
+            terminationReason: string | null;
+            /** Exitcode */
+            exitCode: number | null;
+            /** Restartcount */
+            restartCount: number | null;
+            /** Logtail */
+            logTail: string[];
+            /** Logtruncated */
+            logTruncated: boolean;
+            /** Previousversionrunning */
+            previousVersionRunning: boolean | null;
+        };
+        /**
+         * FeedEventResponse
+         * @description 피드 재난의 원본 지진 요약. provider 는 usgs(실제) 또는 inject(시연 주입)다.
+         */
+        FeedEventResponse: {
+            /** Provider */
+            provider: string;
+            /** Eventid */
+            eventId: string;
+            /** Place */
+            place: string | null;
+            /** Occurredat */
+            occurredAt: string | null;
+            /** Depthkm */
+            depthKm: number | null;
+            /** Url */
+            url: string | null;
+            /** Nearestdistancekm */
+            nearestDistanceKm: number | null;
+        };
         /**
          * FindingItemResponse
          * @description 근거 줄(취약점·비밀 위치 등). 비밀값 원문·매치 문자열은 없다.
@@ -2857,6 +3361,34 @@ export interface components {
         };
         /** @enum {string} */
         FindingOrigin: "RULE" | "HUMAN" | "AI";
+        /**
+         * FindingRemediationResponse
+         * @description 고칠 방법. DEPENDENCY_BUMP: package 를 fromVersion → toVersion 으로 올린다.
+         *
+         *     toVersion 이 null 이면 아직 고친 버전이 없다.
+         */
+        FindingRemediationResponse: {
+            kind: components["schemas"]["RemediationKind"];
+            /** Ecosystem */
+            ecosystem?: string | null;
+            /** Package */
+            package?: string | null;
+            /** Fromversion */
+            fromVersion?: string | null;
+            /** Toversion */
+            toVersion?: string | null;
+            /** Advisoryid */
+            advisoryId?: string | null;
+            /**
+             * Aliases
+             * @default []
+             */
+            aliases: string[];
+            /** Severity */
+            severity?: string | null;
+            /** Summary */
+            summary?: string | null;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -2867,6 +3399,33 @@ export interface components {
             status: components["schemas"]["AgentRunStatus"];
             /** Leaseuntil */
             leaseUntil: string | null;
+        };
+        /**
+         * InjectFeedEventRequest
+         * @description 시연용 가짜 지진 한 건. 피드와 같은 경로로 이 조직에만 흐른다(source = FEED_INJECTED).
+         */
+        InjectFeedEventRequest: {
+            epicenter: components["schemas"]["EpicenterRequest"];
+            /** Magnitude */
+            magnitude: number | string;
+            /** Place */
+            place?: string | null;
+        };
+        /**
+         * InjectFeedEventResponse
+         * @description matched=false 면 재난을 만들지 않았고 reason(BELOW_THRESHOLD·NO_AFFECTED_ENVIRONMENT)이
+         *     있다.
+         */
+        InjectFeedEventResponse: {
+            /** Feedeventid */
+            feedEventId: string;
+            /** Simulated */
+            simulated: boolean;
+            /** Matched */
+            matched: boolean;
+            /** Reason */
+            reason: string | null;
+            disaster: components["schemas"]["DisasterResponse"] | null;
         };
         /** InvitationResponse */
         InvitationResponse: {
@@ -2943,6 +3502,60 @@ export interface components {
         };
         JsonValue: unknown;
         /**
+         * LiveFeedConnectionStatus
+         * @description 실제 재난 피드 연결 상태(GET /disasters/feed). 스위치가 꺼져 있으면 DISABLED 다.
+         * @enum {string}
+         */
+        LiveFeedConnectionStatus: "DISABLED" | "WAITING" | "CONNECTED" | "ERROR";
+        /**
+         * LiveFeedStatusResponse
+         * @description 실제 재난 피드 상태(API 서버 18). 프론트 LIVE_FEED({name, ready})를 그대로 바꿀 수 있는
+         *     모양이다.
+         *
+         *     ready = connectionStatus 가 CONNECTED. evacuation 은 피드 재난의 대피 계획 처리 방식이다(지금은
+         *     SUGGESTED 하나 — 사람이 evacuate 를 불러야 계획이 생긴다).
+         */
+        LiveFeedStatusResponse: {
+            /** Name */
+            name: string;
+            /** Provider */
+            provider: string;
+            /** Ready */
+            ready: boolean;
+            /** Enabled */
+            enabled: boolean;
+            connectionStatus: components["schemas"]["LiveFeedConnectionStatus"];
+            /** Feedurl */
+            feedUrl: string;
+            /** Pollintervalseconds */
+            pollIntervalSeconds: number;
+            /** Lastpolledat */
+            lastPolledAt: string | null;
+            /** Lastsuccessat */
+            lastSuccessAt: string | null;
+            /** Lasterrorcode */
+            lastErrorCode: string | null;
+            /** Lastfeedcount */
+            lastFeedCount: number;
+            /** Lastneweventcount */
+            lastNewEventCount: number;
+            /** Lastskippedcount */
+            lastSkippedCount: number;
+            threshold: components["schemas"]["LiveFeedThresholdResponse"];
+            /** Evacuation */
+            evacuation: string;
+        };
+        /**
+         * LiveFeedThresholdResponse
+         * @description 조직 기준: 규모 minMagnitude 이상 ∧ 환경이 진원지에서 radiusKm 안이면 재난을 만든다.
+         */
+        LiveFeedThresholdResponse: {
+            /** Minmagnitude */
+            minMagnitude: number;
+            /** Radiuskm */
+            radiusKm: number;
+        };
+        /**
          * LogLevel
          * @description 로그 한 줄의 수준(배포 작업 로그·빌드·실행 로그 공통).
          * @enum {string}
@@ -2958,6 +3571,8 @@ export interface components {
             level: components["schemas"]["LogLevel"];
             /** Message */
             message: string;
+            /** Code */
+            code?: string | null;
         };
         /**
          * LogPageResponse
@@ -3028,7 +3643,7 @@ export interface components {
          * @description 이전 계획 실패·롤백 원인. 롤백 결과는 MigrationRollbackStatus 로 따로 둔다.
          * @enum {string}
          */
-        MigrationErrorCode: "PREFLIGHT_FAILED" | "TRAFFIC_APPLY_FAILED" | "HEALTH_CHECK_FAILED" | "METRICS_UNAVAILABLE" | "THRESHOLD_EXCEEDED" | "DATA_LAG_EXCEEDED" | "ABORTED" | "WORKER_LOST" | "INTERNAL_ERROR" | "TARGET_NOT_RECEIVING" | "SECURITY_GATE_BLOCKED";
+        MigrationErrorCode: "PREFLIGHT_FAILED" | "TRAFFIC_APPLY_FAILED" | "HEALTH_CHECK_FAILED" | "METRICS_UNAVAILABLE" | "THRESHOLD_EXCEEDED" | "DATA_LAG_EXCEEDED" | "ABORTED" | "WORKER_LOST" | "INTERNAL_ERROR" | "TARGET_NOT_RECEIVING" | "SECURITY_GATE_BLOCKED" | "DB_CUTOVER_FAILED" | "DB_CUTOVER_TIMEOUT" | "DB_CUTOVER_PARTIAL" | "DATA_INTEGRITY_FAILED" | "DB_CUTOVER_UNKNOWN";
         /**
          * MigrationFailbackResponse
          * @description 이 계획을 거꾸로 하는 복귀(도착 = 이 계획의 출발 환경)를 지금 만들 수 있는가.
@@ -3164,6 +3779,8 @@ export interface components {
             errorMessage: string | null;
             result: components["schemas"]["MigrationPlanResultResponse"] | null;
             failback: components["schemas"]["MigrationFailbackResponse"];
+            /** Promotewarning */
+            promoteWarning?: string | null;
         };
         /**
          * MigrationPlanMode
@@ -3318,9 +3935,12 @@ export interface components {
         /**
          * MigrationRollbackStatus
          * @description 출발 100% 로 되돌린 결과. NOT_NEEDED 는 트래픽을 바꾼 적이 없어 되돌릴 필요가 없었다.
+         *
+         *     SKIPPED 는 DB 쓰기 전환 단계가 쓰기 담당을 알 수 없거나 이미 도착으로 옮긴 채 실패해, 트래픽도
+         *     DB 도 자동으로 되돌리지 않았다는 뜻이다(사람이 확인한다. API 서버 17).
          * @enum {string}
          */
-        MigrationRollbackStatus: "SUCCEEDED" | "FAILED" | "NOT_NEEDED";
+        MigrationRollbackStatus: "SUCCEEDED" | "FAILED" | "NOT_NEEDED" | "SKIPPED";
         /**
          * MigrationSimulateReason
          * @description 가짜 모드에서 단계 하나를 일부러 실패시킬(또는 트래픽 적음으로 넘길) 원인(simulate.reason).
@@ -3329,13 +3949,14 @@ export interface components {
          *     실패도 만들지 않는다(p95 는 판정에 쓰지 않는다).
          * @enum {string}
          */
-        MigrationSimulateReason: "ERROR_RATE" | "LATENCY" | "HEALTH" | "DATA_LAG" | "TRAFFIC" | "TARGET_NOT_RECEIVING" | "LOW_TRAFFIC";
+        MigrationSimulateReason: "ERROR_RATE" | "LATENCY" | "HEALTH" | "DATA_LAG" | "TRAFFIC" | "TARGET_NOT_RECEIVING" | "LOW_TRAFFIC" | "DB_CUTOVER_FAIL" | "DB_CUTOVER_PARTIAL" | "DB_CUTOVER_TIMEOUT" | "DATA_INTEGRITY";
         /**
          * MigrationSimulateRequest
          * @description 가짜 실행기 모드에서만 받는다. failAtStep 단계를 reason 대로 실패(또는 트래픽 적음)시킨다.
          *
-         *     DATA_LAG 는 데이터 확인 단계(3)만, TARGET_NOT_RECEIVING 은 비율 단계 1·2만, 그 밖의 reason 은
-         *     비율 단계(1·2·4)만 고를 수 있다. LATENCY 는 받지 않는다(p95 는 판정에 쓰지 않는다).
+         *     DATA_LAG 는 데이터 확인 단계(3)만, TARGET_NOT_RECEIVING 은 비율 단계 1·2만, DB_CUTOVER_* ·
+         *     DATA_INTEGRITY 는 DB 쓰기 전환 단계(5, includeCutover=true 계획만)만, 그 밖의 reason 은 비율
+         *     단계(1·2·4)만 고를 수 있다. LATENCY 는 받지 않는다(p95 는 판정에 쓰지 않는다).
          */
         MigrationSimulateRequest: {
             /** Failatstep */
@@ -3344,10 +3965,11 @@ export interface components {
         };
         /**
          * MigrationStepKind
-         * @description 계획 단계 종류. 단계는 고정 5개(사전 확인 → 10% → 50% → 데이터 확인 → 100%)다.
+         * @description 계획 단계 종류. 단계는 고정 5개(사전 확인 → 10% → 50% → 데이터 확인 → 100%)이고,
+         *     만들 때 includeCutover=true 면 맨 뒤에 DB 쓰기 전환(DB_CUTOVER) 하나를 더해 6개다(API 서버 17).
          * @enum {string}
          */
-        MigrationStepKind: "PREFLIGHT" | "SHIFT" | "DATA_SYNC_CHECK";
+        MigrationStepKind: "PREFLIGHT" | "SHIFT" | "DATA_SYNC_CHECK" | "DB_CUTOVER";
         /**
          * MigrationStepResponse
          * @description 계획 값(index·kind·비율·필요 건수·최대 대기·예상 시간)과 실제 결과(result)를 나란히 싣는다.
@@ -3370,6 +3992,7 @@ export interface components {
             /** Expectedseconds */
             expectedSeconds: number;
             result: components["schemas"]["StepResultResponse"];
+            cutover?: components["schemas"]["StepCutoverResponse"] | null;
         };
         /**
          * MigrationStepStatus
@@ -3595,9 +4218,10 @@ export interface components {
         };
         /**
          * PrecheckDetailResponse
-         * @description 사전 점검(kind = PRECHECK) 또는 반영 실행(kind = APPLY_PATCH)의 상세.
+         * @description 사전 점검(PRECHECK)·반영 실행(APPLY_PATCH)·배포 실패 진단(CHANGE_PROPOSAL)의 상세.
          *
          *     반영 실행이면 `apply` 가 차고 사전 점검 결과 칸(configDiff·findings·patches 등)은 비어 있다.
+         *     배포 실패 진단이면 `diagnosis` 가 차고 패치는 `patches` 에 있다(SPEC api-98).
          */
         PrecheckDetailResponse: {
             /**
@@ -3664,6 +4288,44 @@ export interface components {
             /** Blockedattempts */
             blockedAttempts: components["schemas"]["PrecheckBlockedAttemptResponse"][];
             apply: components["schemas"]["PrecheckApplyRunResponse"] | null;
+            diagnosis?: components["schemas"]["PrecheckDiagnosisResponse"] | null;
+        };
+        /** PrecheckDiagnosisEvidenceResponse */
+        PrecheckDiagnosisEvidenceResponse: {
+            source: components["schemas"]["DiagnosisEvidenceSource"];
+            /** Line */
+            line: number | null;
+            /** Path */
+            path: string | null;
+            /** Text */
+            text: string;
+        };
+        /**
+         * PrecheckDiagnosisResponse
+         * @description 배포 실패 진단(kind = CHANGE_PROPOSAL)의 결과(SPEC api-98). 다른 종류면 상세의 칸이 null.
+         *
+         *     deployRequestId·environmentId·sourceCommitSha 는 만들 때 고정한 값이라 결과 전에도 있다.
+         *     결과 칸(result·category·cause·fixable·unfixableReason·evidence)은 결과가 저장된 뒤에만 차고
+         *     그 전(QUEUED·CLAIMED·RUNNING)과 결과 없이 끝난 실행(TIMED_OUT·CANCELLED)은 null·빈 배열이다.
+         *     모든 문자열은 비밀값 모양을 가린 값이다.
+         */
+        PrecheckDiagnosisResponse: {
+            result: components["schemas"]["DiagnosisResult"] | null;
+            category: components["schemas"]["DiagnosisCategory"] | null;
+            /** Cause */
+            cause: string | null;
+            /** Fixable */
+            fixable: boolean | null;
+            /** Unfixablereason */
+            unfixableReason: string | null;
+            /** Evidence */
+            evidence: components["schemas"]["PrecheckDiagnosisEvidenceResponse"][];
+            /** Deployrequestid */
+            deployRequestId: string | null;
+            /** Environmentid */
+            environmentId: string | null;
+            /** Sourcecommitsha */
+            sourceCommitSha: string | null;
         };
         /** PrecheckFeatureGapResponse */
         PrecheckFeatureGapResponse: {
@@ -3761,6 +4423,12 @@ export interface components {
             branch: string | null;
             /** Simulated */
             simulated: boolean;
+            /** Pullrequesturl */
+            pullRequestUrl?: string | null;
+            /** Redeployrequestid */
+            redeployRequestId?: string | null;
+            /** Redeployrejectedcode */
+            redeployRejectedCode?: string | null;
         };
         /** PrecheckPatchApprovalResponse */
         PrecheckPatchApprovalResponse: {
@@ -3864,6 +4532,12 @@ export interface components {
          * @enum {string}
          */
         RefType: "BRANCH" | "COMMIT";
+        /**
+         * RemediationKind
+         * @description 증거에 붙는 고칠 방법의 종류(SPEC sec-6-cve-watch). 지금은 의존성 버전 올리기 하나다.
+         * @enum {string}
+         */
+        RemediationKind: "DEPENDENCY_BUMP";
         RequiredRequestsItem: number;
         /**
          * RevertStatus
@@ -3949,6 +4623,8 @@ export interface components {
             pendingRedeploy: boolean;
             /** Simulated */
             simulated: boolean;
+            /** Deployed */
+            deployed: boolean;
         };
         /** SecurityCellResponse */
         SecurityCellResponse: {
@@ -4181,13 +4857,14 @@ export interface components {
             items: components["schemas"]["FindingItemResponse"][];
             /** Totalitems */
             totalItems: number;
+            remediation?: components["schemas"]["FindingRemediationResponse"] | null;
         };
         /**
          * SecurityFindingSource
          * @description 증거를 만든 도구·경로. 통제마다 받을 수 있는 출처가 규칙표에 정해져 있다.
          * @enum {string}
          */
-        SecurityFindingSource: "TRIVY_IMAGE" | "TRIVY_CONFIG" | "TRIVY_SECRET" | "GITLEAKS" | "TLS_PROBE" | "MANUAL_REVIEW" | "WAS_TEST" | "WAS_STATE" | "AUDIT_LOG" | "PRECHECK" | "ENTRYPOINT" | "DATA_ENGINE" | "CLOUD_API" | "KUBERNETES_API" | "GITHUB_API" | "AI_REVIEW";
+        SecurityFindingSource: "TRIVY_IMAGE" | "TRIVY_CONFIG" | "TRIVY_SECRET" | "GITLEAKS" | "TLS_PROBE" | "MANUAL_REVIEW" | "WAS_TEST" | "WAS_STATE" | "AUDIT_LOG" | "PRECHECK" | "ENTRYPOINT" | "DATA_ENGINE" | "CLOUD_API" | "KUBERNETES_API" | "GITHUB_API" | "AI_REVIEW" | "CVE_WATCH";
         /**
          * SecurityGateStatus
          * @description 매트릭스의 게이트 관점(저장 안 함): 게이트가 이 통제·칸을 막는가.
@@ -4452,12 +5129,23 @@ export interface components {
              */
             updatedAt: string;
         };
+        /** ServiceVariableCopyResponse */
+        ServiceVariableCopyResponse: {
+            /** Copied */
+            copied: components["schemas"]["CopiedServiceVariableResponse"][];
+            /** Failed */
+            failed: components["schemas"]["FailedServiceVariableCopyResponse"][];
+            /** Simulated */
+            simulated: boolean;
+        };
         /** ServiceVariableListResponse */
         ServiceVariableListResponse: {
             /** Items */
             items: components["schemas"]["ServiceVariableResponse"][];
             /** Simulated */
             simulated: boolean;
+            /** Deployed */
+            deployed: boolean;
         };
         /** ServiceVariableResponse */
         ServiceVariableResponse: {
@@ -4526,6 +5214,44 @@ export interface components {
             failAt: components["schemas"]["SimulatedFailureStage"];
         };
         /**
+         * SimulatedAdvisoryRequest
+         * @description 가짜 권고. 칸을 비우면 React2Shell(Node.js RCE) 모양 기본값이다.
+         */
+        SimulatedAdvisoryRequest: {
+            /**
+             * Id
+             * @default SIM-NODE2SHELL-0001
+             */
+            id: string;
+            /**
+             * Summary
+             * @default [시연용 가짜 권고] React Server Components 원격 코드 실행(React2Shell 모양)
+             */
+            summary: string;
+            /** @default CRITICAL */
+            severity: components["schemas"]["AdvisorySeverity"];
+            /**
+             * Ecosystem
+             * @default npm
+             */
+            ecosystem: string;
+            /**
+             * Package
+             * @default react-server-dom-webpack
+             */
+            package: string;
+            /**
+             * Introduced
+             * @default 19.0.0
+             */
+            introduced: string;
+            /**
+             * Fixed
+             * @default 19.0.1
+             */
+            fixed: string | null;
+        };
+        /**
          * SimulatedFailureStage
          * @description 가짜 모드에서 요청 하나를 일부러 실패시킬 단계(simulate.failAt).
          * @enum {string}
@@ -4546,6 +5272,79 @@ export interface components {
             verifyingAt: string | null;
             /** Finishedat */
             finishedAt: string | null;
+        };
+        /**
+         * StepCutoverResponse
+         * @description DB 쓰기 전환 단계(API 서버 17)의 Job 과 결과. 그 밖의 단계는 null.
+         *
+         *     jobKind = cutover·rollback(복귀)·promote, allowPromote = 재난 긴급 이전,
+         *     exitCode = 스크립트 종료 코드(0 끝남·1 바뀐 것 없음·2 부분 상태, 모르면 null),
+         *     reason = 건너뜀·판정 이유
+         *     (ALREADY_WRITER·ALREADY_DONE·PROMOTED·ROWS_MISMATCH·RESULT_MISSING·RESULT_UNAVAILABLE·JOB_LOST·
+         *     TIMED_OUT·NO_CHANGE·PRECHECK_FAILED·WRITER_UNCONFIRMED·TARGET_IS_WRITER·START_UNCONFIRMED·
+         *     POLL_ERRORS), startFailure = Job 을 만들지 못한 이유 코드, run = 결과 행.
+         */
+        StepCutoverResponse: {
+            /** Jobname */
+            jobName?: string | null;
+            /** Jobkind */
+            jobKind?: string | null;
+            /** Allowpromote */
+            allowPromote?: boolean | null;
+            /** Exitcode */
+            exitCode?: number | null;
+            /** Reason */
+            reason?: string | null;
+            /** Jobfinished */
+            jobFinished?: boolean | null;
+            /** Joblost */
+            jobLost?: boolean | null;
+            /** Startfailure */
+            startFailure?: string | null;
+            /** Startuncertain */
+            startUncertain?: boolean | null;
+            /** Startconfirmed */
+            startConfirmed?: boolean | null;
+            /** Pollerrors */
+            pollErrors?: number | null;
+            /** Writer */
+            writer?: string | null;
+            run?: components["schemas"]["StepCutoverRunResponse"] | null;
+        };
+        /**
+         * StepCutoverRunResponse
+         * @description 컷오버 Job 이 고객 DB 결과 표(echo_ops.cutover_runs)에 남긴 이 계획의 행.
+         */
+        StepCutoverRunResponse: {
+            kind: components["schemas"]["CutoverKind"];
+            /**
+             * Pausedat
+             * Format: date-time
+             */
+            pausedAt: string;
+            /**
+             * Resumedat
+             * Format: date-time
+             */
+            resumedAt: string;
+            /** Writepausems */
+            writePauseMs: number;
+            /** Drainms */
+            drainMs: number | null;
+            /** Catchupms */
+            catchupMs: number | null;
+            /** Switchms */
+            switchMs: number | null;
+            /** Rowstotal */
+            rowsTotal: number | null;
+            /** Missingrows */
+            missingRows: number | null;
+            /** Duplicaterows */
+            duplicateRows: number | null;
+            /** Mode */
+            mode: string | null;
+            /** Rpoestimatems */
+            rpoEstimateMs: number | null;
         };
         /**
          * StepMetricsResponse
@@ -4624,10 +5423,17 @@ export interface components {
         /**
          * UpdateOrganizationSettingsRequest
          * @description 조직 설정 변경(어드민). allowSelfApproval 은 필수다.
+         *
+         *     liveFeedMinMagnitude·liveFeedRadiusKm 은 실제 재난 피드 기준이다(API 서버 18, 생략하면 그대로).
+         *     지금 값은 GET /disasters/feed 의 threshold 로 본다.
          */
         UpdateOrganizationSettingsRequest: {
             /** Allowselfapproval */
             allowSelfApproval: boolean;
+            /** Livefeedminmagnitude */
+            liveFeedMinMagnitude?: number | string | null;
+            /** Livefeedradiuskm */
+            liveFeedRadiusKm?: number | null;
         };
         /**
          * UpdateServiceRequest
@@ -5862,6 +6668,43 @@ export interface operations {
             };
         };
     };
+    copy_service_variables_api_v1_orgs__org_id__services__service_id__variables_copy_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                service_id: string;
+                /** @description 조직 id(uuid) */
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CopyServiceVariablesRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_ServiceVariableCopyResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_deploy_request_api_v1_orgs__org_id__deploy_requests__deploy_request_id__get: {
         parameters: {
             query?: never;
@@ -5919,6 +6762,50 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiResponse_DeployRequestDetailResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_diagnosis_api_v1_orgs__org_id__deploy_requests__deploy_request_id__diagnosis_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                deploy_request_id: string;
+                /** @description 조직 id(uuid) */
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["CreateDiagnosisRequest"] | null;
+            };
+        };
+        responses: {
+            /** @description 이미 있는 진단(같은 실행) */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_PrecheckDetailResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -6087,7 +6974,11 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["ApproveMigrationPlanRequest"] | null;
+            };
+        };
         responses: {
             /** @description Successful Response */
             202: {
@@ -6244,6 +7135,74 @@ export interface operations {
             };
         };
     };
+    get_live_feed_status_api_v1_orgs__org_id__disasters_feed_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 조직 id(uuid) */
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_LiveFeedStatusResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    inject_feed_event_api_v1_orgs__org_id__disasters_feed_inject_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 조직 id(uuid) */
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InjectFeedEventRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_InjectFeedEventResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     preview_disaster_api_v1_orgs__org_id__disasters_preview_get: {
         parameters: {
             query: {
@@ -6354,6 +7313,39 @@ export interface operations {
         };
     };
     get_disaster_api_v1_orgs__org_id__disasters__disaster_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                disaster_id: string;
+                /** @description 조직 id(uuid) */
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_DisasterResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    evacuate_disaster_api_v1_orgs__org_id__disasters__disaster_id__evacuate_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -6560,6 +7552,107 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiResponse_Page_SecurityFindingResponse__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    check_cve_watch_api_v1_orgs__org_id__security_cve_watch_check_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 조직 id(uuid) */
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_CveWatchRunResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    inject_cve_advisory_api_v1_orgs__org_id__security_cve_watch_inject_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description 조직 id(uuid) */
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["CveWatchInjectRequest"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponse_CveWatchRunResponse_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    request_finding_diagnosis_api_v1_orgs__org_id__security_findings__finding_id__diagnosis_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                finding_id: string;
+                /** @description 조직 id(uuid) */
+                org_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
@@ -7360,6 +8453,39 @@ export interface operations {
                         /** Reason */
                         reason: string;
                     }[];
+                    diagnosis?: {
+                        /**
+                         * DiagnosisResult
+                         * @description 배포 실패 진단(CHANGE_PROPOSAL)의 결론(SPEC api-98).
+                         * @enum {string}
+                         */
+                        result: "DIAGNOSED" | "INSUFFICIENT_EVIDENCE" | "NO_FAILURE_EVIDENCE";
+                        category?: ("CODE" | "CONFIG" | "BUILD" | "RUNTIME" | "PLATFORM") | null;
+                        /** Cause */
+                        cause?: string | null;
+                        /** Fixable */
+                        fixable: boolean;
+                        /** Unfixablereason */
+                        unfixableReason?: string | null;
+                        /**
+                         * Evidence
+                         * @default []
+                         */
+                        evidence?: {
+                            /**
+                             * DiagnosisEvidenceSource
+                             * @description 진단 근거 한 줄의 출처. LOG 는 실패 로그 줄, FILE 은 저장소 파일 줄, CONFIG 는 설정 값.
+                             * @enum {string}
+                             */
+                            source: "LOG" | "FILE" | "CONFIG";
+                            /** Line */
+                            line?: number | null;
+                            /** Path */
+                            path?: string | null;
+                            /** Text */
+                            text: string;
+                        }[];
+                    } | null;
                 } | {
                     /**
                      * Status

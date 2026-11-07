@@ -133,16 +133,32 @@ export function useCreateMigrationPlan(orgId: string, serviceId: string) {
 
 type PlanAction = 'approve' | 'reject' | 'cancel' | 'abort';
 
-/** 승인·거절·취소·중단. 승인하면 바로 실행된다(202). 409(STALE·만료)는 계획을 다시 불러 상태를 보여 준다 */
+/** 승인 대상. promoteWarning 이 있는 계획(재난 긴급 이전 + DB 쓰기 전환)은 동의를 함께 보낸다 */
+export type PlanActionTarget = string | { planId: string; acknowledgePromote: boolean };
+
+const targetPlanId = (target: PlanActionTarget) =>
+  typeof target === 'string' ? target : target.planId;
+
+/**
+ * 승인·거절·취소·중단. 승인하면 바로 실행된다(202). 409(STALE·만료)는 계획을 다시 불러 상태를 보여 준다.
+ * 승격 동의가 필요한 계획을 동의 없이 승인하면 422 PROMOTE_ACK_REQUIRED 다(계획은 그대로)
+ */
 export function usePlanAction(orgId: string, serviceId: string, action: PlanAction) {
   const invalidate = useInvalidatePlan(orgId, serviceId);
   return useMutation({
-    mutationFn: (planId: string) => {
+    mutationFn: (target: PlanActionTarget) => {
+      const planId = targetPlanId(target);
       const params = { params: { path: { org_id: orgId, plan_id: planId } } };
       switch (action) {
         case 'approve':
+          // 동의가 없는 승인은 지금처럼 본문 없이 보낸다
           return unwrap(
-            api.POST('/api/v1/orgs/{org_id}/migration-plans/{plan_id}/approve', params),
+            api.POST('/api/v1/orgs/{org_id}/migration-plans/{plan_id}/approve', {
+              ...params,
+              ...(typeof target !== 'string' && target.acknowledgePromote
+                ? { body: { acknowledgePromote: true } }
+                : {}),
+            }),
           );
         case 'reject':
           return unwrap(api.POST('/api/v1/orgs/{org_id}/migration-plans/{plan_id}/reject', params));
@@ -152,6 +168,6 @@ export function usePlanAction(orgId: string, serviceId: string, action: PlanActi
           return unwrap(api.POST('/api/v1/orgs/{org_id}/migration-plans/{plan_id}/abort', params));
       }
     },
-    onSettled: (_data, _error, planId) => invalidate(planId),
+    onSettled: (_data, _error, target) => invalidate(targetPlanId(target)),
   });
 }

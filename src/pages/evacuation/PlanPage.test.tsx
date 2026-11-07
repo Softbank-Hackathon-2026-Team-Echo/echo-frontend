@@ -172,25 +172,28 @@ function serve({
   stale = false,
   targetSimulated = true,
   blocked = false,
+  promoteWarning = null,
 }: {
   allowSelfApproval: boolean;
   active: string | null;
   stale?: boolean;
   targetSimulated?: boolean;
   blocked?: boolean;
+  promoteWarning?: string | null;
 }) {
   const calls: { path: string; body?: unknown }[] = [];
   server.use(
     http.get(`${API}/me`, () => ok(me(allowSelfApproval))),
     http.get(`${API}/orgs/o1/services/s1`, () => ok(service(active, targetSimulated))),
     http.get(`${API}/orgs/o1/environments`, () => ok({ items: [], total: 0, page: 0, size: 100 })),
-    http.get(`${API}/orgs/o1/migration-plans/:id`, () => ok(plan)),
+    http.get(`${API}/orgs/o1/migration-plans/:id`, () => ok({ ...plan, promoteWarning })),
     http.get(`${API}/orgs/o1/security/compare`, ({ request }) => {
       compareQueries.push(new URL(request.url).searchParams);
       return ok(compare(blocked));
     }),
-    http.post(`${API}/orgs/o1/migration-plans/:id/approve`, () => {
-      calls.push({ path: 'approve' });
+    http.post(`${API}/orgs/o1/migration-plans/:id/approve`, async ({ request }) => {
+      const text = await request.text();
+      calls.push({ path: 'approve', body: text ? JSON.parse(text) : undefined });
       if (stale) {
         return HttpResponse.json(
           {
@@ -404,5 +407,82 @@ describe('PlanPage', () => {
     const create = await screen.findByRole('button', { name: 'Create plan' });
     await new Promise((resolve) => setTimeout(resolve, 50));
     expect(create).not.toHaveAttribute('aria-disabled', 'true');
+  });
+
+  it('DB 쓰기 담당도 옮기기를 고르면 includeCutover 를 보내고 단계가 6개가 된다', async () => {
+    const calls = serve({ allowSelfApproval: false, active: null });
+    renderPage();
+
+    await userEvent.click(await screen.findByLabelText(/Also move the DB writer/));
+    expect(screen.getByText('DB writer cutover')).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Create plan' }));
+
+    await expect.poll(() => calls[0]?.body).toMatchObject({ includeCutover: true });
+  });
+
+  it('고르지 않으면 includeCutover false 로 만든다', async () => {
+    const calls = serve({ allowSelfApproval: false, active: null });
+    renderPage();
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Create plan' }));
+
+    await expect.poll(() => calls[0]?.body).toMatchObject({ includeCutover: false });
+    expect(screen.queryByText('DB writer cutover')).not.toBeInTheDocument();
+  });
+
+  it('승격 경고가 있으면 동의 전에는 승인을 잠그고, 동의하면 acknowledgePromote 를 보낸다', async () => {
+    const calls = serve({
+      allowSelfApproval: true,
+      active: plan.id,
+      promoteWarning: 'Promotion cannot be undone.',
+    });
+    renderPage();
+
+    expect(await screen.findByText('Promotion cannot be undone.')).toBeInTheDocument();
+    const approve = screen.getByRole('button', { name: 'Approve plan' });
+    expect(approve).toHaveAttribute('aria-disabled', 'true');
+
+    await userEvent.click(screen.getByLabelText(/I understand the promotion cannot be undone/));
+    await userEvent.click(screen.getByRole('button', { name: 'Approve plan' }));
+
+    await expect
+      .poll(() => calls)
+      .toEqual([{ path: 'approve', body: { acknowledgePromote: true } }]);
+  });
+
+  it('승격 경고가 없으면 지금처럼 본문 없이 승인한다', async () => {
+    const calls = serve({ allowSelfApproval: true, active: plan.id });
+    renderPage();
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Approve plan' }));
+
+    await expect.poll(() => calls).toEqual([{ path: 'approve', body: undefined }]);
+    expect(screen.queryByText('This plan promotes the target database')).not.toBeInTheDocument();
+  });
+
+  it('승인이 422 PROMOTE_ACK_REQUIRED 면 동의가 필요하다고 알려 준다', async () => {
+    serve({ allowSelfApproval: true, active: plan.id });
+    server.use(
+      http.post(`${API}/orgs/o1/migration-plans/:id/approve`, () =>
+        HttpResponse.json(
+          {
+            success: false,
+            code: 'PROMOTE_ACK_REQUIRED',
+            message: 'acknowledgePromote is required',
+            details: [],
+          },
+          { status: 422 },
+        ),
+      ),
+    );
+    renderPage();
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Approve plan' }));
+
+    expect(
+      await screen.findByText(
+        'This plan promotes the target database. Tick the acknowledgement above and approve again.',
+      ),
+    ).toBeInTheDocument();
   });
 });

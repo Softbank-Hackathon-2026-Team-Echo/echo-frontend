@@ -4,7 +4,14 @@ import { cn } from '@/lib/utils';
 
 export type StageState = 'done' | 'current' | 'failed' | 'pending' | 'skipped';
 
-export type Stage = { key: string; title: ReactNode; meta?: ReactNode; state: StageState };
+export type Stage = {
+  key: string;
+  title: ReactNode;
+  meta?: ReactNode;
+  state: StageState;
+  /** 사람이 봐야 하는 단계에 붙는 빨간 배지 문구 (예: DB 쓰기 전환 결과 모름) */
+  alert?: string;
+};
 
 const INDICATOR: Record<StageState, string> = {
   done: 'bg-success-solid text-fg-on-brand',
@@ -51,6 +58,11 @@ export function StageList({ stages, start = 0 }: { stages: Stage[]; start?: numb
               )}
             >
               {stage.title}
+              {stage.alert && (
+                <span className="ml-2 inline-flex items-center rounded-sm bg-danger-solid px-2 py-0.5 align-middle text-label text-fg-on-brand">
+                  {stage.alert}
+                </span>
+              )}
             </span>
             {stage.meta && (
               <span
