@@ -215,7 +215,11 @@ export default function PlanPage() {
   return (
     <>
       <PageHeader
-        title={t('Migration plan {{id}}', { id: current.id.slice(0, 8) })}
+        title={
+          current.mode === 'FAILBACK'
+            ? t('Failback plan {{id}}', { id: current.id.slice(0, 8) })
+            : t('Migration plan {{id}}', { id: current.id.slice(0, 8) })
+        }
         description={t(
           '{{source}} → {{target}} · est. {{duration}} · created {{time}} by {{login}}',
           {
