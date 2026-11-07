@@ -908,12 +908,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Request Finding Diagnosis
-         * @description 증거의 고칠 방법(DEPENDENCY_BUMP)으로 AI 진단 실행을 만든다.
-         *
-         *     이슈 #98(CHANGE_PROPOSAL) 병합 전이라 지금은 404·409 검사 뒤 501 `NOT_IMPLEMENTED` 다.
-         */
+        /** Request Finding Diagnosis */
         post: operations["request_finding_diagnosis_api_v1_orgs__org_id__security_findings__finding_id__diagnosis_post"];
         delete?: never;
         options?: never;
@@ -2881,7 +2876,7 @@ export interface components {
          * @description 배포 요청 실패 이유. DB CHECK 를 걸지 않고 앱이 이 값만 쓴다.
          * @enum {string}
          */
-        DeployRequestErrorCode: "REPO_NOT_ACCESSIBLE" | "REF_NOT_FOUND" | "SOURCE_PROVIDER_UNAVAILABLE" | "BUILD_FAILED" | "BUILD_TIMEOUT" | "DEPLOY_FAILED" | "DEPLOY_TIMEOUT" | "HEALTH_CHECK_FAILED" | "HEALTH_CHECK_TIMEOUT" | "PUBLIC_URL_UNREACHABLE" | "WORKER_LOST" | "INTERNAL_ERROR" | "BUILD_DISPATCH_FAILED" | "CLUSTER_UNAUTHORIZED" | "IMAGE_PULL_FAILED" | "CONTAINER_START_FAILED" | "ENV_SECRET_UNAVAILABLE";
+        DeployRequestErrorCode: "REPO_NOT_ACCESSIBLE" | "REF_NOT_FOUND" | "SOURCE_PROVIDER_UNAVAILABLE" | "BUILD_FAILED" | "BUILD_TIMEOUT" | "DEPLOY_FAILED" | "DEPLOY_TIMEOUT" | "HEALTH_CHECK_FAILED" | "HEALTH_CHECK_TIMEOUT" | "PUBLIC_URL_UNREACHABLE" | "WORKER_LOST" | "INTERNAL_ERROR" | "BUILD_DISPATCH_FAILED" | "CLUSTER_UNAUTHORIZED" | "IMAGE_PULL_FAILED" | "CONTAINER_START_FAILED" | "ENV_SECRET_UNAVAILABLE" | "SECURITY_GATE_BLOCKED";
         /**
          * DeployRequestStatus
          * @description 배포 요청 상태. 취소는 QUEUED 에서만 한다. 끝 상태는 되감지 않는다.
@@ -2939,13 +2934,13 @@ export interface components {
          * @description 진단한 원인의 분류.
          * @enum {string}
          */
-        DiagnosisCategory: "CODE" | "CONFIG" | "BUILD" | "RUNTIME" | "PLATFORM";
+        DiagnosisCategory: "CODE" | "CONFIG" | "BUILD" | "RUNTIME" | "PLATFORM" | "DEPENDENCY";
         /**
          * DiagnosisEvidenceSource
          * @description 진단 근거 한 줄의 출처. LOG 는 실패 로그 줄, FILE 은 저장소 파일 줄, CONFIG 는 설정 값.
          * @enum {string}
          */
-        DiagnosisEvidenceSource: "LOG" | "FILE" | "CONFIG";
+        DiagnosisEvidenceSource: "LOG" | "FILE" | "CONFIG" | "ADVISORY";
         /**
          * DiagnosisResult
          * @description 배포 실패 진단(CHANGE_PROPOSAL)의 결론(SPEC api-98).
@@ -4326,6 +4321,13 @@ export interface components {
             environmentId: string | null;
             /** Sourcecommitsha */
             sourceCommitSha: string | null;
+            /** Findingid */
+            findingId?: string | null;
+            /**
+             * Syntheticadvisory
+             * @default false
+             */
+            syntheticAdvisory: boolean;
         };
         /** PrecheckFeatureGapResponse */
         PrecheckFeatureGapResponse: {
@@ -4943,7 +4945,7 @@ export interface components {
          * @description 통제 판정 사유(기계 판독용). 게이트가 막으면 이 값을 통제 ID 와 함께 돌려준다.
          * @enum {string}
          */
-        SecurityReasonCode: "CONTROL_FAILED" | "CONTROL_WARNING" | "EVIDENCE_UNKNOWN" | "EVIDENCE_MISSING" | "EVIDENCE_EXPIRED" | "EVIDENCE_SIMULATED" | "EVIDENCE_INCOMPLETE" | "SOURCE_NOT_ALLOWED" | "SCOPE_MISMATCH" | "POLICY_VERSION_MISMATCH" | "PRECHECK_MISSING" | "AI_UNCONFIRMED" | "AI_ESCALATED" | "EXCEPTION_APPLIED" | "EXCEPTION_EXPIRED" | "NOT_APPLICABLE";
+        SecurityReasonCode: "CONTROL_FAILED" | "CONTROL_TIMEOUT" | "CONTROL_WARNING" | "EVIDENCE_UNKNOWN" | "EVIDENCE_MISSING" | "EVIDENCE_EXPIRED" | "EVIDENCE_SIMULATED" | "EVIDENCE_INCOMPLETE" | "SOURCE_NOT_ALLOWED" | "SCOPE_MISMATCH" | "POLICY_VERSION_MISMATCH" | "PRECHECK_MISSING" | "AI_UNCONFIRMED" | "AI_ESCALATED" | "EXCEPTION_APPLIED" | "EXCEPTION_EXPIRED" | "NOT_APPLICABLE";
         /**
          * SecurityResult
          * @description 증거·통제·매트릭스 칸의 결과. 확인하지 못한 것(UNKNOWN)과 목업은 PASS 가 아니다.
@@ -7652,7 +7654,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["ApiResponse_PrecheckDetailResponse_"];
                 };
             };
             /** @description Validation Error */
@@ -8460,7 +8462,7 @@ export interface operations {
                          * @enum {string}
                          */
                         result: "DIAGNOSED" | "INSUFFICIENT_EVIDENCE" | "NO_FAILURE_EVIDENCE";
-                        category?: ("CODE" | "CONFIG" | "BUILD" | "RUNTIME" | "PLATFORM") | null;
+                        category?: ("CODE" | "CONFIG" | "BUILD" | "RUNTIME" | "PLATFORM" | "DEPENDENCY") | null;
                         /** Cause */
                         cause?: string | null;
                         /** Fixable */
@@ -8477,7 +8479,7 @@ export interface operations {
                              * @description 진단 근거 한 줄의 출처. LOG 는 실패 로그 줄, FILE 은 저장소 파일 줄, CONFIG 는 설정 값.
                              * @enum {string}
                              */
-                            source: "LOG" | "FILE" | "CONFIG";
+                            source: "LOG" | "FILE" | "CONFIG" | "ADVISORY";
                             /** Line */
                             line?: number | null;
                             /** Path */
@@ -8485,6 +8487,10 @@ export interface operations {
                             /** Text */
                             text: string;
                         }[];
+                    } | null;
+                    /** Sbom */
+                    sbom?: {
+                        [key: string]: unknown;
                     } | null;
                 } | {
                     /**

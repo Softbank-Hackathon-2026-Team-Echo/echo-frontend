@@ -1,5 +1,5 @@
 // 보안 매트릭스 · 증거 · 이전 전후 비교 (echo-was docs/api/security.md). 이전을 막을지는 서버 게이트가 정한다
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { api, unwrap } from './client';
 import { queryKeys } from './query-keys';
 import type { SecurityMatrixCell } from './types';
@@ -106,5 +106,16 @@ export function useSecurityCompare(
         }),
       ),
     enabled: Boolean(orgId && source && target && source !== target),
+  });
+}
+
+export function useFindingDiagnosis(orgId: string | undefined, findingId: string) {
+  return useMutation({
+    mutationFn: () =>
+      unwrap(
+        api.POST('/api/v1/orgs/{org_id}/security/findings/{finding_id}/diagnosis', {
+          params: { path: { org_id: orgId ?? '', finding_id: findingId } },
+        }),
+      ),
   });
 }

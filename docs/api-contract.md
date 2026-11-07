@@ -279,3 +279,12 @@ W3 은 ai-agent #22 의 실패 로그 입력과 같은 값이다.
 ## 6. 바뀐 기록
 
 - v0.1 (11/2): 첫 초안. 공통 규칙·화면별 API·실시간·새 API 요청 초안.
+
+
+## CVE 의존성 수정 (AI #27)
+
+`POST /orgs/{orgId}/security/findings/{id}/diagnosis`, 본문 없음, 사람 개발자 이상. 201/기존 진행 중이면 200 `PrecheckDetail`, `CHANGE_PROPOSAL`. finding에서 시작하므로 실패 배포 ID는 없다. 이후 기존 `GET /prechecks/{id}`와 patch 승인 API를 쓴다.
+
+진단 category `DEPENDENCY`, evidence source `ADVISORY` 추가; FILE 근거와 구분한다. `diagnosis.findingId`, `syntheticAdvisory`가 추가된다. 합성 권고는 실제 샌드박스 실행 성공을 대신하지 않으며 지정 demo 외 요청은 409다.
+
+보안 FindingSheet에서 시작→근거/diff/PatchReview→같은 시트의 RedeployFollow로 잇는다. 새 배포 ref가 기존 패치 커밋인지 서버가 검증한다. 빌드·기동 성공과 기능 호환성 미실시 문구를 함께 표시한다. 기본 서버 스위치 off인 동안 API 오류를 그대로 표시하고 가짜 결과로 대체하지 않는다.

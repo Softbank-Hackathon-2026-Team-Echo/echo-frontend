@@ -1,0 +1,9 @@
+{
+  "Dependency remediation": "依存関係の脆弱性を修正",
+  "Synthetic advisory · sandbox checks and approved redeploy are real.": "合成アドバイザリです。サンドボックス検査と承認後の再デプロイは実際に実行されます。",
+  "Create dependency fix": "依存関係の修正案を作成",
+  "Advisory": "脆弱性アドバイザリ",
+  "Build and startup checks passed. Functional compatibility has not been tested.": "ビルド・起動検証に合格。機能互換性は未検証です。",
+  "Check again": "再確認",
+  "Dependency issue": "依存関係の問題"
+}

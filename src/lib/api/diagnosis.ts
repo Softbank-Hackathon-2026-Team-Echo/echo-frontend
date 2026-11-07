@@ -31,6 +31,7 @@ export const CATEGORY_LABELS: Record<DiagnosisCategory, string> = {
   BUILD: k('Build error'),
   RUNTIME: k('Runtime error'),
   PLATFORM: k('Platform error'),
+  DEPENDENCY: k('Dependency issue'),
 };
 
 export const FIX_LABELS: Record<DiagnosisFix, string> = {

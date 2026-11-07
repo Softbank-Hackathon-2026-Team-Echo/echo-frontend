@@ -346,7 +346,7 @@ function UrlCard({ request }: { request: DeployRequestDetail }) {
  * AI 진단 패치가 만든 재배포를 실패 화면 안에서 이어 보인다. 원래 실패 · 진단 · 승인 기록은 위에 그대로 두고,
  * 지금 진행 중인 재배포의 단계 · 로그 · 결과를 여기서 따로 그린다
  */
-function RedeployFollow({
+export function RedeployFollow({
   orgId,
   redeployRequestId,
   service,

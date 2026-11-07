@@ -1,0 +1,9 @@
+{
+  "Dependency remediation": "의존성 취약점 수정",
+  "Synthetic advisory · sandbox checks and approved redeploy are real.": "합성 권고입니다. 샌드박스 검사와 승인 후 재배포는 실제로 실행합니다.",
+  "Create dependency fix": "의존성 수정안 만들기",
+  "Advisory": "취약점 권고",
+  "Build and startup checks passed. Functional compatibility has not been tested.": "빌드·기동 검증 통과. 기능 호환성 검증 미실시.",
+  "Check again": "다시 확인",
+  "Dependency issue": "의존성 문제"
+}

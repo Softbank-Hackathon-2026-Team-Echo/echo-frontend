@@ -16,6 +16,7 @@ import type { SecurityControlCheck, SecurityFinding, SecurityMatrixCell } from '
 import { dateTime } from '@/lib/format';
 import { t } from '@/lib/i18n';
 import { securityReasonLabel, securityResultView, securitySeverityLabel } from '@/lib/status';
+import { CveDiagnosis } from './CveDiagnosis';
 
 // 취약점이 수십 건이면 아래 통제까지 한참 내려가야 해서 처음에는 접어 둔다
 const ITEM_PREVIEW = 5;
@@ -100,6 +101,7 @@ function FindingDetail({ finding }: { finding: SecurityFinding }) {
             : t('Show all {{total}} items', { total: finding.items.length })}
         </Button>
       )}
+      {finding.remediation?.kind === 'DEPENDENCY_BUMP' && <CveDiagnosis finding={finding} />}
       {finding.totalItems > finding.items.length && (
         <p className="text-caption text-fg-muted">
           {t('Showing {{shown}} of {{total}} items', {
