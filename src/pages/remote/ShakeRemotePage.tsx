@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router';
 import { ErrorState } from '@/components/ErrorState';
 import { Logo } from '@/components/Logo';
 import { RoleButton } from '@/components/RoleButton';
+import { SimulatedBadge } from '@/components/SimulatedBadge';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -17,7 +18,6 @@ import { useNow } from '@/hooks/useNow';
 import {
   DISASTER_MAGNITUDES,
   type DisasterPlan,
-  EPICENTER_PRESETS,
   useActiveDisasters,
   useCreateDisaster,
   useEndDisaster,
@@ -52,7 +52,8 @@ const DEFAULT_ENVIRONMENT = 'aws-tokyo';
 const DEFAULT_MAGNITUDE = 7.2;
 /** 화면 숫자를 이 간격보다 자주 고치지 않는다(센서는 초당 60번쯤 온다) */
 const DISPLAY_MS = 100;
-const TOKYO = EPICENTER_PRESETS[0]?.epicenter ?? { lat: 35.2, lng: 139.4 };
+/** 흉내내기는 이 시간 안에 두 번 눌러야 보낸다. 리모컨과 같다 */
+const PRESS_AGAIN_MS = 5_000;
 
 function pickService(items: ServiceSummary[]): ServiceSummary | undefined {
   return (
@@ -81,7 +82,7 @@ function BigSimulatedBadge() {
       className="rounded-lg border-2 border-warning-solid bg-warning-bg px-3 py-2 text-center text-warning-fg"
       data-testid="simulated-badge"
     >
-      <span className="block font-mono text-h2 font-bold tracking-widest">SIMULATED</span>
+      <span className="block font-mono text-h2">SIMULATED</span>
       <span className="text-small">{t('Simulated drill disaster. Not a real earthquake.')}</span>
     </p>
   );
@@ -110,6 +111,9 @@ export default function ShakeRemotePage() {
   const [current, setCurrent] = useState(0);
   const [peak, setPeak] = useState(0);
   const [lastTriggeredAt, setLastTriggeredAt] = useState<number | null>(null);
+  // 재난은 시뮬레이션이어도 이전은 실제라, 흔들림 한 번에 트래픽이 움직이기 전에 사람이 확인한다
+  const [isConfirmed, setIsConfirmed] = useState(false);
+  const [isPressedOnce, setIsPressedOnce] = useState(false);
   const locked = lockRemainingMs({ lastTriggeredAt, now: Date.now() }) > 0;
   const now = useNow(locked, 250);
 
@@ -118,18 +122,25 @@ export default function ShakeRemotePage() {
   const service = serviceItems.find((item) => item.id === serviceId) ?? pickService(serviceItems);
   const environment =
     environmentItems.find((item) => item.id === environmentId) ?? pickEnvironment(environmentItems);
-  const epicenter = (environment && environmentCoordinates(environment)) ?? TOKYO;
+  const epicenter = environment ? environmentCoordinates(environment) : null;
   const latest = active.data?.at(-1);
+  const hasActive = Boolean(latest);
   const allowed = organization ? hasRole(organization.role, 'DEVELOPER') : false;
-  const blocked = Boolean(latest) || create.isPending || !allowed;
+  // 진행 중 재난을 모르는 동안(목록 로딩 · 조회 실패)은 보내지 않는다
+  const notReady = hasActive || !active.isSuccess || !epicenter || !isConfirmed;
+  const blocked = notReady || create.isPending || !allowed;
 
   // 센서 콜백은 한 번만 붙이고, 판정에 쓰는 최신 값은 ref 로 읽는다
   const gate = useRef({
     blocked,
     threshold,
-    input: { type: 'EARTHQUAKE' as const, magnitude, epicenter },
+    input: epicenter ? { type: 'EARTHQUAKE' as const, magnitude, epicenter } : null,
   });
-  gate.current = { blocked, threshold, input: { type: 'EARTHQUAKE', magnitude, epicenter } };
+  gate.current = {
+    blocked,
+    threshold,
+    input: epicenter ? { type: 'EARTHQUAKE', magnitude, epicenter } : null,
+  };
   // 같은 순간 이벤트가 여러 번 와도 한 번만 보내도록 상태가 아니라 ref 로 바로 잠근다
   const lockRef = useRef<number | null>(null);
   const shownAt = useRef(0);
@@ -150,9 +161,12 @@ export default function ShakeRemotePage() {
       lastTriggeredAt: lockRef.current,
       now: nowMs,
     });
-    if (!fire) return;
+    if (!fire || !input) return;
     lockRef.current = nowMs;
     setLastTriggeredAt(nowMs);
+    // 한 번 보내면 감지를 끈다. 켜 둔 채 종료하면 다음 흔들림이 재난을 또 낸다
+    setArmed(false);
+    setIsConfirmed(false);
     navigator.vibrate?.([200, 100, 200]);
     createRef.current(input);
   }
@@ -165,6 +179,35 @@ export default function ShakeRemotePage() {
     window.addEventListener('devicemotion', listener);
     return () => window.removeEventListener('devicemotion', listener);
   }, [armed]);
+
+  // 다른 기기에서 재난이 생겨도 같다
+  useEffect(() => {
+    if (!hasActive) return;
+    setArmed(false);
+    setIsConfirmed(false);
+  }, [hasActive]);
+
+  useEffect(() => {
+    if (!isPressedOnce) return;
+    const timer = window.setTimeout(() => setIsPressedOnce(false), PRESS_AGAIN_MS);
+    return () => window.clearTimeout(timer);
+  }, [isPressedOnce]);
+
+  function handleConfirm(checked: boolean) {
+    setIsConfirmed(checked);
+    if (checked) return;
+    setArmed(false);
+    setIsPressedOnce(false);
+  }
+
+  function handleSimulate() {
+    if (!isPressedOnce) {
+      setIsPressedOnce(true);
+      return;
+    }
+    setIsPressedOnce(false);
+    handleSample(clampThreshold(threshold) + 15, true);
+  }
 
   async function handleArm() {
     if (armed) {
@@ -214,7 +257,7 @@ export default function ShakeRemotePage() {
         <p className="text-body-medium">
           {t('Shake or drop the phone to declare a disaster (simulated drill disaster).')}
         </p>
-        <BigSimulatedBadge />
+        {(!latest || latest.simulated) && <BigSimulatedBadge />}
       </div>
 
       <section
@@ -287,7 +330,7 @@ export default function ShakeRemotePage() {
               })
             }
           >
-            {t('End simulation')}
+            {latest.simulated ? t('End simulation') : t('End disaster')}
           </RoleButton>
         </section>
       ) : (
@@ -329,6 +372,13 @@ export default function ShakeRemotePage() {
             <p className="text-caption text-fg-muted">
               {t('The epicenter is placed on this environment.')}
             </p>
+            {environment && !epicenter && (
+              <p role="alert" className="text-small text-danger-fg">
+                {t(
+                  'This environment has no coordinates, so nothing can be sent. Pick another one.',
+                )}
+              </p>
+            )}
           </div>
 
           <div className="flex flex-col gap-1.5">
@@ -351,6 +401,20 @@ export default function ShakeRemotePage() {
               </SelectContent>
             </Select>
           </div>
+
+          <div className="flex flex-col gap-2 rounded-lg bg-danger-bg p-3 text-small text-danger-fg">
+            <p>{t('The disaster is simulated, but the migrations it starts are real.')}</p>
+            <p>{t('Every service on the affected environment moves, not only the one above.')}</p>
+            <label className="flex items-start gap-2 text-body-medium">
+              <input
+                type="checkbox"
+                className="mt-0.5 size-4 accent-brand"
+                checked={isConfirmed}
+                onChange={(event) => handleConfirm(event.target.checked)}
+              />
+              {t('I understand real traffic will move')}
+            </label>
+          </div>
         </>
       )}
 
@@ -363,11 +427,7 @@ export default function ShakeRemotePage() {
           <code className="break-all font-mono text-small" data-testid="disaster-id">
             {result.id}
           </code>
-          {result.simulated && (
-            <span className="w-fit rounded-xs bg-warning-bg px-2 font-mono text-body-medium font-bold text-warning-fg">
-              simulated
-            </span>
-          )}
+          {result.simulated && <SimulatedBadge />}
           {plans.length === 0 ? (
             <p className="text-small text-fg-secondary">
               {t('No emergency migration plan was created.')}
@@ -404,6 +464,11 @@ export default function ShakeRemotePage() {
             {t('Requires {{role}}', { role: ROLE_LABELS.DEVELOPER })}
           </p>
         )}
+        {active.isError && (
+          <p role="alert" className="rounded-lg bg-danger-bg p-3 text-small text-danger-fg">
+            {t('Could not check for active disasters. Sending stays blocked until this loads.')}
+          </p>
+        )}
         {support === 'denied' && (
           <p role="alert" className="rounded-lg bg-danger-bg p-3 text-small text-danger-fg">
             {t('Motion permission was denied. Allow motion access in Safari settings and reload.')}
@@ -423,7 +488,7 @@ export default function ShakeRemotePage() {
           requires="DEVELOPER"
           variant={armed ? 'outline' : 'destructive'}
           className="h-20 w-full text-h3"
-          disabled={Boolean(latest)}
+          disabled={!armed && notReady}
           onClick={handleArm}
         >
           <TriangleAlert aria-hidden />
@@ -438,10 +503,10 @@ export default function ShakeRemotePage() {
           variant="ghost"
           className="h-10"
           disabled={blocked || lockLeft > 0}
-          onClick={() => handleSample(clampThreshold(threshold) + 15, true)}
+          onClick={handleSimulate}
         >
           <Vibrate aria-hidden />
-          {t('Simulate an impact')}
+          {isPressedOnce ? t('Press again to move traffic') : t('Simulate an impact')}
         </RoleButton>
       </div>
     </main>

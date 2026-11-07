@@ -47,7 +47,7 @@ src/
 │  ├─ disaster/          # 재난 시뮬레이션 다이얼로그(S01-D) · 지도(DisasterMap, d3-geo + world-atlas 50m 지연 로드)
 │  └─ *.tsx              # 두 화면 이상에서 쓰는 앱 컴포넌트 (Panel, RoleButton, StatusBadge, SimulatedBadge, ProviderLabel, FormField, ConfirmDeleteDialog, ExternalLink, EmptyState, ErrorState, ScreenErrorBoundary, Logo, OrthoGlobe, 등록·배포 다이얼로그(EnvironmentFormDialog · RegisterServiceDialog · DeployDialog) …)
 ├─ layouts/AppShell.tsx  # 사이드바(워드마크 · Operate/Resilience/Govern 묶음 · 사용자 메뉴=테마·로그아웃) + 상단 바(브레드크럼 · Org 선택 · Simulate disaster · 알림)
-├─ pages/                # 화면 단위 폴더 (login/, root/, landing/(L01 소개), onboarding/(O01~O03), dashboard/(조직 개요 · 서비스 Overview 칸), services/(목록 · 서비스 작업 공간 탭), evacuation/, migrations/, security/, audit/, remote/(S01-R 휴대폰 리모컨), settings/, dev/). 한 화면에서만 쓰는 컴포넌트는 그 폴더 안에
+├─ pages/                # 화면 단위 폴더 (login/, root/, landing/(L01 소개), onboarding/(O01~O03), dashboard/(조직 개요 · 서비스 Overview 칸), services/(목록 · 서비스 작업 공간 탭), evacuation/, migrations/, security/, audit/, remote/(S01-R 휴대폰 리모컨 · R2b 충격 트리거), settings/, dev/). 한 화면에서만 쓰는 컴포넌트는 그 폴더 안에
 ├─ hooks/                # useTheme(테마 3개, localStorage), useRole(현재 조직 역할), useNow(경과 시간), usePrefersReducedMotion, useInViewOnce(처음 화면에 들어오면 true)
 ├─ lib/
 │  ├─ api/               # client(api = openapi-fetch + unwrap, 스키마 밖 경로는 apiFetch) · errors · notify · form-errors(422 → 칸 오류)
@@ -60,6 +60,7 @@ src/
 │  ├─ migration-*.ts     # 이전 단계 시간(stages) · 결과 숫자(metrics). 두 화면 이상에서 쓴다
 │  ├─ deploy-stages.ts   # 배포 단계 상태 · 시간
 │  ├─ env-file.ts        # 붙여 넣은 .env 를 키 · 값으로 나눈다
+│  ├─ shake.ts           # 충격 트리거 판정(가속도 크기 · 임계 · 잠금 · 센서 권한) 순수 함수
 │  ├─ route-prefetch.ts  # 메뉴 의도(마우스 올림 · 포커스) 때 화면 청크 미리 받기 · route-pattern.ts(Sentry 화면 이름)
 │  ├─ geo.ts             # 리전·도시 → 좌표(계약 4-1 🆕 전까지), 거리 계산
 │  ├─ i18n.ts            # 번역 t · k, 언어 감지 · 저장. 영어 문구가 키다
@@ -256,3 +257,4 @@ docs/                    # api-contract.md, perf.md(성능 측정 방법 · 기�
 | 11/7 | 게이트가 C-AI-1 로 승인을 막으면 그 줄에 도착 환경 사전 점검 링크를 둔다 | 11/6 전체 테스트에서 복귀가 도쿄 사전 점검 기록이 없어 막혔다 |
 | 11/7 | 배포 실패 AI 진단은 운영 API(`POST …/deploy-requests/{id}/diagnosis`)를 누를 때만 부른다. 서버 값이 `simulated` 면 배지를 달고, 패치를 승인하면 만들어진 재배포로 잇는다. 패치가 없거나 진단을 못 쓰면 규칙 분류로 고치기 버튼 하나를 고르고 `simulated` 를 단다 | echo-was #98. 화면을 여는 것만으로 진단 실행을 만들지 않는다. 진단이 멈춰도 시연이 막히지 않게 한다 |
 | 11/7 | 재난 출처는 `SIMULATED` · `LIVE_FEED`(USGS) · `FEED_INJECTED` 를 배지로 나누고 `simulated` 는 서버 값을 따른다. 피드 재난은 계획이 없어 "대피 계획 만들기" 를 확인 창을 거쳐 부른다. 피드 상태는 재난 다이얼로그와 대피 화면에 30초 폴링으로 보인다. 주입 버튼은 화면에 두지 않는다 | frontend #94. 자기 승인이 켜져 있으면 이전이 바로 시작돼 버튼 하나로 보내지 않는다. 시연 주입은 어드민이 서버에서 한다 |
+| 11/7 | 충격 트리거(R2b, `/o/:slug/remote/shake`)는 실제 이전을 밝히고 체크해야 감지 · 흉내내기가 된다. 한 번 보내면 감지와 체크가 풀린다. 흉내내기는 5초 안에 두 번 눌러야 보낸다. 진행 중 재난을 모르면(로딩 · 조회 실패) 보내지 않는다. `/remote` 는 `echo-demo` 를 먼저 고른다 | 재난은 시뮬레이션이어도 이전은 실제다. 켜 둔 채 종료하면 다음 흔들림이 재난을 또 냈다. 개인 조직으로 가면 시연 대시보드에 재난이 보이지 않는다 |
