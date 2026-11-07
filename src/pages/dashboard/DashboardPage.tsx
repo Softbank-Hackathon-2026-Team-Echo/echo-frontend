@@ -19,6 +19,7 @@ import { ActiveDisasterCard } from './ActiveDisasterCard';
 import { AiResidencyPanel } from './AiResidencyPanel';
 import { CloudCostPanel } from './CloudCostPanel';
 import { CompletionCard, recentCompletion } from './CompletionCard';
+import { DemoRestoreButton } from './DemoRestoreDialog';
 import { EnvironmentsPanel } from './EnvironmentsPanel';
 import { RecentActivity } from './RecentActivity';
 import { ServiceCard } from './ServiceCard';
@@ -111,6 +112,9 @@ export default function DashboardPage() {
             </Link>
           </Button>
         )}
+        <span className={running ? undefined : 'ml-auto'}>
+          <DemoRestoreButton orgId={organization.id} />
+        </span>
         {latest && latest.affectedEnvironmentIds.length > 0 && (
           <Button asChild variant="destructive" size="sm">
             <Link to={`/o/${organization.slug}/evacuation`}>
