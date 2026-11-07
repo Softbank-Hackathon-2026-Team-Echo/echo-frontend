@@ -254,7 +254,7 @@ data: {"seq": 1042, "ts": "2026-11-07T03:05:40Z", "orgId": "…", "resource": {"
 | W1 | 첫 배포 전 변수 저장. `POST …/services/{id}/environments/{envId}/connect` 로 연결을 먼저 만들거나 연결 없이 `PUT …/variables/{key}` 를 받는다 | 첫 배포 뒤 변수를 넣고 다시 배포한다 |
 | W2 | `GET …/services/{id}/env-template?ref=` → `{ keys: [{ key, required, comment }], source }`. 저장소 `.env.example` 기준 | 붙여넣기만 쓴다 |
 | W3 | 배포 요청 상세에 `failure: { exitCode, reason, logTail: string[] }`. 실패한 Pod 가 지워지기 전에 읽고 비밀값을 지운다 | 오류 코드와 변수 안내만 보인다 |
-| W4 | 배포 요청에 `standbyEnvironmentIds: string[]` | 환경마다 배포한다 |
+| W4 ✅ | 배포 요청에 `standbyEnvironmentIds: string[]`(최대 5개) | 운영 API 에 있다. 배포 창이 고른 목록을 보내고 고르지 않으면 빈 목록을 보낸다 |
 | W5 | `PUT …/variables` 일괄 저장 (선택) | 화면이 키 × 환경 수만큼 부른다 |
 
 W3 은 ai-agent #22 의 실패 로그 입력과 같은 값이다.
