@@ -75,6 +75,7 @@ src/
 scripts/                # gen-api.mjs(API 타입) · trim-atlas.mjs(지도 데이터) · check-bundle.mjs(번들 예산) · check-i18n.mjs(빠진 번역)
 .github/workflows/ci.yml # PR · main 에서 lint · typecheck · test · build · 번들 예산
 public/_headers          # Cloudflare Pages 응답 헤더(클릭재킹 방지 · 권한 끔 · /assets 1년 캐시)
+functions/onprem-probe.js # Cloudflare Pages Function. 온프레 감시 화면이 손님 · 감시자 주소를 같은 출처로 부른다(호스트 · 경로 고정 목록)
 specs/                   # 태스크 명세
 docs/                    # api-contract.md, perf.md(성능 측정 방법 · 기준선), i18n-glossary.md(번역 용어표), demo-script.md(시연 대본), manual-test.md(손으로 돌리는 전체 흐름), PR.md(커밋 안 함)
 .claude/launch.json      # 브라우저 미리보기용 개발 서버 설정
@@ -264,3 +265,4 @@ docs/                    # api-contract.md, perf.md(성능 측정 방법 · 기�
 | 11/7 | 실행 중이던 이전 계획이 끝나면(계획 목록 · 상세를 다시 부를 때 실행 중 → 끝으로 바뀐 것을 보면) 그 서비스 · 서비스 목록 · 환경을 다시 부른다 | 11/7 리허설: 이전이 끝난 뒤에도 서비스 개요가 새로고침 전까지 출발 환경 100% 를 그렸다. 트래픽 비율은 서비스 응답에 있다 |
 | 11/7 | 프론트 28은 5·10·25·50·75·100% 6칸 요청(기본 `[7,10,20,30,30,30]`)과 최소 관찰 3초 예상 시간을 쓴다. 막대·숫자는 700ms 동안 바뀌고 움직임 줄이기면 즉시 반영한다. A·B 그래프는 서버 단계 시작 시각의 계단선이다 | 확정 SPEC `specs/fe-28-smooth-canary.md`가 11/5 곡선 결정을 대체한다. 서버 #133 배포 뒤 병합하며 저장된 옛 단계는 그대로 그린다 |
 | 11/8 | 배포 상세 오른쪽에 "예비 환경" 칸을 두고 따라가기 요청을 이번 배포에서 요청한 예비(`standbyEnvironmentIds` 에 있음)와 기존 예비 따라가기로 나눈다. 요청했는데 따라가기가 없으면 주 배포 전에는 대기, 성공 뒤에는 건너뜀이다 | 프론트 #99: 서버는 둘 다 `STANDBY_SYNC` 로 만든다. 빈 목록을 예비 끄기로, 건너뜀을 실패로 읽지 않게 한다 |
+| 11/8 | 노트북 온프레 시연(④) 발표 화면 `/o/:slug/remote/onprem` 은 손님 주소 `/api/info` 를 2초마다(앞 요청 뒤) 불러 응답 환경 · 최근 60건 · 실패 수 · 마지막 전환(옛 환경 마지막 응답 → 새 환경 첫 응답 초)을 보인다. 부르는 길은 Pages Function `functions/onprem-probe.js` 이고 호스트는 `(demo\|hb\|watch)-*.echoport.uk`, 경로는 `/api/info` · `/hb` · `/state` · `/healthz` 만 받는다 | 데모 앱 · 감시자에 CORS 헤더가 없어 브라우저가 직접 읽지 못한다. 아무 주소나 대신 부르는 프록시가 되지 않게 목록을 고정하고 쿠키를 넘기지 않는다. 기록은 브라우저에만 둔다 |
