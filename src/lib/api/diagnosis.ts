@@ -1,12 +1,7 @@
-// 시뮬레이션: 배포 실패 AI 진단 API(echo-ai-agent #22)가 아직 없다. 서버가 준 실패 코드 · 오류 문장 ·
-// 컨테이너 마지막 로그(failure.logTail, echo-was #97)로 규칙 분류만 하고, 화면에는 항상 simulated 배지를 단다.
-// API 가 생기면 DIAGNOSIS_API_READY 를 켜고 api + unwrap 으로 바꾼다
+// 시뮬레이션: 진단 API(POST /deploy-requests/{id}/diagnosis)를 부를 수 없거나 패치가 없을 때만 쓰는 규칙 분류다.
+// 고치기 버튼 하나를 고르는 데 쓰고, 이 값을 그릴 때는 항상 simulated 배지를 단다
 import { k } from '@/lib/i18n';
-import { type DeployRequestDetail, deployFailure } from './types';
-
-export const DIAGNOSIS_API_READY = false;
-
-export type DiagnosisCategory = 'CONFIG' | 'BUILD' | 'RUNTIME' | 'PLATFORM';
+import { type DeployRequestDetail, type DiagnosisCategory, deployFailure } from './types';
 
 /** 고치기 버튼 하나가 하는 일. 모두 이미 있는 화면 동작으로 이어진다 */
 export type DiagnosisFix =
@@ -31,6 +26,7 @@ export type Diagnosis = {
 };
 
 export const CATEGORY_LABELS: Record<DiagnosisCategory, string> = {
+  CODE: k('Code error'),
   CONFIG: k('Config error'),
   BUILD: k('Build error'),
   RUNTIME: k('Runtime error'),
@@ -72,7 +68,7 @@ export function findVariable(message: string | null | undefined): string | null 
 
 /** 실패한 배포 요청을 규칙으로 분류한다. 실패가 아니면 null */
 export function diagnoseDeploy(
-  request: Pick<DeployRequestDetail, 'status' | 'errorCode' | 'errorMessage'>,
+  request: Pick<DeployRequestDetail, 'status' | 'errorCode' | 'errorMessage' | 'failure'>,
 ): Diagnosis | null {
   if (request.status !== 'FAILED') return null;
   const failure = deployFailure(request);

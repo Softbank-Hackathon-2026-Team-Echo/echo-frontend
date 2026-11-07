@@ -107,6 +107,8 @@ export function PlanDraft({
         requiredRequests: required,
         maxWaitSeconds,
         rollbackConditions: conditions,
+        // 쓰기 전환은 사람이 스크립트로 돌린다. 서버 실행기가 꺼져 있으면 true 는 409 다
+        includeCutover: false,
         ...(simulate ? { simulate } : {}),
       },
       { onSuccess: onCreated },

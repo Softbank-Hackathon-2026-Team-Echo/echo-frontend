@@ -79,6 +79,7 @@ const tokyoQuake: Disaster = {
   meetsThreshold: true,
   unknownEnvironmentIds: [],
   createdBy: { id: 'u1', login: 'echoport' },
+  feedEvent: null,
   endedBy: null,
   plans: [],
   radiusKm: 302,

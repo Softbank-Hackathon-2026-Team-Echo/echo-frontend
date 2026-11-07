@@ -58,5 +58,7 @@
   "The image scan found problems in the sandbox.": "샌드박스 이미지 스캔에서 문제를 찾았습니다.",
   "The app failed its health check in the sandbox.": "샌드박스에서 앱 헬스 체크에 실패했습니다.",
   "Finished {{time}}": "{{time}} 완료",
-  "Applying in the sandbox…": "샌드박스에 반영하는 중…"
+  "Applying in the sandbox…": "샌드박스에 반영하는 중…",
+  "Open the redeploy": "다시 배포 보기",
+  "The redeploy did not start.": "다시 배포가 시작되지 않았습니다."
 }

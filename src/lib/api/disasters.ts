@@ -1,5 +1,5 @@
-// 재난 (API 서버 9, echo-was docs/api/disasters.md). 재난은 늘 시뮬레이션이지만, 기준을 넘으면 서버가
-// 피해 서비스의 긴급 이전 계획을 만들고 자기 승인이 켜진 조직에서는 실제 이전이 바로 시작된다
+// 재난 (API 서버 9 · 18, echo-was docs/api/disasters.md). 버튼 재난은 기준을 넘으면 서버가 긴급 이전 계획을
+// 만든다. 피드 재난은 계획 없이 생기고 사람이 대피 계획을 만들어야 한다. 이전은 어느 쪽이든 실제다
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { type LatLng, nearLabel } from '../geo';
 import { k } from '../i18n';
@@ -35,8 +35,7 @@ export const DISASTER_MAGNITUDES = Array.from({ length: 21 }, (_, index) =>
 /** 화면 안내용 지진 규모 기준. 실제 판정은 서버 meetsThreshold 다 */
 export const EVACUATION_MIN_MAGNITUDE = 7;
 
-/** 실제 지진 피드 후보 (11/2 2부). 시간이 되면 붙인다 */
-export const LIVE_FEED = { name: 'P2P地震情報', ready: false } as const;
+const FEED_POLL_MS = 30_000;
 
 /** 규모 → 영향 반경(km). 지도 원을 바로 그리려고 둔다. 서버와 같은 식이다(M7.2 → 302km) */
 export function radiusForMagnitude(magnitude: number): number {
@@ -63,6 +62,21 @@ export function useActiveDisasters(orgId: string | undefined) {
     select: (page) => [...page.items].reverse().map(withEpicenterLabel),
     enabled: Boolean(orgId),
     refetchInterval: DISASTER_POLL_MS,
+  });
+}
+
+/** 실제 지진 피드의 연결 상태. 꺼져 있으면 꺼짐으로 보인다 */
+export function useLiveFeedStatus(orgId: string | undefined) {
+  return useQuery({
+    queryKey: [...queryKeys.disasters(orgId ?? ''), 'feed'],
+    queryFn: () =>
+      unwrap(
+        api.GET('/api/v1/orgs/{org_id}/disasters/feed', {
+          params: { path: { org_id: orgId ?? '' } },
+        }),
+      ),
+    enabled: Boolean(orgId),
+    refetchInterval: FEED_POLL_MS,
   });
 }
 
@@ -107,6 +121,20 @@ export function useCreateDisaster(orgId: string) {
         api.POST('/api/v1/orgs/{org_id}/disasters', {
           params: { path: { org_id: orgId } },
           body: input,
+        }),
+      ),
+    onSuccess: invalidate,
+  });
+}
+
+/** 피드 재난은 제안만 온다. 누른 사람이 계획을 만들고, 자기 승인이 켜져 있으면 이전이 바로 시작된다 */
+export function useEvacuateDisaster(orgId: string) {
+  const invalidate = useInvalidateDisasters(orgId);
+  return useMutation({
+    mutationFn: (disasterId: string) =>
+      unwrap(
+        api.POST('/api/v1/orgs/{org_id}/disasters/{disaster_id}/evacuate', {
+          params: { path: { org_id: orgId, disaster_id: disasterId } },
         }),
       ),
     onSuccess: invalidate,

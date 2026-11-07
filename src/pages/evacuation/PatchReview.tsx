@@ -1,4 +1,6 @@
 import { CircleCheck, CircleX } from 'lucide-react';
+import { Link } from 'react-router';
+import { ExternalLink } from '@/components/ExternalLink';
 import { RoleButton } from '@/components/RoleButton';
 import { SimulatedBadge } from '@/components/SimulatedBadge';
 import { StatusBadge } from '@/components/StatusBadge';
@@ -33,10 +35,18 @@ type PatchReviewProps = {
   precheckId: string;
   patch: PrecheckPatch;
   number: number;
+  /** 진단 패치가 만든 재배포로 가는 주소 */
+  deployLink?: (id: string) => string;
 };
 
 /** 샌드박스 반영 실행의 결과. 브랜치 · 커밋은 러너 결과가 나온 뒤에만 찬다 */
-function ApplyResult({ apply }: { apply: NonNullable<PrecheckPatch['apply']> }) {
+function ApplyResult({
+  apply,
+  deployLink,
+}: {
+  apply: NonNullable<PrecheckPatch['apply']>;
+  deployLink?: (id: string) => string;
+}) {
   return (
     <div className="flex flex-col gap-1 border-t border-line px-4 py-3 text-small">
       {apply.failureCode && (
@@ -59,12 +69,24 @@ function ApplyResult({ apply }: { apply: NonNullable<PrecheckPatch['apply']> }) 
         )}
         {apply.simulated && <SimulatedBadge />}
       </p>
+      {apply.pullRequestUrl && <ExternalLink href={apply.pullRequestUrl} />}
+      {apply.redeployRequestId && deployLink && (
+        <Link to={deployLink(apply.redeployRequestId)} className="text-brand hover:underline">
+          {t('Open the redeploy')}
+        </Link>
+      )}
+      {apply.redeployRejectedCode && (
+        <p className="text-warning-fg">
+          {t('The redeploy did not start.')}{' '}
+          <span className="font-mono text-mono">{apply.redeployRejectedCode}</span>
+        </p>
+      )}
     </div>
   );
 }
 
 /** 러너가 낸 수정안 하나. 사람이 승인 · 거절한다(F15). 막힌 패치는 승인 버튼이 없다 */
-export function PatchReview({ orgId, precheckId, patch, number }: PatchReviewProps) {
+export function PatchReview({ orgId, precheckId, patch, number, deployLink }: PatchReviewProps) {
   const decide = usePatchDecision(orgId, precheckId);
   const { passed, total } = patch.verification;
   const failed = passed < total;
@@ -98,7 +120,7 @@ export function PatchReview({ orgId, precheckId, patch, number }: PatchReviewPro
           </span>
         ))}
       </pre>
-      {patch.apply && <ApplyResult apply={patch.apply} />}
+      {patch.apply && <ApplyResult apply={patch.apply} deployLink={deployLink} />}
       <footer className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
         <span
           className={cn(

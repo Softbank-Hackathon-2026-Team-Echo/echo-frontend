@@ -128,8 +128,6 @@
   "No threshold yet. Every typhoon counts.": "아직 기준이 없어 모든 태풍을 대상으로 합니다.",
   "Source": "출처",
   "Manual (simulated)": "수동 (simulated)",
-  "Live feed ({{name}}) connected": "실시간 피드({{name}}) 연결됨",
-  "Live feed ({{name}}) not connected yet": "실시간 피드({{name}}) 연결 전",
   "{{total}} environment affected": "영향받는 환경 {{total}}개",
   "{{total}} environments affected": "영향받는 환경 {{total}}개",
   "{{total}} safe target": "안전한 환경 {{total}}개",
@@ -151,5 +149,15 @@
   "Loading": "불러오는 중",
   "Exception": "예외",
   "Exception: {{reason}}": "예외: {{reason}}",
-  "Expires {{time}}": "만료 {{time}}"
+  "Expires {{time}}": "만료 {{time}}",
+  "Live feed ({{name}})": "실시간 피드({{name}})",
+  "Checked {{time}}": "마지막 조회 {{time}}",
+  "Place": "위치",
+  "Occurred": "발생 시각",
+  "Nearest environment": "가장 가까운 환경",
+  "Feed threshold met": "피드 기준 충족",
+  "Create evacuation plans": "대피 계획 만들기",
+  "Create plans": "계획 만들기",
+  "If self-approval is on, the migration starts right away.": "자기 승인이 켜져 있으면 이전이 바로 시작됩니다.",
+  "End disaster": "재난 종료"
 }

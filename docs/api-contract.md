@@ -141,9 +141,12 @@ data: {"seq": 1042, "ts": "2026-11-07T03:05:40Z", "orgId": "…", "resource": {"
 | 만들기 | `POST …/disasters` `{type, epicenter{lat, lng}, magnitude}` → 201 `Disaster` (개발자, 사람만) |
 | 조회 | `GET …/disasters?status=ACTIVE\|ENDED&page&size` · `GET …/disasters/{id}` |
 | 종료 | `POST …/disasters/{id}/end` → `ENDED`. 복귀 잠금이 풀린다 |
+| 피드 상태 | `GET …/disasters/feed` → `{provider, connectionStatus, lastPolledAt, lastErrorCode, threshold{minMagnitude, radiusKm}, evacuation …}`. 30초마다 다시 부른다 |
+| 대피 계획 | `POST …/disasters/{id}/evacuate` → 200 `Disaster`. 피드 재난은 `plans = []` 로 생겨 사람이 부른다. 409 `DISASTER_NOT_ACTIVE` |
 
 - `Disaster`: `{id, type, source, simulated, magnitude, epicenter, radiusKm, meetsThreshold, status, affectedEnvironmentIds[], safeEnvironmentIds[], unknownEnvironmentIds[], createdBy, endedBy, startedAt, endedAt, plans[{serviceId, planId, outcome, reason, targetEnvironmentId, planStatus}]}`.
 - 건너뛴 서비스는 만들기 응답의 `plans` 에만 있어서 화면은 그 순간 토스트로 알린다. `epicenterLabel` 은 서버에 없어 좌표로 만든다.
+- `source` 는 `SIMULATED` · `LIVE_FEED`(`simulated: false`) · `FEED_INJECTED` 다. 피드 재난은 `createdBy` 가 `null` 이고 `feedEvent {provider, eventId, place, occurredAt, depthKm, url, nearestDistanceKm}` 가 있다.
 - 지진 M7.0 이상, 태풍은 늘 기준을 넘는다. 기준 미달은 저장만 하고 복귀 · 도착을 막지 않는다. M7.2 반경은 302km 다.
 - 계획 요약 · 상세에 `disasterId`, 상세에 `failback {allowed, reason, disasterId}` 가 있다. 복귀 버튼은 `failback.allowed` 를 따른다. 끝나지 않은 재난의 피해 환경으로 계획을 만들면 409 `DISASTER_ACTIVE` 다.
 - 실시간 채널이 없어 진행 중인 재난은 5초마다 다시 부른다.
@@ -253,6 +256,13 @@ data: {"seq": 1042, "ts": "2026-11-07T03:05:40Z", "orgId": "…", "resource": {"
 | W5 | `PUT …/variables` 일괄 저장 (선택) | 화면이 키 × 환경 수만큼 부른다 |
 
 W3 은 ai-agent #22 의 실패 로그 입력과 같은 값이다.
+
+### 4-10. 배포 실패 진단 ✅
+
+- 시작: `POST …/deploy-requests/{id}/diagnosis` → 201 `PrecheckDetail`(`kind: CHANGE_PROPOSAL`), 이미 있으면 200. 409 `DEPLOY_NOT_FAILED` · `SERVICE_DELETING` · `PRECHECK_IN_PROGRESS`
+- 배포 상세의 `diagnosis {runId, status}` 로 다시 들어와도 같은 실행을 본다. 결과는 `GET …/prechecks/{id}` 의 `diagnosis {result, category, cause, fixable, unfixableReason, evidence[]}` 와 `patches[]` 다
+- 패치 승인 뒤 `apply.redeployRequestId` 가 차면 그 배포로 잇고, `redeployRejectedCode` 면 코드를 보인다. `pullRequestUrl` 은 아직 `null` 이다
+- 러너가 꺼져 있으면 서버가 가짜 진단을 주고 `simulated: true` 다
 
 ## 5. 열린 질문
 

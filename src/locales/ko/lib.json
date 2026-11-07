@@ -188,5 +188,10 @@
   "Copy": "복사",
   "capacity": "용량",
   "patch #3": "패치 #3",
-  "Replication lag could not be read. A failback needs the DB cutover first": "복제 지연을 읽지 못했습니다. 복귀 전에 DB 쓰기 전환이 필요합니다"
+  "Replication lag could not be read. A failback needs the DB cutover first": "복제 지연을 읽지 못했습니다. 복귀 전에 DB 쓰기 전환이 필요합니다",
+  "Waiting": "대기 중",
+  "Off": "꺼짐",
+  "Error": "오류",
+  "Real earthquake · USGS": "실제 지진 · USGS",
+  "Demo injection": "시연 주입"
 }
