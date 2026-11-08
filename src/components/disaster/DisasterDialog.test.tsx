@@ -126,4 +126,17 @@ describe('DisasterDialog', () => {
     await waitFor(() => expect(submit).toBeEnabled());
     expect(screen.queryByRole('checkbox')).not.toBeInTheDocument();
   });
+
+  it('휴대폰 QR 은 시연에 쓰는 흔들기 트리거 주소를 담는다', async () => {
+    serve();
+    renderDialog();
+
+    await userEvent.click(await screen.findByText('Open the remote on a phone'));
+
+    expect(
+      await screen.findByRole('img', {
+        name: `${window.location.origin}/o/echo-demo/remote/shake`,
+      }),
+    ).toBeInTheDocument();
+  });
 });
