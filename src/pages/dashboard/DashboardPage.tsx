@@ -19,6 +19,7 @@ import { ActiveDisasterCard } from './ActiveDisasterCard';
 import { AiResidencyPanel } from './AiResidencyPanel';
 import { CloudCostPanel } from './CloudCostPanel';
 import { CompletionCard, recentCompletion } from './CompletionCard';
+import { DemoSnapshotCard } from './DemoSnapshotCard';
 import { EnvironmentsPanel } from './EnvironmentsPanel';
 import { RecentActivity } from './RecentActivity';
 import { ServiceCard } from './ServiceCard';
@@ -121,6 +122,8 @@ export default function DashboardPage() {
       </div>
 
       {!details.isPending && <SetupBanner orgSlug={organization.slug} progress={setup} />}
+
+      <DemoSnapshotCard orgId={organization.id} />
 
       {latest && (
         <ActiveDisasterCard
