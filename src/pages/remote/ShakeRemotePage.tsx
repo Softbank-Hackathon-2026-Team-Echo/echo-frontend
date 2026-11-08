@@ -18,6 +18,7 @@ import { useNow } from '@/hooks/useNow';
 import {
   DISASTER_MAGNITUDES,
   type DisasterPlan,
+  EVACUATION_MIN_MAGNITUDE,
   useActiveDisasters,
   useCreateDisaster,
   useEndDisaster,
@@ -128,7 +129,9 @@ export default function ShakeRemotePage() {
   const hasActive = Boolean(latest);
   const allowed = organization ? hasRole(organization.role, 'DEVELOPER') : false;
   // 진행 중 재난을 모르는 동안(목록 로딩 · 조회 실패)은 보내지 않는다
-  const notReady = hasActive || !active.isSuccess || !epicenter || !isConfirmed;
+  // 기준 미만이면 서버가 이전을 만들지 않아 실제 트래픽 확인이 필요 없다
+  const movesTraffic = magnitude >= EVACUATION_MIN_MAGNITUDE;
+  const notReady = hasActive || !active.isSuccess || !epicenter || (movesTraffic && !isConfirmed);
   const blocked = notReady || create.isPending || !allowed;
 
   // 센서 콜백은 한 번만 붙이고, 판정에 쓰는 최신 값은 ref 로 읽는다
@@ -403,19 +406,28 @@ export default function ShakeRemotePage() {
             </Select>
           </div>
 
-          <div className="flex flex-col gap-2 rounded-lg bg-danger-bg p-3 text-small text-danger-fg">
-            <p>{t('The disaster is simulated, but the migrations it starts are real.')}</p>
-            <p>{t('Every service on the affected environment moves, not only the one above.')}</p>
-            <label className="flex items-start gap-2 text-body-medium">
-              <input
-                type="checkbox"
-                className="mt-0.5 size-4 accent-brand"
-                checked={isConfirmed}
-                onChange={(event) => handleConfirm(event.target.checked)}
-              />
-              {t('I understand real traffic will move')}
-            </label>
-          </div>
+          {movesTraffic ? (
+            <div className="flex flex-col gap-2 rounded-lg bg-danger-bg p-3 text-small text-danger-fg">
+              <p>{t('The disaster is simulated, but the migrations it starts are real.')}</p>
+              <p>{t('Every service on the affected environment moves, not only the one above.')}</p>
+              <label className="flex items-start gap-2 text-body-medium">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 size-4 accent-brand"
+                  checked={isConfirmed}
+                  onChange={(event) => handleConfirm(event.target.checked)}
+                />
+                {t('I understand real traffic will move')}
+              </label>
+            </div>
+          ) : (
+            <p className="rounded-lg bg-subtle p-3 text-small text-fg-secondary">
+              {t(
+                'Below M{{magnitude}}. Affected environments are flagged, but no evacuation is proposed.',
+                { magnitude: EVACUATION_MIN_MAGNITUDE.toFixed(1) },
+              )}
+            </p>
+          )}
         </>
       )}
 
@@ -507,7 +519,11 @@ export default function ShakeRemotePage() {
           onClick={handleSimulate}
         >
           <Vibrate aria-hidden />
-          {isPressedOnce ? t('Press again to move traffic') : t('Simulate an impact')}
+          {isPressedOnce
+            ? movesTraffic
+              ? t('Press again to move traffic')
+              : t('Press again to send')
+            : t('Simulate an impact')}
         </RoleButton>
       </div>
     </main>

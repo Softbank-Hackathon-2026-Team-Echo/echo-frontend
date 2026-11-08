@@ -33,5 +33,6 @@
   "This service already has an open migration plan": "このサービスにはすでに進行中の移行計画があります",
   "Traffic already left the affected environment": "トラフィックはすでに被災環境を離れています",
   "Trigger disaster": "災害を発生",
-  "{{total}} migrations started": "移行を{{total}}件開始しました"
+  "{{total}} migrations started": "移行を{{total}}件開始しました",
+  "Press again to send": "もう一度押すと送信します"
 }
