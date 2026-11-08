@@ -11,6 +11,7 @@ import { isActivePlan, useMigrationPlan, useOrgMigrationPlans } from '@/lib/api/
 import type { EnvironmentSummary, Organization, ServiceDetail } from '@/lib/api/types';
 import { t } from '@/lib/i18n';
 import { currentWeights } from '@/lib/migration-metrics';
+import type { OnpremTopologyView } from '@/pages/services/OnpremLive';
 import { ActiveDisasterCard } from './ActiveDisasterCard';
 import { CompletionCard, recentCompletion } from './CompletionCard';
 import { EnvironmentsPanel } from './EnvironmentsPanel';
@@ -30,11 +31,14 @@ export function ServiceDashboard({
   organization,
   service,
   observed,
+  onprem,
 }: {
   organization: Organization;
   service: ServiceDetail;
   /** 온프레 실시간 관측값이 콘솔 등록값과 다를 때만: 트래픽 칸에 보일 환경 · 비율과 주석 1줄 */
   observed?: { name: string; weight: number; note: string };
+  /** 온프레 연결 서비스만: 토폴로지 노드 표시 · 상태 줄 · 캡션(노트북 감시자 관측값) */
+  onprem?: OnpremTopologyView;
 }) {
   const orgId = organization.id;
   const environments = useEnvironments(orgId);
@@ -86,7 +90,7 @@ export function ServiceDashboard({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-3">
-        <StatusPill migrating={migrating} disaster={latest} names={names} />
+        <StatusPill migrating={migrating} disaster={latest} names={names} onprem={onprem?.line} />
         <span className="ml-auto text-small text-fg-muted max-wide:hidden">{t('Last 15 min')}</span>
         {running && (
           <Button asChild variant="secondary" size="sm" className="max-wide:ml-auto">
@@ -128,7 +132,13 @@ export function ServiceDashboard({
             atRisk={atRisk}
             edgeUrl={serving?.service.url}
             receivingId={receivingId}
+            alerts={onprem?.alerts}
           />
+          {onprem && (
+            <p data-testid="onprem-live-caption" className="mt-2 text-caption text-fg-muted">
+              {onprem.caption}
+            </p>
+          )}
         </Panel>
         <div className="col-span-4 flex flex-col gap-4 max-wide:col-span-6 max-sm:col-span-12">
           {latest && (

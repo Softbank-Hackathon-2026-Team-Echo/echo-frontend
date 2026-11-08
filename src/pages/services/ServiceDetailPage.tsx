@@ -32,7 +32,7 @@ import { hasRole } from '@/lib/roles';
 import { teardownErrorLabel } from '@/lib/status';
 import { ApplyChangesBar } from './ApplyChangesBar';
 import { EditServiceDialog } from './EditServiceDialog';
-import { OnpremLiveCard } from './OnpremLive';
+import { onpremTopologyView } from './OnpremLive';
 import { ServiceActivity } from './ServiceActivity';
 import { ServiceDeployments } from './ServiceDeployments';
 import { ServiceMetrics } from './ServiceMetrics';
@@ -101,6 +101,14 @@ export default function ServiceDetailPage() {
       ),
     };
   }, [service, live.trafficOn]);
+  // 「환경 상태」 카드 대신 토폴로지 안(노드 표시 · 갈래 비율 · 상태 줄)에서만 보인다
+  const onprem = useMemo(
+    () =>
+      service && live.enabled
+        ? onpremTopologyView(service, { status: live.status, trafficOn: live.trafficOn })
+        : undefined,
+    [service, live.enabled, live.status, live.trafficOn],
+  );
 
   // 서비스를 등록하면 바로 배포로 이어진다
   useEffect(() => {
@@ -256,13 +264,13 @@ export default function ServiceDetailPage() {
         </TabsList>
       </Tabs>
 
-      {tab === 'overview' && live.enabled && <OnpremLiveCard live={live} />}
       {tab === 'overview' && (
         <Suspense fallback={<Skeleton className="h-96 w-full" />}>
           <ServiceDashboard
             organization={organization}
             service={shown ?? service}
             observed={observed}
+            onprem={onprem}
           />
         </Suspense>
       )}
