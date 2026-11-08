@@ -29,9 +29,12 @@ const NO_DISASTERS: Disaster[] = [];
 export function ServiceDashboard({
   organization,
   service,
+  observed,
 }: {
   organization: Organization;
   service: ServiceDetail;
+  /** 온프레 실시간 관측값이 콘솔 등록값과 다를 때만: 트래픽 칸에 보일 환경 · 비율과 주석 1줄 */
+  observed?: { name: string; weight: number; note: string };
 }) {
   const orgId = organization.id;
   const environments = useEnvironments(orgId);
@@ -106,10 +109,16 @@ export function ServiceDashboard({
       <KpiTiles
         serving={serving}
         target={migrating}
+        observed={observed}
         summary={metrics.data?.summary}
         status={metricsStatus}
         simulated={metrics.data?.simulated}
       />
+      {observed && !migrating && (
+        <p data-testid="onprem-live-note" className="-mt-2 text-caption text-fg-muted">
+          {observed.note}
+        </p>
+      )}
 
       <div className="grid grid-cols-12 gap-4">
         <Panel title={t('Topology')} className="col-span-8 max-wide:col-span-12">

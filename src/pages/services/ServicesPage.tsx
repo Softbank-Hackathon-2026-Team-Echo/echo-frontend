@@ -29,7 +29,9 @@ import { useServiceDetails, useServices, useServicesDeployRequests } from '@/lib
 import type { DeployRequestSummary, ServiceDetail } from '@/lib/api/types';
 import { usePendingVariableCounts } from '@/lib/api/variables';
 import { t } from '@/lib/i18n';
+import { hasOnpremLink } from '@/lib/onprem-live';
 import { deployStatusView, shortSha } from '@/lib/status';
+import { OnpremLiveRowBadge } from './OnpremLive';
 
 function StatItem({
   icon: Icon,
@@ -184,6 +186,7 @@ export default function ServicesPage() {
                       </TableCell>
                       <TableCell>
                         {serving?.environment.name ?? <span className="text-fg-muted">—</span>}
+                        {detail && hasOnpremLink(detail) && <OnpremLiveRowBadge />}
                       </TableCell>
                       <TableCell>
                         {latest ? (
