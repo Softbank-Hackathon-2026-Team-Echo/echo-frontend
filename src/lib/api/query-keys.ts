@@ -50,6 +50,7 @@ export const queryKeys = {
   auditLogs: (orgId: string, filters: { actorType?: string; q?: string }) =>
     ['org', orgId, 'audit', 'logs', filters] as const,
   recentActivity: (orgId: string) => ['org', orgId, 'audit', 'recent'] as const,
+  demoSnapshot: (orgId: string) => ['org', orgId, 'demo', 'snapshot'] as const,
   // 노트북 온프레 감시 화면의 감시자 상태. EchoPort 조직 리소스가 아니라 조직 키 밖에 둔다
   onpremWatcher: (host: string) => ['onprem-watch', 'watcher', host] as const,
 };
