@@ -46,10 +46,11 @@ import {
 import { disasterPlanReasonLabel } from '@/lib/status';
 import { cn } from '@/lib/utils';
 
-// 시연 기본값 (지민 R2b): 서비스 demo · 환경 aws-tokyo · 규모 M7.2
+// 시연 기본값 (지민 R2b): 서비스 demo · 환경 aws-tokyo
 const DEFAULT_SERVICE = 'demo';
 const DEFAULT_ENVIRONMENT = 'aws-tokyo';
-const DEFAULT_MAGNITUDE = 7.2;
+// 시연 기본값: M6.8 — 7.0 이상이면 긴급 트래픽 계획이 자동 승인돼 DB 포함 이전을 막는다(2026-11-08 리허설)
+const DEFAULT_MAGNITUDE = 6.8;
 /** 화면 숫자를 이 간격보다 자주 고치지 않는다(센서는 초당 60번쯤 온다) */
 const DISPLAY_MS = 100;
 /** 흉내내기는 이 시간 안에 두 번 눌러야 보낸다. 리모컨과 같다 */

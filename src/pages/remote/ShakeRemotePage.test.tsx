@@ -148,7 +148,7 @@ describe('ShakeRemotePage', () => {
     vi.useRealTimers();
   });
 
-  it('목업임을 큰 글씨로 밝히고 기본값은 demo · aws-tokyo · M7.2 다', async () => {
+  it('목업임을 큰 글씨로 밝히고 기본값은 demo · aws-tokyo · M6.8 다', async () => {
     serve();
     renderPage();
     expect(await screen.findByTestId('simulated-badge')).toHaveTextContent('SIMULATED');
@@ -157,7 +157,7 @@ describe('ShakeRemotePage', () => {
     ).toBeInTheDocument();
     await waitFor(() => expect(screen.getByLabelText('Service')).toHaveTextContent('demo'));
     expect(screen.getByLabelText('Affected environment')).toHaveTextContent('aws-tokyo');
-    expect(screen.getByLabelText('Magnitude')).toHaveTextContent('M7.2');
+    expect(screen.getByLabelText('Magnitude')).toHaveTextContent('M6.8');
   });
 
   it('실제 이전을 밝히고 체크 전에는 감지 · 흉내내기를 막는다', async () => {
@@ -189,7 +189,7 @@ describe('ShakeRemotePage', () => {
     expect(calls).toEqual(['create']);
     expect(bodies[0]).toEqual({
       type: 'EARTHQUAKE',
-      magnitude: 7.2,
+      magnitude: 6.8,
       epicenter: { lat: 35.68, lng: 139.69 },
     });
     expect(screen.getByRole('link', { name: /Open it/ })).toHaveAttribute(
