@@ -22,6 +22,45 @@ function bars() {
   return [...section.querySelectorAll<HTMLElement>('span[style]')];
 }
 
+describe('LiveTab DB 문구', () => {
+  it('DB_CUTOVER 단계가 있으면 DB 쓰기 전환 순서, 없으면 트래픽만 옮긴다고 적는다', () => {
+    const { rerender } = render(
+      <LiveTab
+        {...props}
+        plan={canaryPlan({
+          steps: [step(1, 'SHIFT', 50, 'PASSED'), step(2, 'DB_CUTOVER', null, 'PENDING')],
+        })}
+      />,
+    );
+    expect(screen.getByTestId('db-cutover-note')).toHaveTextContent(
+      'DB writer cutover: pause writes briefly → target DB catches up to the last row → compare both ledgers → switch the writer → resume',
+    );
+    expect(screen.queryByText(/data migration engine/)).toBeNull();
+    rerender(<LiveTab {...props} plan={planAt(50)} />);
+    expect(screen.getByTestId('db-cutover-note')).toHaveTextContent(
+      'This plan moves traffic only (the DB writer stays where it is).',
+    );
+  });
+
+  it('DB_CUTOVER 진행 중이면 「DB 맞추는 중」 상태 줄을 스피너와 보인다', () => {
+    const { rerender } = render(
+      <LiveTab
+        {...props}
+        plan={canaryPlan({
+          steps: [step(1, 'SHIFT', 100, 'PASSED'), step(2, 'DB_CUTOVER', null, 'RUNNING')],
+        })}
+      />,
+    );
+    const line = screen.getByTestId('db-phase-line');
+    expect(line).toHaveTextContent(
+      'Syncing DB — writes paused, target DB catching up and ledgers being compared',
+    );
+    expect(line.querySelector('svg')).toHaveClass('motion-safe:animate-spin');
+    rerender(<LiveTab {...props} plan={planAt(50)} />);
+    expect(screen.queryByTestId('db-phase-line')).toBeNull();
+  });
+});
+
 describe('LiveTab', () => {
   it('비율 막대 2개를 유지하고 700ms 전환과 숫자 중간값을 보인다', () => {
     const { rerender } = render(<LiveTab {...props} plan={planAt(0)} />);

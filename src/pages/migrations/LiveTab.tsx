@@ -1,10 +1,13 @@
+import { LoaderCircle } from 'lucide-react';
 import { TrafficChart } from '@/components/TrafficChart';
 import { useAnimatedNumber } from '@/hooks/useAnimatedNumber';
 import type { MigrationPlan } from '@/lib/api/types';
 import { t } from '@/lib/i18n';
 import {
   currentWeights,
+  dbPhaseLine,
   failedRequests,
+  hasDbCutover,
   latestP95,
   maxReplicationLag,
   weightTimeline,
@@ -99,6 +102,7 @@ export function LiveTab({
     (step) => step.kind === 'SHIFT' && step.result?.status === 'PENDING',
   );
   const conditions = plan.rollbackConditions;
+  const dbPhase = dbPhaseLine(plan);
 
   return (
     <div className="flex items-start gap-3 max-wide:flex-col">
@@ -143,6 +147,17 @@ export function LiveTab({
       </div>
 
       <div className="flex w-100 shrink-0 flex-col gap-3 max-wide:w-full">
+        {dbPhase && (
+          <p
+            role="status"
+            data-testid="db-phase-line"
+            data-kind={dbPhase.kind}
+            className="flex items-center gap-1.5 rounded-xl border border-migrating-solid bg-migrating-bg px-4 py-2.5 text-body-medium text-migrating-fg"
+          >
+            <LoaderCircle aria-hidden className="size-4 shrink-0 motion-safe:animate-spin" />
+            {dbPhase.text}
+          </p>
+        )}
         {plan.progress && (
           <StepProgress
             progress={plan.progress}
@@ -207,10 +222,12 @@ export function LiveTab({
             </li>
             {conditions.healthCheck && <li>{t('the health check fails')}</li>}
           </ul>
-          <p className="text-caption text-fg-muted">
-            {t(
-              'DB writer cutover (pause writes → fence → LSN match → promote) joins these steps when the data migration engine is connected.',
-            )}
+          <p data-testid="db-cutover-note" className="text-caption text-fg-muted">
+            {hasDbCutover(plan)
+              ? t(
+                  'DB writer cutover: pause writes briefly → target DB catches up to the last row → compare both ledgers → switch the writer → resume',
+                )
+              : t('This plan moves traffic only (the DB writer stays where it is).')}
           </p>
         </section>
       </div>

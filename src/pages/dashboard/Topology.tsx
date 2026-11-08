@@ -18,7 +18,7 @@ import {
   useStore,
 } from '@xyflow/react';
 import ELK from 'elkjs/lib/elk-api.js';
-import { LoaderCircle, TriangleAlert } from 'lucide-react';
+import { Database, LoaderCircle, TriangleAlert } from 'lucide-react';
 import { type CSSProperties, memo, useEffect, useMemo, useRef, useState } from 'react';
 import { ProviderLabel } from '@/components/ProviderLabel';
 import { StatusBadge } from '@/components/StatusBadge';
@@ -49,6 +49,8 @@ type EnvNodeData = {
   receiving: boolean;
   /** 온프레 실시간 관측(노트북 감시자): 장애 · 복구 중 · 대체 서비스 중 라벨 */
   alert?: TopologyAlert;
+  /** 가장 최근 성공한 계획의 DB 컷오버 결과가 있을 때 그 도착 환경: 「DB 쓰기 담당」 배지 */
+  dbWriter?: boolean;
 };
 type GroupNodeData = { label: string; risky: boolean };
 type ProxyNodeData = { url: string | undefined };
@@ -70,8 +72,8 @@ function standbyText(link: ServiceOnEnvironment['link'] | undefined): string {
     : t('Warm');
 }
 
-/** 환경 노드: 역할 · 버전 · 트래픽 막대 · 위험 */
-function EnvironmentNode({ data }: NodeProps<Node<EnvNodeData, 'environment'>>) {
+/** 환경 노드: 역할 · 버전 · 트래픽 막대 · 위험 (시험에서 노드만 그려 보려고 내보낸다) */
+export function EnvironmentNode({ data }: NodeProps<Node<EnvNodeData, 'environment'>>) {
   const { environment, links, receiving, alert } = data;
   // 온프레 장애는 ③ 지진 피해 환경과 같은 빨간 테두리 · 경고 아이콘을 쓴다
   const atRisk = data.atRisk || alert?.tone === 'danger';
@@ -103,6 +105,16 @@ function EnvironmentNode({ data }: NodeProps<Node<EnvNodeData, 'environment'>>) 
       data-alert={alert?.tone}
     >
       {receiving && <span aria-hidden className="topology-beam" />}
+      {/* 카드 크기를 바꾸지 않게 위 테두리에 걸쳐 둔다 */}
+      {data.dbWriter && (
+        <span
+          data-testid="topology-db-writer"
+          className="absolute -top-2.5 right-2 inline-flex items-center gap-1 rounded-sm border border-success-solid bg-success-bg px-1.5 text-label text-success-fg"
+        >
+          <Database aria-hidden className="size-3" />
+          {t('DB writer')}
+        </span>
+      )}
       <Handle
         type="target"
         position={Position.Top}
@@ -378,6 +390,8 @@ type TopologyProps = {
   receivingId?: string;
   /** 온프레 실시간 관측(노트북 감시자): 환경 id → 노드 라벨. 장애 · 복구 중 환경의 0% 갈래는 회색 점선 */
   alerts?: Map<string, TopologyAlert>;
+  /** DB 쓰기 담당 환경 id(가장 최근 성공한 계획의 DB 컷오버 결과가 있을 때만) */
+  dbWriterId?: string;
 };
 
 const NO_ALERTS = new Map<string, TopologyAlert>();
@@ -389,6 +403,7 @@ function TopologyCanvas({
   edgeUrl,
   receivingId,
   alerts = NO_ALERTS,
+  dbWriterId,
 }: TopologyProps) {
   const { fitView } = useReactFlow();
   const [positions, setPositions] = useState<Positions>(new Map());
@@ -516,13 +531,14 @@ function TopologyCanvas({
             atRisk: atRisk.has(environment.id),
             receiving: environment.id === receivingId,
             alert: alerts.get(environment.id),
+            dbWriter: environment.id === dbWriterId,
           },
           draggable: false,
         });
       }
     }
     return list;
-  }, [positions, groups, byEnvironment, atRisk, edgeUrl, receivingId, alerts]);
+  }, [positions, groups, byEnvironment, atRisk, edgeUrl, receivingId, alerts, dbWriterId]);
 
   // 캔버스 왼쪽 아래 버튼의 툴팁. 기본값이 영어 문구라 그대로 번역한다
   const ariaLabelConfig = useMemo(
