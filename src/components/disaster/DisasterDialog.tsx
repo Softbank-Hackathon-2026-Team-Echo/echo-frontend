@@ -302,7 +302,10 @@ export function DisasterDialog({
               {remoteOpen && (
                 <div className="mt-2 flex items-center gap-3">
                   <Suspense fallback={<Skeleton className="size-40" />}>
-                    <RemoteQr url={`${window.location.origin}/o/${organization.slug}/remote`} />
+                    {/* 시연은 흔들기 트리거를 쓴다. 버튼 리모컨(/remote)은 주소로만 남긴다 */}
+                    <RemoteQr
+                      url={`${window.location.origin}/o/${organization.slug}/remote/shake`}
+                    />
                   </Suspense>
                   <span>{t('Scan and sign in with a Developer account.')}</span>
                 </div>
