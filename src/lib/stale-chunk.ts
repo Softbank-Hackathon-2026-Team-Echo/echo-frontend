@@ -26,6 +26,19 @@ export function reloadOnceForStaleChunk(reload: () => void, now = Date.now()): b
   return true;
 }
 
+// 브라우저마다 지연 로드 실패 문구가 다르다(Chrome·Firefox·Safari, Vite CSS 미리 받기)
+const STALE_CHUNK_MESSAGE =
+  /dynamically imported module|Importing a module script failed|Failed to load module script|Unable to preload CSS/i;
+
+/** 배포로 사라진 화면 코드를 받다 난 오류인지. 운영은 없는 파일 대신 index.html 을 줘서 이렇게 실패한다 */
+export function isStaleChunkError(error: unknown): boolean {
+  return error instanceof Error && STALE_CHUNK_MESSAGE.test(error.message);
+}
+
+export function reloadPage() {
+  window.location.reload();
+}
+
 /** Vite 가 지연 로드 실패를 알리는 이벤트다 */
 export function installStaleChunkReload() {
   window.addEventListener('vite:preloadError', () => {

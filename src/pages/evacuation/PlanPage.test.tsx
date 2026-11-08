@@ -440,25 +440,40 @@ describe('PlanPage', () => {
     expect(create).not.toHaveAttribute('aria-disabled', 'true');
   });
 
-  it('DB 쓰기 담당도 옮기기를 고르면 includeCutover 를 보내고 단계가 9개가 된다', async () => {
+  it('DB 쓰기 담당도 옮기기는 기본으로 켜져 있어 그대로 만들면 includeCutover true 를 보낸다(시연 결정)', async () => {
     const calls = serve({ allowSelfApproval: false, active: null });
     renderPage();
 
-    await userEvent.click(await screen.findByLabelText(/Also move the DB writer/));
+    expect(await screen.findByLabelText<HTMLInputElement>(/Also move the DB writer/)).toBeChecked();
     expect(screen.getByText('DB writer cutover')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Create plan' }));
 
     await expect.poll(() => calls[0]?.body).toMatchObject({ includeCutover: true });
   });
 
-  it('고르지 않으면 includeCutover false 로 만든다', async () => {
+  it('복귀 계획 초안도 DB 쓰기 담당 옮기기가 기본으로 켜져 있다', async () => {
+    const calls = serve({ allowSelfApproval: false, active: null });
+    renderRoute(<PlanPage />, {
+      path: '/o/:slug/evacuation/plan',
+      url: '/o/echo-demo/evacuation/plan?service=s1&target=e2&failback=1',
+    });
+
+    expect(await screen.findByRole('heading', { name: 'Plan the failback' })).toBeInTheDocument();
+    expect(screen.getByLabelText<HTMLInputElement>(/Also move the DB writer/)).toBeChecked();
+    await userEvent.click(screen.getByRole('button', { name: 'Create plan' }));
+
+    await expect.poll(() => calls[0]?.body).toMatchObject({ includeCutover: true });
+  });
+
+  it('끄면 includeCutover false 로 만들고 DB 쓰기 전환 단계가 빠진다', async () => {
     const calls = serve({ allowSelfApproval: false, active: null });
     renderPage();
 
-    await userEvent.click(await screen.findByRole('button', { name: 'Create plan' }));
+    await userEvent.click(await screen.findByLabelText(/Also move the DB writer/));
+    expect(screen.queryByText('DB writer cutover')).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Create plan' }));
 
     await expect.poll(() => calls[0]?.body).toMatchObject({ includeCutover: false });
-    expect(screen.queryByText('DB writer cutover')).not.toBeInTheDocument();
   });
 
   it('승격 경고가 있으면 동의 전에는 승인을 잠그고, 동의하면 acknowledgePromote 를 보낸다', async () => {
@@ -558,7 +573,8 @@ describe('PlanPage', () => {
     );
     await userEvent.click(screen.getByRole('button', { name: 'Cancel this plan' }));
     await userEvent.click(await screen.findByRole('button', { name: 'Create a new plan' }));
-    await userEvent.click(await screen.findByLabelText(/Also move the DB writer/));
+    // DB 쓰기 담당 옮기기는 기본으로 켜져 있다
+    expect(await screen.findByLabelText(/Also move the DB writer/)).toBeChecked();
     await userEvent.click(await screen.findByRole('button', { name: 'Create plan' }));
 
     // 새 계획의 고지에는 아직 동의하지 않았으므로 체크가 꺼져 있고 승인이 잠긴다
