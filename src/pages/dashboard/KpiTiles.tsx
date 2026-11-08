@@ -76,19 +76,23 @@ export type TargetTraffic = { name: string; weight: number };
 export const KpiTiles = memo(function KpiTiles({
   serving,
   target,
+  observed,
   summary,
   status,
   simulated = false,
 }: {
   serving: ServiceOnEnvironment | undefined;
   target?: TargetTraffic;
+  /** 온프레 실시간 관측(노트북 감시자)이 등록값과 다를 때 지금 트래픽 쪽. 이전 중이면 쓰지 않는다 */
+  observed?: TargetTraffic;
   summary?: ServiceMetricsSummary;
   status?: ServiceMetricsStatus;
   simulated?: boolean;
 }) {
-  const weight = target?.weight ?? serving?.link.trafficWeight ?? 0;
-  const envName = target?.name ?? serving?.link.environment.name;
-  const hasValue = Boolean(target || serving);
+  const live = target ? undefined : observed;
+  const weight = target?.weight ?? live?.weight ?? serving?.link.trafficWeight ?? 0;
+  const envName = target?.name ?? live?.name ?? serving?.link.environment.name;
+  const hasValue = Boolean(target || live || serving);
   const noRequests = t('No requests yet');
   const shared = { status, simulated };
   return (
@@ -117,7 +121,15 @@ export const KpiTiles = memo(function KpiTiles({
           {...shared}
         />
       </Tile>
-      <Tile label={target ? t('Traffic on target') : t('Traffic on primary')}>
+      <Tile
+        label={
+          target
+            ? t('Traffic on target')
+            : live
+              ? t('Traffic now (observed)')
+              : t('Traffic on primary')
+        }
+      >
         <span className="flex flex-wrap items-baseline gap-2">
           <span className="text-metric-xl tabular-nums">{hasValue ? `${weight}%` : '—'}</span>
           {envName && (

@@ -1,5 +1,6 @@
 import type { useWatcherState } from '@/lib/api/onprem-watch';
 import { t } from '@/lib/i18n';
+import { WATCH_STRIP_SIZE, type WatchSample, watchKind } from '@/lib/onprem-watch';
 import { cn } from '@/lib/utils';
 import { clock, KIND_BG } from './onprem-watch-view';
 
@@ -28,6 +29,34 @@ export function Stat({
         {value}
       </span>
       {caption && <span className="text-small text-fg-secondary">{caption}</span>}
+    </div>
+  );
+}
+
+/** 최근 응답 색 띠(왼쪽이 오래된 것). 서비스 상세의 「온프레 실시간」 카드가 쓴다 */
+export function WatchStrip({ samples, className }: { samples: WatchSample[]; className?: string }) {
+  const offset = WATCH_STRIP_SIZE - samples.length;
+  return (
+    <div data-testid="watch-strip" className={cn('flex h-6 gap-0.5', className)}>
+      {Array.from({ length: WATCH_STRIP_SIZE }, (_, index) => {
+        const sample = index >= offset ? samples[index - offset] : undefined;
+        const kind = sample
+          ? sample.environment === null
+            ? 'fail'
+            : watchKind(sample.environment)
+          : 'empty';
+        const fill =
+          kind === 'empty' ? 'bg-subtle' : kind === 'fail' ? 'bg-danger-solid' : KIND_BG[kind];
+        return (
+          <span
+            // biome-ignore lint/suspicious/noArrayIndexKey: 칸 자리 자체가 순서다
+            key={index}
+            data-kind={kind}
+            title={sample ? (sample.environment ?? t('Failed')) : undefined}
+            className={cn('flex-1 rounded-sm', fill)}
+          />
+        );
+      })}
     </div>
   );
 }

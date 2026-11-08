@@ -1,5 +1,5 @@
 import { ArrowRightLeft, History, Lock, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { ConfirmDeleteDialog } from '@/components/ConfirmDeleteDialog';
 import { DeployDialog } from '@/components/DeployDialog';
@@ -19,12 +19,20 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useRole } from '@/hooks/useRole';
 import { useCurrentOrg } from '@/lib/api/me';
+import { useOnpremLive } from '@/lib/api/onprem-watch';
 import { useDeleteService, useDeployRequests, useService } from '@/lib/api/services';
 import { k, t } from '@/lib/i18n';
+import {
+  applyLiveTraffic,
+  hasOnpremLink,
+  observedTraffic,
+  registeredTraffic,
+} from '@/lib/onprem-live';
 import { hasRole } from '@/lib/roles';
 import { teardownErrorLabel } from '@/lib/status';
 import { ApplyChangesBar } from './ApplyChangesBar';
 import { EditServiceDialog } from './EditServiceDialog';
+import { OnpremLiveCard } from './OnpremLive';
 import { ServiceActivity } from './ServiceActivity';
 import { ServiceDeployments } from './ServiceDeployments';
 import { ServiceMetrics } from './ServiceMetrics';
@@ -74,6 +82,25 @@ export default function ServiceDetailPage() {
   const requested = searchParams.get('tab');
   const tab: Tab = isTab(requested) ? requested : 'overview';
   const startDeploy = searchParams.get('deploy') === '1';
+  // 온프레 환경이 연결된 서비스(demo-onprem)는 개요 탭에서 노트북 감시자 관측값으로 트래픽 비율을 덮어 그린다
+  const live = useOnpremLive(tab === 'overview' && service !== undefined && hasOnpremLink(service));
+  const shown = useMemo(
+    () => service && applyLiveTraffic(service, live.trafficOn),
+    [service, live.trafficOn],
+  );
+  const observed = useMemo(() => {
+    if (!service) return undefined;
+    const traffic = observedTraffic(service, live.trafficOn);
+    const registered = registeredTraffic(service);
+    if (!traffic || !registered) return undefined;
+    return {
+      ...traffic,
+      note: t(
+        'Live observation (laptop watcher). Console registered value: {{name}} {{weight}}',
+        registered,
+      ),
+    };
+  }, [service, live.trafficOn]);
 
   // 서비스를 등록하면 바로 배포로 이어진다
   useEffect(() => {
@@ -229,9 +256,14 @@ export default function ServiceDetailPage() {
         </TabsList>
       </Tabs>
 
+      {tab === 'overview' && live.enabled && <OnpremLiveCard live={live} />}
       {tab === 'overview' && (
         <Suspense fallback={<Skeleton className="h-96 w-full" />}>
-          <ServiceDashboard organization={organization} service={service} />
+          <ServiceDashboard
+            organization={organization}
+            service={shown ?? service}
+            observed={observed}
+          />
         </Suspense>
       )}
       {tab === 'deployments' && (

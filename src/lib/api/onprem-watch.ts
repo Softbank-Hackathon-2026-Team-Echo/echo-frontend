@@ -2,9 +2,14 @@
 // 손님 주소 · 감시자 주소에 CORS 헤더가 없어 브라우저가 직접 읽지 못하기 때문이다.
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useReducer } from 'react';
+import { useSearchParams } from 'react-router';
 import { queryKeys } from '@/lib/api/query-keys';
+import { liveStatus, liveTrafficOn } from '@/lib/onprem-live';
 import {
+  DEFAULT_GUEST_HOST,
+  DEFAULT_WATCHER_HOST,
   EMPTY_WATCH,
+  hostOf,
   recordSample,
   WATCH_INTERVAL_MS,
   type WatchSample,
@@ -100,16 +105,47 @@ export type WatcherState = {
   epoch: number | null;
   armed: boolean | null;
   promotedAt: string | null;
+  normalSince: string | null;
+  /** 감시자가 본 두 신호(노트북 심장 박동 · 복제). 모르면 null */
+  hb: boolean | null;
+  repl: boolean | null;
 };
 
 function watcherStateOf(result: ProbeResult): WatcherState | null {
   if (!result.ok || !result.body || typeof result.body !== 'object') return null;
   const body = result.body as Record<string, unknown>;
+  const signals =
+    body.signals && typeof body.signals === 'object'
+      ? (body.signals as Record<string, unknown>)
+      : {};
   return {
     state: typeof body.state === 'string' ? body.state : null,
     epoch: typeof body.epoch === 'number' ? body.epoch : null,
     armed: typeof body.armed === 'boolean' ? body.armed : null,
     promotedAt: typeof body.promoted_at === 'string' ? body.promoted_at : null,
+    normalSince: typeof body.normal_since === 'string' ? body.normal_since : null,
+    hb: typeof signals.hb === 'boolean' ? signals.hb : null,
+    repl: typeof signals.repl === 'boolean' ? signals.repl : null,
+  };
+}
+
+/**
+ * 서비스 화면의 온프레 실시간 관측. enabled 가 거짓이면 아무것도 부르지 않는다.
+ * 호스트는 기본값 상수이고 `?guest=` · `?watcher=` 쿼리가 있으면 그 값을 쓴다
+ */
+export function useOnpremLive(enabled: boolean) {
+  const [params] = useSearchParams();
+  const guestHost = enabled ? hostOf(params.get('guest') ?? DEFAULT_GUEST_HOST) : '';
+  const watcherHost = enabled ? hostOf(params.get('watcher') ?? DEFAULT_WATCHER_HOST) : '';
+  const watch = useOnpremWatch(guestHost);
+  const watcher = useWatcherState(watcherHost);
+  const state = watcher.data?.watcher?.state ?? null;
+  return {
+    enabled,
+    watch,
+    watcher,
+    status: enabled ? liveStatus(state, watch.current) : null,
+    trafficOn: enabled ? liveTrafficOn(state, watch.current) : null,
   };
 }
 
