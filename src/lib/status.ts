@@ -314,6 +314,93 @@ export function disasterSourceView(source: string): StatusView {
   return viewOf(DISASTER_SOURCES, source);
 }
 
+// 과거 재난 화면(#100). 값 이름은 서버 계약 전 임시다. 없는 출처는 확인 불가이고 실제나 가상으로 넘겨짚지 않는다
+const HISTORY_EVENT_SOURCES: Record<string, StatusView> = {
+  USGS_ARCHIVE: { label: k('Disaster source: real USGS record'), tone: 'neutral' },
+  SIMULATED: { label: k('Disaster source: simulated'), tone: 'neutral' },
+};
+
+export function historyEventSourceView(source: string | null): StatusView {
+  return source
+    ? viewOf(HISTORY_EVENT_SOURCES, source)
+    : { label: t("Disaster source: can't confirm"), tone: 'neutral' };
+}
+
+const HISTORY_MIGRATION_SOURCES: Record<string, StatusView> = {
+  DEMO: { label: k('Migration history: demo (virtual)'), tone: 'warning' },
+  REAL: { label: k('Migration history: real run'), tone: 'success' },
+};
+
+export function historyMigrationSourceView(source: string | null): StatusView {
+  return source
+    ? viewOf(HISTORY_MIGRATION_SOURCES, source)
+    : { label: t("Migration history: can't confirm"), tone: 'neutral' };
+}
+
+const HISTORY_STEP_KINDS: Record<string, string> = {
+  EVENT: k('Event occurred'),
+  POLICY: k('Policy decision'),
+  TARGET: k('Target check'),
+  SAFETY: k('Safety check'),
+  MIGRATION_STAGE: k('Migration stage'),
+  WEIGHT_SHIFT: k('Traffic shift'),
+  RESULT: k('Result'),
+};
+
+export function historyStepKindLabel(kind: string): string {
+  const label = HISTORY_STEP_KINDS[kind];
+  return label ? t(label) : kind;
+}
+
+const HISTORY_STEP_STATUS: Record<string, StatusView> = {
+  DONE: { label: k('Done'), tone: 'success' },
+  BLOCKED: { label: k('Blocked'), tone: 'danger' },
+  NO_TARGET: { label: k('No target'), tone: 'warning' },
+  DUPLICATE: { label: k('Duplicate'), tone: 'warning' },
+  SAFETY_FAILED: { label: k('Safety check failed'), tone: 'danger' },
+};
+
+export function historyStepStatusView(status: string): StatusView {
+  return viewOf(HISTORY_STEP_STATUS, status);
+}
+
+const HISTORY_IMPACT: Record<string, string> = {
+  AFFECTED: k('Affected'),
+  OUTSIDE: k('Outside'),
+};
+
+export function historyImpactLabel(impact: string | null): string {
+  if (!impact) return t("Can't confirm");
+  const label = HISTORY_IMPACT[impact];
+  return label ? t(label) : impact;
+}
+
+const RADIUS_SOURCES: Record<string, string> = {
+  POLICY: k('Policy impact radius'),
+  DEMO_ASSUMPTION: k('Demo assumed radius'),
+};
+
+export function historyRadiusLabel(source: string): string {
+  const label = RADIUS_SOURCES[source];
+  return label ? t(label) : source;
+}
+
+/** 서버가 꺼짐을 확인해 줄 때만 꺼짐이다. 응답이 없거나 오래되면 확인 불가다 */
+export function liveIntakeView(status: string | null, isStale: boolean): StatusView {
+  if (status === null || isStale)
+    return { label: t("Live intake: can't confirm"), tone: 'neutral' };
+  if (status === 'DISABLED') return { label: t('Live intake off'), tone: 'neutral' };
+  if (status === 'CONNECTED') return { label: t('Live intake on'), tone: 'success' };
+  return { label: t("Live intake: can't confirm"), tone: 'neutral' };
+}
+
+export function autoMigrationView(enabled: boolean | null): StatusView {
+  if (enabled === null) return { label: t("Auto migration: can't confirm"), tone: 'neutral' };
+  return enabled
+    ? { label: t('Auto migration on'), tone: 'warning' }
+    : { label: t('Auto migration off'), tone: 'neutral' };
+}
+
 const VARIABLE_COPY_FAILURES: Record<string, string> = {
   ENV_VAR_ALREADY_EXISTS: k('Already set here. Turn on replace to overwrite.'),
   ENV_VAR_NOT_FOUND: k('Not set in the source environment.'),

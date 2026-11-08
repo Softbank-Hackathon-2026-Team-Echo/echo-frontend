@@ -1,6 +1,7 @@
 import {
   ArrowLeftRight,
   Bell,
+  CalendarClock,
   Check,
   ChevronDown,
   ChevronRight,
@@ -68,6 +69,7 @@ const NAV_GROUPS = [
     items: [
       { to: 'evacuation', label: k('Evacuation'), icon: MapPin },
       { to: 'migrations', label: k('Migrations'), icon: ArrowLeftRight },
+      { to: 'history', label: k('Disaster history'), icon: CalendarClock },
     ],
   },
   {

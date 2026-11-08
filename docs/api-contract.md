@@ -261,6 +261,10 @@ data: {"seq": 1042, "ts": "2026-11-07T03:05:40Z", "orgId": "…", "resource": {"
 
 W3 은 ai-agent #22 의 실패 로그 입력과 같은 값이다.
 
+### 4-9-1. 과거 재난 조회 재생 (가칭) 🆕
+
+프론트 #100 · echo-was #122. 필드 이름 · 단위 · enum 은 서버 계약에서 정한다. 프론트가 필요한 뜻은 #100 5절 표에 있고, `src/lib/disaster-history.ts` 는 화면용 임시 모양이다. 계약 전까지 화면은 대기 상태이고 실행 API 를 부르지 않는다.
+
 ### 4-10. 배포 실패 진단 ✅
 
 - 시작: `POST …/deploy-requests/{id}/diagnosis` → 201 `PrecheckDetail`(`kind: CHANGE_PROPOSAL`), 이미 있으면 200. 409 `DEPLOY_NOT_FAILED` · `SERVICE_DELETING` · `PRECHECK_IN_PROGRESS`

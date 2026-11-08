@@ -40,14 +40,14 @@ Team Echo 멀티 클라우드 관리 플랫폼 **EchoPort**의 웹 프론트다.
 src/
 ├─ main.tsx              # 진입점. 테마 적용 → 조직 주소면 /me 미리 부름 → 예전 목업 서비스 워커가 남았으면 지움 → 렌더
 ├─ App.tsx               # QueryClient · Tooltip · Toaster · Router 공급자
-├─ router.tsx            # 라우트 표 (/login, /(로그인 전 L01 소개 · 로그인 후 조직으로), /o/:slug/*, /dev/tokens(개발만), 404). 메뉴 경로는 ui-terms §3
+├─ router.tsx            # 라우트 표 (/login, /(로그인 전 L01 소개 · 로그인 후 조직으로), /o/:slug/*, /dev/tokens · /dev/disaster-history(개발만), 404). 메뉴 경로는 ui-terms §3
 ├─ styles/               # tokens.css → shadcn-theme.css → index.css(Tailwind @theme 연결) 순서
 ├─ components/
 │  ├─ ui/                # shadcn/ui 생성 파일. 토큰 글자 스타일·32px 밀도로 고쳤다
-│  ├─ disaster/          # 재난 시뮬레이션 다이얼로그(S01-D) · 지도(DisasterMap, d3-geo + world-atlas 50m 지연 로드)
+│  ├─ disaster/          # 재난 시뮬레이션 다이얼로그(S01-D) · 지도(DisasterMap, d3-geo + world-atlas 50m 지연 로드) · map-base(지도 바탕 공용)
 │  └─ *.tsx              # 두 화면 이상에서 쓰는 앱 컴포넌트 (Panel, RoleButton, StatusBadge, SimulatedBadge, ProviderLabel, FormField, ConfirmDeleteDialog, ExternalLink, EmptyState, ErrorState, ScreenErrorBoundary, Logo, OrthoGlobe, 등록·배포 다이얼로그(EnvironmentFormDialog · RegisterServiceDialog · DeployDialog · StandbyPicker) …)
 ├─ layouts/AppShell.tsx  # 사이드바(워드마크 · Operate/Resilience/Govern 묶음 · 사용자 메뉴=테마·로그아웃) + 상단 바(브레드크럼 · Org 선택 · Simulate disaster · 알림)
-├─ pages/                # 화면 단위 폴더 (login/, root/, landing/(L01 소개), onboarding/(O01~O03), dashboard/(조직 개요 · 서비스 Overview 칸), services/(목록 · 서비스 작업 공간 탭), evacuation/, migrations/, security/, audit/, remote/(S01-R 휴대폰 리모컨 · R2b 충격 트리거), settings/, dev/). 한 화면에서만 쓰는 컴포넌트는 그 폴더 안에
+├─ pages/                # 화면 단위 폴더 (login/, root/, landing/(L01 소개), onboarding/(O01~O03), dashboard/(조직 개요 · 서비스 Overview 칸), services/(목록 · 서비스 작업 공간 탭), evacuation/, migrations/, security/, audit/, remote/(S01-R 휴대폰 리모컨 · R2b 충격 트리거), history/(과거 재난 조회 재생), settings/, dev/). 한 화면에서만 쓰는 컴포넌트는 그 폴더 안에
 ├─ hooks/                # useTheme(테마 3개, localStorage), useRole(현재 조직 역할), useNow(경과 시간), usePrefersReducedMotion, useAnimatedNumber(비율 숫자), useInViewOnce(처음 화면에 들어오면 true)
 ├─ lib/
 │  ├─ api/               # client(api = openapi-fetch + unwrap, 스키마 밖 경로는 apiFetch) · errors · notify · form-errors(422 → 칸 오류)
@@ -59,6 +59,7 @@ src/
 │  ├─ status.ts          # 서버 상태 값 → 화면 문구·색 (StatusBadge 와 짝), 오류 코드 → 문구
 │  ├─ migration-*.ts     # 이전 단계 시간(stages) · 결과 숫자(metrics). 두 화면 이상에서 쓴다
 │  ├─ deploy-stages.ts   # 배포 단계 상태 · 시간
+│  ├─ disaster-history.ts # 과거 재난 화면 임시 모양(서버 계약 아님) · 기록된 가중치 찾기
 │  ├─ env-file.ts        # 붙여 넣은 .env 를 키 · 값으로 나눈다
 │  ├─ shake.ts           # 충격 트리거 판정(가속도 크기 · 임계 · 잠금 · 센서 권한) 순수 함수
 │  ├─ route-prefetch.ts  # 메뉴 의도(마우스 올림 · 포커스) 때 화면 청크 미리 받기 · route-pattern.ts(Sentry 화면 이름)
@@ -260,6 +261,7 @@ docs/                    # api-contract.md, perf.md(성능 측정 방법 · 기�
 | 11/7 | 재난 출처는 `SIMULATED` · `LIVE_FEED`(USGS) · `FEED_INJECTED` 를 배지로 나누고 `simulated` 는 서버 값을 따른다. 피드 재난은 계획이 없어 "대피 계획 만들기" 를 확인 창을 거쳐 부른다. 피드 상태는 재난 다이얼로그와 대피 화면에 30초 폴링으로 보인다. 주입 버튼은 화면에 두지 않는다 | frontend #94. 자기 승인이 켜져 있으면 이전이 바로 시작돼 버튼 하나로 보내지 않는다. 시연 주입은 어드민이 서버에서 한다 |
 | 11/7 | 충격 트리거(R2b, `/o/:slug/remote/shake`)는 실제 이전을 밝히고 체크해야 감지 · 흉내내기가 된다. 한 번 보내면 감지와 체크가 풀린다. 흉내내기는 5초 안에 두 번 눌러야 보낸다. 진행 중 재난을 모르면(로딩 · 조회 실패) 보내지 않는다. `/remote` 는 `echo-demo` 를 먼저 고른다 | 재난은 시뮬레이션이어도 이전은 실제다. 켜 둔 채 종료하면 다음 흔들림이 재난을 또 냈다. 개인 조직으로 가면 시연 대시보드에 재난이 보이지 않는다 |
 | 11/7 | 배포 창은 주 환경을 고른 뒤 예비 환경을 최대 5개 고르고 `standbyEnvironmentIds` 를 항상 보낸다. 주 환경은 후보에서 빼고, 접속 실패 환경은 비활성, 확인 전 환경은 `Not checked` 를 단다. 빈 목록은 이미 있는 예비를 멈추지 않는다고 적는다 | 프론트 #99. 빈 목록을 예비 끄기나 비용 $0 으로 읽지 않게 한다. 서비스별 격리는 echo-infra #112 뒤에 확인한다 |
+| 11/7 | 과거 재난 화면(`/o/:slug/history`)은 서버 계약 전까지 대기 상태만 보이고 샘플 사건을 운영에 넣지 않는다. 임시 데이터는 테스트와 `/dev/disaster-history` 만 쓴다. 재생은 화면의 단계만 바꾸고 반경 · 가중치는 서버 값만 그린다 | 프론트 #100. 실제 USGS 사건과 가상 이전이 실적으로 보이면 안 되고, 조회 경로가 실행 경로에 닿으면 안 된다. 계약 전 레이아웃과 연동 완료를 나눠 보고한다 |
 | 11/7 | 변수 탭에 "다른 환경으로 복사" 다이얼로그를 둔다(`POST …/variables:copy`). 기본 원본은 서비스 중 환경, 대상은 나머지 전부, 이미 있는 키는 덮어쓰기를 켰을 때만 바꾼다. 결과는 줄마다 실패 이유를 보인다 | 도현 님 개선 목록 5번: AWS · GCP 에 같은 변수를 환경마다 다시 넣었다. 값은 서버 안에서 옮겨 화면을 지나지 않는다. 바뀐 키는 기존 적용 막대가 다시 배포를 안내한다 |
 | 11/7 | 진단 패치가 재배포를 만들면 실패 배포 화면 안에 "수정한 커밋으로 다시 배포" 칸을 열어 그 재배포의 단계 · 로그 · 결과를 잇는다. 원래 실패 · 진단 · 승인은 위에 남긴다. 반영이 끝난 뒤 재배포 id 가 올 때까지 90초 동안 진단을 계속 다시 부르고, 넘으면 다시 확인 버튼을 준다 | 형래 님 분석(11/7 18:47): 서버는 반영 완료 뒤 커밋 · PR 을 만들고 약 6초 뒤에 재배포를 이어서, 반영 완료 시각에 폴링을 멈추면 재배포를 놓쳤다. 시연 B-7 을 화면 이동 없이 보이게 한다 |
 | 11/7 | 실행 중이던 이전 계획이 끝나면(계획 목록 · 상세를 다시 부를 때 실행 중 → 끝으로 바뀐 것을 보면) 그 서비스 · 서비스 목록 · 환경을 다시 부른다 | 11/7 리허설: 이전이 끝난 뒤에도 서비스 개요가 새로고침 전까지 출발 환경 100% 를 그렸다. 트래픽 비율은 서비스 응답에 있다 |

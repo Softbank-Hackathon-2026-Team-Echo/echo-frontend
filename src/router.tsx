@@ -144,6 +144,12 @@ const routes: RouteObject[] = [
         ],
       },
       {
+        path: 'history',
+        handle: crumb(k('Disaster history')),
+        lazy: () =>
+          import('@/pages/history/DisasterHistoryPage').then((m) => ({ Component: m.default })),
+      },
+      {
         path: 'security',
         handle: crumb(k('Security')),
         lazy: () => import('@/pages/security/SecurityPage').then((m) => ({ Component: m.default })),
@@ -180,6 +186,11 @@ const routes: RouteObject[] = [
         {
           path: '/dev/tokens',
           lazy: () => import('@/pages/dev/TokensPage').then((m) => ({ Component: m.default })),
+        },
+        {
+          path: '/dev/disaster-history',
+          lazy: () =>
+            import('@/pages/dev/DisasterHistoryPreview').then((m) => ({ Component: m.default })),
         },
       ]
     : []),
