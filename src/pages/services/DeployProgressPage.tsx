@@ -277,12 +277,14 @@ function Outcome({
   requestLink,
   hadPrevious,
   actions,
+  deploysLink,
 }: {
   orgId: string;
   request: DeployRequestDetail;
   requestLink: (id: string) => string;
   hadPrevious: boolean | null;
   actions: DiagnosisActions;
+  deploysLink: string;
 }) {
   if (request.status === 'SUCCEEDED') {
     return (
@@ -338,6 +340,7 @@ function Outcome({
           request={request}
           actions={actions}
           deployLink={requestLink}
+          deploysLink={deploysLink}
         />
       </div>
     );
@@ -611,6 +614,7 @@ export default function DeployProgressPage() {
         requestLink={(id) => `/o/${slug}/services/${serviceId}/deploys/${id}`}
         hadPrevious={hadPreviousVersion(request, history.data?.items)}
         actions={actions}
+        deploysLink={`/o/${slug}/services/${serviceId}?tab=deployments`}
       />
 
       {organization && redeployRequestId && (

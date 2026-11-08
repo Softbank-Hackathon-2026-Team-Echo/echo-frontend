@@ -1,7 +1,10 @@
-import { screen, within } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { HttpResponse, http } from 'msw';
+import { createMemoryRouter, RouterProvider } from 'react-router';
 import { describe, expect, it } from 'vitest';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import type { DeployRequestSummary, Me, MemberRole, ServiceDetail } from '@/lib/api/types';
 import { server } from '@/test/msw-server';
 import { renderRoute } from '@/test/render';
@@ -246,5 +249,64 @@ describe('ServiceDetailPage 설정 수정', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Save changes' }));
 
     await expect.poll(() => bodies).toEqual([{ containerPort: 3000 }]);
+  });
+});
+
+describe('ServiceDetailPage 패치 승인 뒤 배포 목록', () => {
+  function renderWithDetail(url: string) {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const router = createMemoryRouter(
+      [
+        { path: '/o/:slug/services/:serviceId', element: <ServiceDetailPage /> },
+        {
+          path: '/o/:slug/services/:serviceId/deploys/:deployRequestId',
+          element: <p>deploy detail</p>,
+        },
+      ],
+      { initialEntries: [url] },
+    );
+    render(
+      <QueryClientProvider client={client}>
+        <TooltipProvider>
+          <RouterProvider router={router} />
+        </TooltipProvider>
+      </QueryClientProvider>,
+    );
+    return router;
+  }
+
+  it('승인 뒤 생긴 배포가 아직 없으면 기다리는 줄을 보이고, 생기면 그 배포 상세로 옮긴다', async () => {
+    serve('DEVELOPER');
+    const start = Date.now();
+    const since = new Date(start - 10_000).toISOString();
+    let appeared = false;
+    server.use(
+      http.get(`${API}/orgs/o1/services/s1/deploy-requests`, () => {
+        // 처음 1초는 새 배포가 없다(서버가 아직 수정 커밋 · PR 을 만드는 중)
+        appeared ||= Date.now() - start > 1_000;
+        const fresh = request('r3', 'c', {
+          status: 'BUILDING',
+          stageTimes: {
+            queuedAt: new Date(start).toISOString(),
+            buildingAt: null,
+            deployingAt: null,
+            verifyingAt: null,
+            finishedAt: null,
+          },
+        });
+        const old = request('r1', 'a', { status: 'FAILED' });
+        return ok({ items: appeared ? [fresh, old] : [old], total: 2, page: 0, size: 20 });
+      }),
+    );
+    const router = renderWithDetail(
+      `/o/echo-demo/services/s1?tab=deployments&since=${encodeURIComponent(since)}`,
+    );
+    expect(
+      await screen.findByText(
+        'Waiting for the redeploy with the fix. Its page opens when it starts.',
+      ),
+    ).toBeInTheDocument();
+    expect(await screen.findByText('deploy detail', {}, { timeout: 4000 })).toBeInTheDocument();
+    expect(router.state.location.pathname).toBe('/o/echo-demo/services/s1/deploys/r3');
   });
 });

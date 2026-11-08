@@ -13,10 +13,16 @@ import {
 } from '@/lib/api/diagnosis';
 import { describeApiError } from '@/lib/api/errors';
 import { isActivePrecheck, useCreateDiagnosis, usePrecheck } from '@/lib/api/prechecks';
-import type { DeployRequestDetail, PrecheckDetail, PrecheckDiagnosis } from '@/lib/api/types';
+import type {
+  DeployRequestDetail,
+  PrecheckDetail,
+  PrecheckDiagnosis,
+  PrecheckPatch,
+} from '@/lib/api/types';
 import { t } from '@/lib/i18n';
 import { precheckFailureLabel, precheckStepLabel } from '@/lib/status';
 import { PatchReview } from '@/pages/evacuation/PatchReview';
+import { useFollowRedeploy } from './follow-redeploy';
 
 /** 고치기 버튼이 부를 동작. 이 배포에서 할 수 없는 고치기는 unavailable 에 넣는다 */
 export type DiagnosisActions = {
@@ -73,6 +79,7 @@ function ServerResult({
   rule,
   actions,
   deployLink,
+  onApproved,
 }: {
   orgId: string;
   run: PrecheckDetail;
@@ -80,6 +87,7 @@ function ServerResult({
   rule: Diagnosis;
   actions: DiagnosisActions;
   deployLink: (id: string) => string;
+  onApproved: (patch: PrecheckPatch | undefined) => void;
 }) {
   return (
     <>
@@ -128,6 +136,7 @@ function ServerResult({
               patch={patch}
               number={index + 1}
               deployLink={deployLink}
+              onApproved={onApproved}
             />
           ))}
         </>
@@ -147,19 +156,31 @@ export function DeployDiagnosis({
   request,
   actions,
   deployLink,
+  deploysLink,
 }: {
   orgId: string;
   request: Pick<
     DeployRequestDetail,
     'id' | 'status' | 'errorCode' | 'errorMessage' | 'failure' | 'diagnosis'
-  >;
+  > &
+    Partial<Pick<DeployRequestDetail, 'serviceId'>>;
   actions: DiagnosisActions;
   deployLink: (id: string) => string;
+  /** 서비스 배포 목록 주소. 승인 뒤 새 배포를 못 찾으면 여기로 옮긴다 */
+  deploysLink?: string;
 }) {
   const create = useCreateDiagnosis(orgId, request.id);
   const [createdId, setCreatedId] = useState<string>();
   const runId = request.diagnosis?.runId ?? createdId;
   const precheck = usePrecheck(orgId, runId);
+  const followRedeploy = useFollowRedeploy({
+    orgId,
+    precheckId: runId ?? '',
+    serviceId: request.serviceId,
+    failedRequestId: request.id,
+    deployLink,
+    deploysLink,
+  });
   const rule = diagnoseDeploy(request);
   if (!rule) return null;
 
@@ -211,6 +232,7 @@ export function DeployDiagnosis({
           rule={rule}
           actions={actions}
           deployLink={deployLink}
+          onApproved={(patch) => void followRedeploy(patch)}
         />
       ) : (
         <>

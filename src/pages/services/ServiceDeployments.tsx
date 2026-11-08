@@ -1,5 +1,5 @@
-import { GitBranch, RotateCcw } from 'lucide-react';
-import { useState } from 'react';
+import { GitBranch, Loader2, RotateCcw } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 import { EmptyState } from '@/components/EmptyState';
 import { ErrorState } from '@/components/ErrorState';
@@ -29,9 +29,13 @@ import { timeAgo } from '@/lib/format';
 import { t } from '@/lib/i18n';
 import { deployStatusView, deployTriggerLabel, shortSha } from '@/lib/status';
 import { ActiveDeployments } from './ActiveDeployments';
+import { FOLLOW_POLL_MS, findNewDeploy, SINCE_PARAM } from './follow-redeploy';
 import { RollbackDialog } from './RollbackDialog';
 
 const ALL_ENVIRONMENTS = 'all';
+
+/** 승인 뒤 목록에서 새 배포를 기다리는 시간. 실측 승인 → 재배포 접수 약 1분이라 넉넉히 둔다 */
+const SINCE_WAIT_MS = 5 * 60_000;
 
 function refLabel(request: DeployRequestSummary) {
   return request.ref.type === 'BRANCH' ? request.ref.value : shortSha(request.ref.value);
@@ -52,6 +56,22 @@ function DeployHistory({
   const history = useDeployRequests(orgId, serviceId);
   const rollback = useRollback(orgId, serviceId);
   const [target, setTarget] = useState<DeployRequestSummary>();
+  // 진단 패치 승인 뒤 새 배포를 못 찾고 넘어왔으면 그 시각 뒤 배포를 강조하고, 생기면 상세로 옮긴다
+  const [searchParams] = useSearchParams();
+  const since = searchParams.get(SINCE_PARAM);
+  const sinceMs = since ? new Date(since).getTime() : Number.NaN;
+  const freshId = since && history.data ? findNewDeploy(history.data.items, since)?.id : undefined;
+  const waiting = Boolean(since) && !freshId && Date.now() - sinceMs < SINCE_WAIT_MS;
+  const { refetch } = history;
+  useEffect(() => {
+    if (!waiting) return;
+    const timer = setInterval(() => void refetch(), FOLLOW_POLL_MS);
+    return () => clearInterval(timer);
+  }, [waiting, refetch]);
+  useEffect(() => {
+    if (freshId)
+      navigate(`/o/${orgSlug}/services/${serviceId}/deploys/${freshId}`, { replace: true });
+  }, [freshId, navigate, orgSlug, serviceId]);
 
   if (history.isError)
     return <ErrorState error={history.error} onRetry={() => history.refetch()} />;
@@ -65,6 +85,15 @@ function DeployHistory({
 
   return (
     <div className="overflow-hidden rounded-lg border border-line bg-surface">
+      {waiting && (
+        <p
+          role="status"
+          className="flex items-center gap-2 border-b border-line bg-ai-bg px-4 py-2 text-small text-ai-fg"
+        >
+          <Loader2 aria-hidden className="size-3.5 animate-spin" />
+          {t('Waiting for the redeploy with the fix. Its page opens when it starts.')}
+        </p>
+      )}
       <Table>
         <TableHeader>
           <TableRow>
@@ -80,7 +109,13 @@ function DeployHistory({
         </TableHeader>
         <TableBody>
           {items.map((request) => (
-            <TableRow key={request.id}>
+            <TableRow
+              key={request.id}
+              data-highlighted={
+                new Date(request.stageTimes.queuedAt).getTime() >= sinceMs || undefined
+              }
+              className="data-[highlighted]:bg-ai-bg"
+            >
               <TableCell className="text-fg-secondary">
                 {timeAgo(request.stageTimes.queuedAt)}
               </TableCell>

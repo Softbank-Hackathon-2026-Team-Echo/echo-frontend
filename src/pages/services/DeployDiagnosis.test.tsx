@@ -7,6 +7,18 @@ import { server } from '@/test/msw-server';
 import { renderRoute } from '@/test/render';
 import { DeployDiagnosis } from './DeployDiagnosis';
 
+const navigate = vi.hoisted(() => vi.fn());
+vi.mock('react-router', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('react-router')>()),
+  useNavigate: () => navigate,
+}));
+
+const toastError = vi.hoisted(() => vi.fn());
+vi.mock('sonner', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('sonner')>();
+  return { ...actual, toast: Object.assign(actual.toast, { error: toastError }) };
+});
+
 const API = 'http://api.test/api/v1';
 const ok = <T,>(data: T, status = 200) => HttpResponse.json({ success: true, data }, { status });
 
@@ -78,6 +90,8 @@ describe('DeployDiagnosis', () => {
 
   beforeEach(() => {
     actions.run.mockClear();
+    navigate.mockClear();
+    toastError.mockClear();
     server.use(
       http.get(`${API}/me`, () =>
         ok({
@@ -232,6 +246,125 @@ describe('DeployDiagnosis', () => {
     expect(await screen.findByText('Succeeded')).toBeInTheDocument();
     expect(screen.getByText('7cd47f4')).toBeInTheDocument();
     expect(calls.approved).toBe(1);
+    // 승인 응답에 id 가 없어도 점검 상세에서 찾아 새 배포 상세로 옮긴다
+    await waitFor(() =>
+      expect(navigate).toHaveBeenCalledWith('/o/echo-demo/services/s1/deploys/r2'),
+    );
+  });
+
+  const approveButton = async () => {
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Approve patch' })).not.toHaveAttribute(
+        'aria-disabled',
+        'true',
+      ),
+    );
+    return screen.getByRole('button', { name: 'Approve patch' });
+  };
+
+  it('승인을 누르면 곧바로 버튼을 막고 반영 진행 줄을 보인 뒤, 응답의 새 배포 상세로 옮긴다', async () => {
+    serve(run({}));
+    let release: () => void = () => {};
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    server.use(
+      http.post(`${API}/orgs/o1/prechecks/run1/patches/p1/approve`, async () => {
+        await gate;
+        return ok({
+          ...patch,
+          status: 'APPROVED',
+          approval: {
+            decision: 'APPROVE',
+            decidedByUserId: 'u1',
+            decidedAt: '2026-11-08T01:00:00Z',
+            reason: null,
+          },
+          apply: { status: 'SUCCEEDED', redeployRequestId: 'r9' },
+        });
+      }),
+    );
+    renderDiagnosis({ ...failed, diagnosis: { runId: 'run1', status: 'SUCCEEDED' } });
+
+    await userEvent.click(await approveButton());
+
+    // 응답 전: 비활성 · 스피너(aria-busy) · 상태 줄
+    expect(await screen.findByText(/Approved — applying the fix/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Approve patch' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Approve patch' })).toHaveAttribute(
+      'aria-busy',
+      'true',
+    );
+    expect(navigate).not.toHaveBeenCalled();
+
+    release();
+    await waitFor(() =>
+      expect(navigate).toHaveBeenCalledWith('/o/echo-demo/services/s1/deploys/r9'),
+    );
+    expect(navigate).toHaveBeenCalledTimes(1);
+    expect(toastError).not.toHaveBeenCalled();
+  });
+
+  it('응답에 id 가 없으면 서비스 배포 목록에서 승인 뒤 생긴 배포를 찾아 옮긴다', async () => {
+    serve(run({}));
+    server.use(
+      http.post(`${API}/orgs/o1/prechecks/run1/patches/p1/approve`, () =>
+        ok({
+          ...patch,
+          status: 'APPROVED',
+          approval: {
+            decision: 'APPROVE',
+            decidedByUserId: 'u1',
+            decidedAt: '2026-11-08T01:00:00Z',
+            reason: null,
+          },
+          apply: null,
+        }),
+      ),
+      http.get(`${API}/orgs/o1/services/s1/deploy-requests`, () =>
+        ok({
+          items: [
+            { id: 'r1', status: 'FAILED', stageTimes: { queuedAt: '2026-11-08T00:50:00Z' } },
+            { id: 'r5', status: 'BUILDING', stageTimes: { queuedAt: '2026-11-08T01:00:58Z' } },
+          ],
+          page: 0,
+          size: 20,
+          total: 2,
+        }),
+      ),
+    );
+    renderDiagnosis({
+      ...failed,
+      serviceId: 's1',
+      diagnosis: { runId: 'run1', status: 'SUCCEEDED' },
+    });
+
+    await userEvent.click(await approveButton());
+    await waitFor(() =>
+      expect(navigate).toHaveBeenCalledWith('/o/echo-demo/services/s1/deploys/r5'),
+    );
+  });
+
+  it('승인이 실패하면(PATCH_STALE) 코드 · 메시지를 토스트로 보이고 옮기지 않는다', async () => {
+    serve(run({}));
+    server.use(
+      http.post(`${API}/orgs/o1/prechecks/run1/patches/p1/approve`, () =>
+        HttpResponse.json(
+          { success: false, code: 'PATCH_STALE', message: 'patch hash does not match' },
+          { status: 409 },
+        ),
+      ),
+    );
+    renderDiagnosis({ ...failed, diagnosis: { runId: 'run1', status: 'SUCCEEDED' } });
+
+    await userEvent.click(await approveButton());
+
+    await waitFor(() => expect(toastError).toHaveBeenCalledTimes(1));
+    const [, options] = toastError.mock.calls[0] as [string, { description?: string }];
+    expect(options.description).toContain('PATCH_STALE · patch hash does not match');
+    expect(navigate).not.toHaveBeenCalled();
+    expect(screen.queryByText(/Approved — applying the fix/)).toBeNull();
+    expect(screen.getByRole('button', { name: 'Approve patch' })).toBeEnabled();
   });
 
   it('재배포가 거절되면 코드를 보인다', async () => {
