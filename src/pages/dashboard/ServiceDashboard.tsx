@@ -10,7 +10,8 @@ import { useServiceMetrics } from '@/lib/api/metrics';
 import { isActivePlan, useMigrationPlan, useOrgMigrationPlans } from '@/lib/api/migrations';
 import type { EnvironmentSummary, Organization, ServiceDetail } from '@/lib/api/types';
 import { t } from '@/lib/i18n';
-import { currentWeights } from '@/lib/migration-metrics';
+import { currentWeights, dbConsistency, dbPhaseLine } from '@/lib/migration-metrics';
+import { cn } from '@/lib/utils';
 import type { OnpremTopologyView } from '@/pages/services/OnpremLive';
 import { ActiveDisasterCard } from './ActiveDisasterCard';
 import { CompletionCard, recentCompletion } from './CompletionCard';
@@ -47,6 +48,11 @@ export function ServiceDashboard({
   const plans = useOrgMigrationPlans(orgId, ids);
   const running = plans.data.find((plan) => isActivePlan(plan.status));
   const runningPlan = useMigrationPlan(orgId, running?.id);
+  // 가장 최근 성공한 계획(목록은 최신순). 상세에만 DB 컷오버 결과가 있어 같은 상세 훅으로 부른다
+  const lastSucceeded = plans.data.find((plan) => plan.status === 'SUCCEEDED');
+  const lastSucceededPlan = useMigrationPlan(orgId, running ? undefined : lastSucceeded?.id);
+  const dbPhase = runningPlan.data ? dbPhaseLine(runningPlan.data) : null;
+  const db = !running && lastSucceededPlan.data ? dbConsistency(lastSucceededPlan.data) : null;
 
   // 폴링으로 같은 응답이 다시 와도 칸들이 다시 그려지지 않게 넘기는 값의 참조를 유지한다.
   // 쿼리 결과는 응답이 같으면 참조가 그대로라 여기서 새 Map · 객체만 만들지 않으면 된다
@@ -90,7 +96,13 @@ export function ServiceDashboard({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-3">
-        <StatusPill migrating={migrating} disaster={latest} names={names} onprem={onprem?.line} />
+        <StatusPill
+          migrating={migrating}
+          disaster={latest}
+          names={names}
+          onprem={onprem?.line}
+          dbPhase={dbPhase}
+        />
         <span className="ml-auto text-small text-fg-muted max-wide:hidden">{t('Last 15 min')}</span>
         {running && (
           <Button asChild variant="secondary" size="sm" className="max-wide:ml-auto">
@@ -133,7 +145,17 @@ export function ServiceDashboard({
             edgeUrl={serving?.service.url}
             receivingId={receivingId}
             alerts={onprem?.alerts}
+            dbWriterId={db?.writerEnvironmentId}
           />
+          {db && (
+            <p
+              data-testid="db-consistency-caption"
+              data-clean={db.clean}
+              className={cn('mt-2 text-caption', db.clean ? 'text-success-fg' : 'text-danger-fg')}
+            >
+              {db.text}
+            </p>
+          )}
           {onprem && (
             <p data-testid="onprem-live-caption" className="mt-2 text-caption text-fg-muted">
               {onprem.caption}

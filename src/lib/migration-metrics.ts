@@ -1,5 +1,6 @@
 import type { MigrationPlan, MigrationStep } from '@/lib/api/types';
 import { t } from '@/lib/i18n';
+import { isDbCutover } from '@/lib/migration-stages';
 
 /** 끝난 뒤 사람이 스크립트를 돌려야 결과가 생긴다. 이 시간까지만 기다린다(서버 요청 값) */
 export const CUTOVER_WAIT_MS = 10 * 60 * 1000;
@@ -42,6 +43,71 @@ export function rowCheck(plan: CutoverPlan) {
     text: `${result.missingRows} · ${result.duplicateRows}`,
     clean: result.missingRows === 0 && result.duplicateRows === 0,
     rowsTotal: result.rowsTotal,
+  };
+}
+
+/** 계획에 DB 쓰기 전환 단계가 있는가(서버가 includeCutover 로 만든 단계) */
+export function hasDbCutover(plan: Pick<MigrationPlan, 'steps'>): boolean {
+  return plan.steps.some(isDbCutover);
+}
+
+/**
+ * 지금 진행 중인 DB 단계 한 줄(상태 줄). 서버가 RUNNING 으로 준 단계만 본다 — 타이머로 흉내 내지 않는다.
+ * DB_CUTOVER 진행 중 > DATA_SYNC_CHECK 진행 중. 둘 다 아니면 null
+ */
+export function dbPhaseLine(
+  plan: Pick<MigrationPlan, 'steps' | 'status'>,
+): { kind: 'cutover' | 'sync'; text: string } | null {
+  if (plan.status !== 'RUNNING') return null;
+  const running = plan.steps.find((step) => step.result?.status === 'RUNNING');
+  if (!running) return null;
+  if (isDbCutover(running))
+    return {
+      kind: 'cutover',
+      text: t('Syncing DB — writes paused, target DB catching up and ledgers being compared'),
+    };
+  if (running.kind === 'DATA_SYNC_CHECK') {
+    const lag = running.result?.metrics?.replicationLagSeconds;
+    return {
+      kind: 'sync',
+      text:
+        typeof lag === 'number'
+          ? t('Checking DB replication · lag {{seconds}}s', { seconds: lag })
+          : t('Checking DB replication'),
+    };
+  }
+  return null;
+}
+
+/**
+ * 끝난 계획의 DB 정합성(인프라 스크립트가 잰 컷오버 결과). 결과가 없거나 누락·중복이 비면 null.
+ * 쓰기 담당 = 그 계획의 도착 환경(FAILBACK 이면 도착이 원래 환경이다)
+ */
+export function dbConsistency(
+  plan: CutoverPlan & Pick<MigrationPlan, 'targetEnvironmentId'>,
+): { writerEnvironmentId: string; clean: boolean; text: string } | null {
+  if (plan.status !== 'SUCCEEDED') return null;
+  const result = cutoverResult(plan);
+  if (!result || result.missingRows == null || result.duplicateRows == null) return null;
+  const clean = result.missingRows === 0 && result.duplicateRows === 0;
+  const values = {
+    rows: result.rowsTotal ?? '—',
+    missing: result.missingRows,
+    duplicate: result.duplicateRows,
+    seconds: result.writePauseMs == null ? '—' : (result.writePauseMs / 1000).toFixed(1),
+  };
+  return {
+    writerEnvironmentId: plan.targetEnvironmentId,
+    clean,
+    text: clean
+      ? t(
+          'DB in sync · {{rows}} ledger rows compared · missing {{missing}} · duplicate {{duplicate}} · writes paused {{seconds}}s',
+          values,
+        )
+      : t(
+          'DB mismatch · {{rows}} ledger rows compared · missing {{missing}} · duplicate {{duplicate}} · writes paused {{seconds}}s',
+          values,
+        ),
   };
 }
 

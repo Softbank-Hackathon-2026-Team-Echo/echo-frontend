@@ -1,3 +1,4 @@
+import { LoaderCircle } from 'lucide-react';
 import { memo } from 'react';
 import type { Disaster } from '@/lib/api/disasters';
 import { t } from '@/lib/i18n';
@@ -18,6 +19,7 @@ export const StatusPill = memo(function StatusPill({
   names,
   failing = NO_FAILING,
   onprem,
+  dbPhase,
 }: {
   migrating: { name: string; weight: number } | undefined;
   disaster: Disaster | undefined;
@@ -25,7 +27,22 @@ export const StatusPill = memo(function StatusPill({
   failing?: string[];
   /** 온프레 실시간(노트북 감시자) 장애 · 복구 한 줄. 평소엔 없다 */
   onprem?: { tone: 'danger' | 'warning'; text: string };
+  /** 이전 중 지금 단계가 DB 컷오버 · 데이터 확인(서버 RUNNING)일 때 「이전 진행 중」 대신 보일 한 줄 */
+  dbPhase?: { kind: 'cutover' | 'sync'; text: string } | null;
 }) {
+  if (migrating && dbPhase) {
+    return (
+      <span
+        role="status"
+        data-testid="db-phase-line"
+        data-kind={dbPhase.kind}
+        className="inline-flex items-center gap-1.5 rounded-full bg-migrating-bg px-2.5 py-0.5 text-label text-migrating-fg"
+      >
+        <LoaderCircle aria-hidden className="size-3 motion-safe:animate-spin" />
+        {dbPhase.text}
+      </span>
+    );
+  }
   if (onprem && !migrating) {
     return (
       <span
