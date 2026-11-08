@@ -466,4 +466,61 @@ describe('DeployDiagnosis', () => {
     expect(await screen.findByText('The redeploy has not started yet.')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Check again' })).toBeInTheDocument();
   });
+  it('독립 검토 근거를 표시하고 화면에서 본 지문으로 승인한다', async () => {
+    const evidenceHash = `sha256:${'a'.repeat(64)}`;
+    const reviewed = {
+      ...patch,
+      reviewEvidence: {
+        version: 'syntax-review-v1',
+        evidenceHash,
+        testDefinitionHash: `sha256:${'b'.repeat(64)}`,
+        sourceCommitSha: 'c'.repeat(40),
+        review: {
+          verdict: 'PASS',
+          reason: 'Only the missing delimiter changed',
+          model: 'test-model',
+          contextHash: `sha256:${'d'.repeat(64)}`,
+        },
+      },
+    };
+    serve(run({ simulated: false, patches: [reviewed] }));
+    let body: unknown;
+    server.use(
+      http.post(`${API}/orgs/o1/prechecks/run1/patches/p1/approve`, async ({ request }) => {
+        body = await request.json();
+        return ok({ ...reviewed, status: 'APPROVED' });
+      }),
+    );
+    renderDiagnosis({ ...failed, diagnosis: { runId: 'run1', status: 'SUCCEEDED' } });
+    const summary = await screen.findByText(/Independent review and syntax evidence/);
+    await userEvent.click(summary);
+    expect(screen.getByText('Only the missing delimiter changed')).toBeVisible();
+    expect(screen.getByText('Syntax checked; functional compatibility not tested.')).toBeVisible();
+    expect(screen.getByText(evidenceHash)).toBeVisible();
+    await userEvent.click(screen.getByRole('button', { name: 'Approve patch' }));
+    await waitFor(() =>
+      expect(body).toEqual({ patchHash: 'h1', reviewEvidenceHash: evidenceHash }),
+    );
+  });
+
+  it('구버전 응답은 증거 지문을 지어내지 않고 기존 승인 본문을 보낸다', async () => {
+    serve(run({}));
+    let body: unknown;
+    server.use(
+      http.post(`${API}/orgs/o1/prechecks/run1/patches/p1/approve`, async ({ request }) => {
+        body = await request.json();
+        return ok({ ...patch, status: 'APPROVED' });
+      }),
+    );
+    renderDiagnosis({ ...failed, diagnosis: { runId: 'run1', status: 'SUCCEEDED' } });
+    await screen.findByText('A parenthesis is missing');
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Approve patch' })).not.toHaveAttribute(
+        'aria-disabled',
+        'true',
+      ),
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Approve patch' }));
+    await waitFor(() => expect(body).toEqual({ patchHash: 'h1' }));
+  });
 });

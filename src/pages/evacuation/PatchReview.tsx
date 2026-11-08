@@ -183,7 +183,8 @@ export function PatchReview({
   // 승인이 성공한 뒤 새 배포로 옮길 때까지 버튼을 다시 열지 않는다
   const [approved, setApproved] = useState(false);
   const { passed, total } = patch.verification;
-  const failed = passed < total;
+  const proof = patch.reviewEvidence;
+  const failed = passed < total || Boolean(proof && proof.review.verdict !== 'PASS');
   const status = patchStatusView(patch.status);
   const approving = (decide.isPending && decide.variables?.decision === 'approve') || approved;
   const busy = decide.isPending || approved;
@@ -240,6 +241,20 @@ export function PatchReview({
           </span>
         ))}
       </pre>
+      {proof && (
+        <details className="border-t border-line px-4 py-3 text-small">
+          <summary className="cursor-pointer text-fg-secondary">
+            {t('Independent review and syntax evidence')} · {proof.review.verdict}
+          </summary>
+          <p className="mt-2 text-fg-secondary">{proof.review.reason}</p>
+          <p className="text-fg-secondary">
+            {t('Syntax checked; functional compatibility not tested.')}
+          </p>
+          <p className="mt-2 break-all font-mono text-mono" title={proof.evidenceHash}>
+            {proof.evidenceHash}
+          </p>
+        </details>
+      )}
       {patch.apply && (
         <ApplyResult
           orgId={orgId}

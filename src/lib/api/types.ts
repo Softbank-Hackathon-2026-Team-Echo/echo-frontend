@@ -50,7 +50,18 @@ export type DisasterPlan = Schemas['DisasterPlanResponse'];
 export type DisasterType = Schemas['DisasterType'];
 export type PrecheckDetail = Schemas['PrecheckDetailResponse'];
 export type PrecheckStatus = Schemas['AgentRunStatus'];
-export type PrecheckPatch = Schemas['PrecheckPatchResponse'];
+// Additive candidate contract: echo-was specs/ai-independent-review.md.
+// Replace this extension with gen:api after the coordinated WAS release.
+export type PatchReviewEvidence = {
+  version: string;
+  evidenceHash: string;
+  testDefinitionHash: string;
+  sourceCommitSha: string;
+  review: { verdict: string; reason: string; model: string; contextHash: string };
+};
+export type PrecheckPatch = Schemas['PrecheckPatchResponse'] & {
+  reviewEvidence?: PatchReviewEvidence | null;
+};
 export type PrecheckProcessing = Schemas['AgentRunProcessingResponse'];
 export type AiResidencySummary = Schemas['AiResidencySummaryResponse'];
 export type CloudCosts = Schemas['CloudCostsResponse'];

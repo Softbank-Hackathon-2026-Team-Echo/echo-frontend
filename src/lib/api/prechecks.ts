@@ -146,6 +146,14 @@ export function useCancelPrecheck(orgId: string) {
 
 type PatchDecision = { patch: PrecheckPatch; decision: 'approve' | 'reject' };
 
+/** Send the evidence the human actually saw; never recompute a newer server fingerprint. */
+export function patchDecisionBody(patch: Pick<PrecheckPatch, 'patchHash' | 'reviewEvidence'>) {
+  return {
+    patchHash: patch.patchHash,
+    ...(patch.reviewEvidence ? { reviewEvidenceHash: patch.reviewEvidence.evidenceHash } : {}),
+  };
+}
+
 /** 패치 승인 · 거절. 서버 반영 스위치가 꺼져 있으면 승인해도 반영 대기로 남는다 */
 /** 실패한 배포의 AI 진단을 시작한다. 이미 있으면 서버가 같은 실행을 돌려준다 */
 export function useCreateDiagnosis(orgId: string, deployRequestId: string) {
@@ -167,7 +175,7 @@ export function usePatchDecision(orgId: string, precheckId: string) {
   return useMutation({
     mutationFn: ({ patch, decision }: PatchDecision) => {
       const path = { org_id: orgId, precheck_id: precheckId, patch_id: patch.id };
-      const body = { patchHash: patch.patchHash };
+      const body = patchDecisionBody(patch);
       return unwrap(
         decision === 'approve'
           ? api.POST('/api/v1/orgs/{org_id}/prechecks/{precheck_id}/patches/{patch_id}/approve', {

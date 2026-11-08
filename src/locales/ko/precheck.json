@@ -61,5 +61,7 @@
   "Applying in the sandbox…": "샌드박스에 반영하는 중…",
   "Open the redeploy": "다시 배포 보기",
   "The redeploy did not start.": "다시 배포가 시작되지 않았습니다.",
-  "Redeploy with the fix": "수정한 커밋으로 다시 배포"
+  "Redeploy with the fix": "수정한 커밋으로 다시 배포",
+  "Independent review and syntax evidence": "독립 검토와 문법 시험 근거",
+  "Syntax checked; functional compatibility not tested.": "문법 검증 완료. 기능 호환성은 검사하지 않았습니다."
 }
