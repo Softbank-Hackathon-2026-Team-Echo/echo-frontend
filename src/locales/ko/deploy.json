@@ -40,5 +40,7 @@
   "Existing standby following this version": "이 버전을 따라가는 기존 예비",
   "in progress": "진행 중",
   "EchoPort skips a standby when the environment is gone, its address conflicts, or a migration is running.": "환경이 없거나 주소가 겹치거나 이전이 진행 중이면 EchoPort가 그 예비를 건너뜁니다.",
-  "Open": "보기"
+  "Open": "보기",
+  "Approved — applying the fix (PR → build → deploy, about 2–3 min)": "승인됨 — 수정 반영 중(PR 생성 → 빌드 → 배포, 약 2~3분)",
+  "Waiting for the redeploy with the fix. Its page opens when it starts.": "수정 배포를 기다리는 중 — 시작되면 그 배포 상세 화면으로 이동합니다."
 }

@@ -40,5 +40,7 @@
   "Existing standby following this version": "このバージョンに追従する既存の予備",
   "in progress": "進行中",
   "EchoPort skips a standby when the environment is gone, its address conflicts, or a migration is running.": "環境がない、アドレスが重複している、または移行中の場合、EchoPortはその予備をスキップします。",
-  "Open": "開く"
+  "Open": "開く",
+  "Approved — applying the fix (PR → build → deploy, about 2–3 min)": "承認済み — 修正を反映中（PR 作成 → ビルド → デプロイ、約 2〜3 分）",
+  "Waiting for the redeploy with the fix. Its page opens when it starts.": "修正デプロイを待っています — 始まるとそのデプロイの詳細画面に移動します。"
 }

@@ -1,11 +1,13 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { CircleCheck, CircleX, Loader2 } from 'lucide-react';
+import { useState } from 'react';
 import { Link } from 'react-router';
 import { ExternalLink } from '@/components/ExternalLink';
 import { RoleButton } from '@/components/RoleButton';
 import { SimulatedBadge } from '@/components/SimulatedBadge';
 import { StatusBadge } from '@/components/StatusBadge';
 import { Button } from '@/components/ui/button';
+import { notifyApiErrorWithCode } from '@/lib/api/notify';
 import {
   isAwaitingRedeploy,
   isRedeployWaitOver,
@@ -47,6 +49,8 @@ type PatchReviewProps = {
   number: number;
   /** 진단 패치가 만든 재배포로 가는 주소 */
   deployLink?: (id: string) => string;
+  /** 승인이 성공하면 부른다(승인 응답의 패치). 주면 카드 위에 반영 진행 줄을 단다 */
+  onApproved?: (patch: PrecheckPatch | undefined) => void;
 };
 
 /** 고친 커밋으로 만든 재배포의 지금 상태. 끝날 때까지 배포 상세와 같은 간격으로 다시 부른다 */
@@ -167,13 +171,48 @@ function ApplyResult({
 }
 
 /** 러너가 낸 수정안 하나. 사람이 승인 · 거절한다(F15). 막힌 패치는 승인 버튼이 없다 */
-export function PatchReview({ orgId, precheckId, patch, number, deployLink }: PatchReviewProps) {
+export function PatchReview({
+  orgId,
+  precheckId,
+  patch,
+  number,
+  deployLink,
+  onApproved,
+}: PatchReviewProps) {
   const decide = usePatchDecision(orgId, precheckId);
+  // 승인이 성공한 뒤 새 배포로 옮길 때까지 버튼을 다시 열지 않는다
+  const [approved, setApproved] = useState(false);
   const { passed, total } = patch.verification;
   const failed = passed < total;
   const status = patchStatusView(patch.status);
+  const approving = (decide.isPending && decide.variables?.decision === 'approve') || approved;
+  const busy = decide.isPending || approved;
+
+  function decideOn(decision: 'approve' | 'reject') {
+    decide.mutate(
+      { patch, decision },
+      {
+        onSuccess: (result) => {
+          if (decision !== 'approve') return;
+          setApproved(true);
+          onApproved?.(result);
+        },
+        onError: notifyApiErrorWithCode,
+      },
+    );
+  }
+
   return (
     <article className="flex flex-col overflow-hidden rounded-xl border border-line bg-surface shadow-xs">
+      {onApproved && approving && (
+        <p
+          role="status"
+          className="flex items-center gap-2 border-b border-line bg-ai-bg px-4 py-2 text-small text-ai-fg"
+        >
+          <Loader2 aria-hidden className="size-3.5 animate-spin" />
+          {t('Approved — applying the fix (PR → build → deploy, about 2–3 min)')}
+        </p>
+      )}
       <header className="flex flex-col gap-1.5 px-4 py-3">
         <span className="flex flex-wrap items-center gap-2">
           {patch.origin === 'RULE' ? (
@@ -234,17 +273,19 @@ export function PatchReview({ orgId, precheckId, patch, number, deployLink }: Pa
               requires="DEVELOPER"
               size="sm"
               variant="outline"
-              disabled={decide.isPending}
-              onClick={() => decide.mutate({ patch, decision: 'reject' })}
+              disabled={busy}
+              onClick={() => decideOn('reject')}
             >
               {t('Reject patch')}
             </RoleButton>
             <RoleButton
               requires="DEVELOPER"
               size="sm"
-              disabled={decide.isPending}
-              onClick={() => decide.mutate({ patch, decision: 'approve' })}
+              disabled={busy}
+              aria-busy={approving || undefined}
+              onClick={() => decideOn('approve')}
             >
+              {approving && <Loader2 aria-hidden className="animate-spin" />}
               {t('Approve patch')}
             </RoleButton>
           </span>

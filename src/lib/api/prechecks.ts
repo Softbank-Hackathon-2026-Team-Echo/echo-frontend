@@ -180,6 +180,8 @@ export function usePatchDecision(orgId: string, precheckId: string) {
             }),
       );
     },
+    // 화면(PatchReview)이 코드까지 담은 토스트를 직접 띄운다
+    meta: { skipGlobalErrorToast: true },
     // 실패해도 다시 불러온다. 다른 사람이 먼저 결정했거나 패치가 바뀌었을 수 있다
     onSettled: () =>
       queryClient.invalidateQueries({ queryKey: queryKeys.precheck(orgId, precheckId) }),
