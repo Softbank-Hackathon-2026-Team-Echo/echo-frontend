@@ -1,4 +1,11 @@
-import { Activity, ArrowLeftRight, Boxes, Globe, ShieldCheck } from 'lucide-react';
+import {
+  Activity,
+  ArrowLeftRight,
+  Boxes,
+  ExternalLink as ExternalLinkIcon,
+  Globe,
+  ShieldCheck,
+} from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { EmptyState } from '@/components/EmptyState';
@@ -7,6 +14,7 @@ import { PageHeader } from '@/components/PageHeader';
 import { RegisterServiceDialog } from '@/components/RegisterServiceDialog';
 import { RoleButton } from '@/components/RoleButton';
 import { StatusBadge } from '@/components/StatusBadge';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   Table,
@@ -187,8 +195,24 @@ export default function ServicesPage() {
                       <TableCell className="font-mono text-mono">
                         {shortSha(serving?.currentDeployment?.commitSha)}
                       </TableCell>
-                      <TableCell className="max-w-56 truncate text-fg-secondary">
-                        {summary.url.replace(/^https:\/\//, '')}
+                      <TableCell>
+                        {/* 심사장 화면에 주소가 드러나지 않게 주소 글자 대신 버튼만 보인다(title·툴팁에도 없음) */}
+                        {summary.url ? (
+                          <Button asChild variant="outline" size="sm">
+                            <a
+                              href={summary.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              aria-label={t('Open {{name}} in a new tab', { name: summary.name })}
+                              onClick={(event) => event.stopPropagation()}
+                            >
+                              {t('Open site')}
+                              <ExternalLinkIcon aria-hidden />
+                            </a>
+                          </Button>
+                        ) : (
+                          <span className="text-fg-muted">—</span>
+                        )}
                       </TableCell>
                     </TableRow>
                   );
