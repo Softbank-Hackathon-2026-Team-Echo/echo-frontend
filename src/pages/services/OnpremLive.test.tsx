@@ -130,20 +130,46 @@ const renderDetail = (query = '') =>
     url: `/o/echo-demo/services/s1${query}`,
   });
 
+/** 환경 한 줄: 이름 · 상태 · 색(③ 토폴로지와 같은 어휘) · 트래픽 % */
+function expectRow(id: string, name: string, state: string, tone: string, weight: string) {
+  const row = screen.getByTestId(`onprem-live-row-${id}`);
+  expect(row).toHaveTextContent(name);
+  expect(row).toHaveTextContent(state);
+  expect(row).toHaveAttribute('data-tone', tone);
+  expect(screen.getByTestId(`onprem-live-weight-${id}`)).toHaveTextContent(weight);
+}
+
+/** 빼기로 한 것: 요청 색 띠 · 범례 · 응답 환경 · 마지막 승격 · 감시자 epoch · 캡션 */
+function expectNoLeftovers() {
+  const card = screen.getByTestId('onprem-live');
+  expect(screen.queryByTestId('watch-strip')).not.toBeInTheDocument();
+  expect(screen.queryByTestId('onprem-live-watcher')).not.toBeInTheDocument();
+  expect(screen.queryByTestId('onprem-live-env')).not.toBeInTheDocument();
+  for (const gone of [
+    /epoch/i,
+    /heartbeat/i,
+    /promoted/i,
+    /Answering/,
+    /every 2 seconds/,
+    /Failed/,
+  ])
+    expect(card).not.toHaveTextContent(gone);
+}
+
 describe('온프레 실시간(서비스 상세)', () => {
   it('NORMAL + 온프레 응답이면 🟢 카드이고 비율은 콘솔 등록값(온프레 100) 그대로다', async () => {
     const probes = serve(ONPREM, { state: 'NORMAL' }, 'onprem');
     renderDetail();
 
     await waitFor(() =>
-      expect(screen.getByTestId('onprem-live-status')).toHaveTextContent('🟢 On-prem is serving'),
+      expect(screen.getByTestId('onprem-live-summary')).toHaveTextContent(
+        'On-premises healthy — 100% of traffic on-prem',
+      ),
     );
-    expect(screen.getByTestId('onprem-live-env')).toHaveTextContent('On-prem');
-    expect(screen.getByTestId('onprem-live-traffic')).toHaveTextContent('On-prem 100%');
-    expect(screen.getByTestId('onprem-live-watcher')).toHaveTextContent(
-      'Watcher NORMAL · epoch 26 · heartbeat OK · replication OK',
-    );
-    expect(screen.getByTestId('watch-strip').querySelector('[data-kind="onprem"]')).not.toBeNull();
+    expect(screen.getByText('Environment status')).toBeInTheDocument();
+    expectRow('onprem', 'On-premises', '🟢 Healthy', 'success', '100%');
+    expectRow('aws', 'AWS Tokyo', 'Standing by', 'idle', '0%');
+    expectNoLeftovers();
     expect(await screen.findByTestId('weight-onprem')).toHaveTextContent('100');
     expect(screen.getByTestId('weight-aws')).toHaveTextContent('0');
     expect(screen.queryByTestId('note')).not.toBeInTheDocument();
@@ -157,16 +183,15 @@ describe('온프레 실시간(서비스 상세)', () => {
     renderDetail();
 
     await waitFor(() =>
-      expect(screen.getByTestId('onprem-live-status')).toHaveTextContent(
-        '🔴 On-prem offline — AWS is serving instead',
+      expect(screen.getByTestId('onprem-live-summary')).toHaveTextContent(
+        'On-premises outage detected — traffic switched to AWS Tokyo',
       ),
     );
+    expectRow('onprem', 'On-premises', '🔴 Outage (connection lost)', 'danger', '0%');
+    expectRow('aws', 'AWS Tokyo', '🟢 Serving instead', 'success', '100%');
+    expectNoLeftovers();
     await waitFor(() => expect(screen.getByTestId('weight-aws')).toHaveTextContent('100'));
     expect(screen.getByTestId('weight-onprem')).toHaveTextContent('0');
-    expect(screen.getByTestId('onprem-live-traffic')).toHaveTextContent(
-      'AWS 100% · On-prem 0% (offline)',
-    );
-    expect(screen.getByTestId('onprem-live-watcher')).toHaveTextContent('heartbeat down');
     expect(screen.getByTestId('observed')).toHaveTextContent('aws-tokyo 100');
     expect(screen.getByTestId('note')).toHaveTextContent(
       'Live observation (laptop watcher). Console registered value: onprem 100',
@@ -178,10 +203,13 @@ describe('온프레 실시간(서비스 상세)', () => {
     renderDetail();
 
     await waitFor(() =>
-      expect(screen.getByTestId('onprem-live-status')).toHaveTextContent(
-        '🟡 Returning — moving back to on-prem',
+      expect(screen.getByTestId('onprem-live-summary')).toHaveTextContent(
+        'On-premises recovered — moving traffic back to on-premises',
       ),
     );
+    expectRow('onprem', 'On-premises', '🟡 Recovering', 'warning', '0%');
+    expectRow('aws', 'AWS Tokyo', '🟢 Serving instead', 'success', '100%');
+    expectNoLeftovers();
     await waitFor(() => expect(screen.getByTestId('weight-aws')).toHaveTextContent('100'));
   });
 
