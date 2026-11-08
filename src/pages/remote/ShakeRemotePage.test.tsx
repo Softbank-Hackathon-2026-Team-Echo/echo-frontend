@@ -123,9 +123,17 @@ async function loaded() {
   );
 }
 
-/** 체크를 켜고 재난 목록까지 받아 보낼 수 있는 상태가 될 때까지 기다린다 */
+/** 기본 M6.8 은 이전 기준 미만이라 체크 없이 재난 목록만 받으면 보낼 수 있다 */
+async function ready() {
+  await loaded();
+  await waitFor(() => expect(watchButton()).toBeEnabled());
+}
+
+/** M7.2 로 올리고 체크를 켜서 실제 이전이 시작되는 재난을 보낼 수 있게 한다 */
 async function confirmed(user: ReturnType<typeof userEvent.setup>) {
   await loaded();
+  await user.click(screen.getByRole('combobox', { name: 'Magnitude' }));
+  await user.click(await screen.findByRole('option', { name: 'M7.2' }));
   await user.click(confirmBox());
   await waitFor(() => expect(watchButton()).toBeEnabled());
 }
@@ -142,6 +150,10 @@ function shake(z = 40) {
 describe('ShakeRemotePage', () => {
   beforeEach(() => {
     vi.stubGlobal('DeviceMotionEvent', class {});
+    // 규모 선택(Radix Select)이 jsdom 에 없는 포인터 · 스크롤 API 를 부른다
+    Element.prototype.hasPointerCapture ??= () => false;
+    Element.prototype.releasePointerCapture ??= () => {};
+    Element.prototype.scrollIntoView ??= () => {};
   });
   afterEach(() => {
     vi.unstubAllGlobals();
@@ -160,10 +172,27 @@ describe('ShakeRemotePage', () => {
     expect(screen.getByLabelText('Magnitude')).toHaveTextContent('M6.8');
   });
 
-  it('실제 이전을 밝히고 체크 전에는 감지 · 흉내내기를 막는다', async () => {
+  it('기준(M7.0) 미만이면 이전하지 않는다고 적고 체크 없이 보낼 수 있다', async () => {
     serve();
     renderPage();
+    await ready();
+
+    expect(
+      screen.getByText(
+        'Below M7.0. Affected environments are flagged, but no evacuation is proposed.',
+      ),
+    ).toBeInTheDocument();
+    expect(screen.queryByLabelText('I understand real traffic will move')).toBeNull();
+    expect(simulateButton()).toBeEnabled();
+  });
+
+  it('기준 이상이면 실제 이전을 밝히고 체크 전에는 감지 · 흉내내기를 막는다', async () => {
+    serve();
+    const user = userEvent.setup();
+    renderPage();
     await loaded();
+    await user.click(screen.getByRole('combobox', { name: 'Magnitude' }));
+    await user.click(await screen.findByRole('option', { name: 'M7.2' }));
 
     expect(
       screen.getByText('The disaster is simulated, but the migrations it starts are real.'),
@@ -179,11 +208,11 @@ describe('ShakeRemotePage', () => {
     const { calls, bodies } = serve();
     const user = userEvent.setup();
     renderPage();
-    await confirmed(user);
+    await ready();
 
     await user.click(simulateButton());
     expect(calls).toEqual([]);
-    await user.click(screen.getByRole('button', { name: 'Press again to move traffic' }));
+    await user.click(screen.getByRole('button', { name: 'Press again to send' }));
 
     expect(await screen.findByTestId('disaster-id')).toHaveTextContent('d-shake-1');
     expect(calls).toEqual(['create']);
@@ -203,7 +232,7 @@ describe('ShakeRemotePage', () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     renderPage();
-    await confirmed(user);
+    await ready();
 
     await user.click(simulateButton());
     act(() => {
@@ -255,12 +284,10 @@ describe('ShakeRemotePage', () => {
     expect(calls).toEqual(['end']);
   });
 
-  it('진행 중 재난 목록을 받기 전에는 체크해도 보내지 못한다', async () => {
+  it('진행 중 재난 목록을 받기 전에는 보내지 못한다', async () => {
     serve({ active: [disaster], slowList: true });
-    const user = userEvent.setup();
     renderPage();
     await loaded();
-    await user.click(confirmBox());
 
     expect(simulateButton()).toBeDisabled();
     expect(watchButton()).toBeDisabled();
@@ -269,10 +296,8 @@ describe('ShakeRemotePage', () => {
 
   it('재난 목록을 못 불러오면 이유를 보이고 보내지 못한다', async () => {
     serve({ failList: true });
-    const user = userEvent.setup();
     renderPage();
     await loaded();
-    await user.click(confirmBox());
 
     expect(
       await screen.findByText(
@@ -287,7 +312,6 @@ describe('ShakeRemotePage', () => {
     serve({
       environments: [{ id: 'e-lab', name: 'lab', location: 'unknown-place', coordinates: null }],
     });
-    const user = userEvent.setup();
     renderPage();
 
     expect(
@@ -295,7 +319,6 @@ describe('ShakeRemotePage', () => {
         'This environment has no coordinates, so nothing can be sent. Pick another one.',
       ),
     ).toBeInTheDocument();
-    await user.click(confirmBox());
     await new Promise((resolve) => setTimeout(resolve, 50));
     expect(simulateButton()).toBeDisabled();
   });

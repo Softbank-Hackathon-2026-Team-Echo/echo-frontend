@@ -2,19 +2,26 @@ import { memo } from 'react';
 import type { Disaster } from '@/lib/api/disasters';
 import { t } from '@/lib/i18n';
 
+const NO_FAILING: string[] = [];
+
 function clock(iso: string) {
   return new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 }
 
-/** 대시보드 제목 옆 상태 알약: 이전 중 > 재난 > 정상 (Figma 시연 장면 1~3) */
+/**
+ * 대시보드 제목 옆 상태 알약: 이전 중 > 재난 > 배포 실패 > 정상 (Figma 시연 장면 1~3).
+ * 서비스 카드가 실패인데 알약이 정상이면 어긋나 보여서, 마지막 배포가 실패한 서비스를 적는다
+ */
 export const StatusPill = memo(function StatusPill({
   migrating,
   disaster,
   names,
+  failing = NO_FAILING,
 }: {
   migrating: { name: string; weight: number } | undefined;
   disaster: Disaster | undefined;
   names: Map<string, string>;
+  failing?: string[];
 }) {
   if (migrating) {
     return (
@@ -43,6 +50,14 @@ export const StatusPill = memo(function StatusPill({
               environments: affected,
             })
           : t('M{{magnitude}} {{place}} · nothing at risk · {{time}}', values)}
+      </span>
+    );
+  }
+  if (failing.length > 0) {
+    return (
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-warning-bg px-2.5 py-0.5 text-label text-warning-fg">
+        <span aria-hidden className="size-1.5 rounded-full bg-warning-solid" />
+        {t('Last deploy failed · {{services}}', { services: failing.join(', ') })}
       </span>
     );
   }

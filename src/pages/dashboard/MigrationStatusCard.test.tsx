@@ -95,4 +95,12 @@ describe('StatusPill', () => {
     );
     expect(screen.getByText('Evacuating to gcp-seoul-standby · 70%')).toBeInTheDocument();
   });
+
+  it('재난 · 이전이 없어도 마지막 배포가 실패한 서비스가 있으면 정상이라고 하지 않는다', () => {
+    renderRoute(
+      <StatusPill migrating={undefined} disaster={undefined} names={names} failing={['demo-ai']} />,
+    );
+    expect(screen.getByText('Last deploy failed · demo-ai')).toBeInTheDocument();
+    expect(screen.queryByText('All systems normal')).toBeNull();
+  });
 });

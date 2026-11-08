@@ -96,6 +96,11 @@ export default function DashboardPage() {
   }
 
   const setup = onboardingProgress(envList, details.data);
+  const failing = details.data
+    .filter(
+      (service) => requests.find((item) => item.serviceId === service.id)?.status === 'FAILED',
+    )
+    .map((service) => service.name);
   const latest = active.at(-1);
   const completed = recentCompletion(organization.id, plans.data);
 
@@ -103,7 +108,7 @@ export default function DashboardPage() {
     <>
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-h1">{t('Dashboard')}</h1>
-        <StatusPill migrating={migrating} disaster={latest} names={names} />
+        <StatusPill migrating={migrating} disaster={latest} names={names} failing={failing} />
         {running && (
           <Button asChild variant="secondary" size="sm" className="ml-auto">
             <Link to={`/o/${organization.slug}/migrations/${running.id}`}>

@@ -33,5 +33,6 @@
   "This service already has an open migration plan": "이 서비스에 이미 열린 이전 계획이 있습니다",
   "Traffic already left the affected environment": "트래픽이 이미 피해 환경을 떠났습니다",
   "Trigger disaster": "재난 발생",
-  "{{total}} migrations started": "이전 {{total}}건을 시작했습니다"
+  "{{total}} migrations started": "이전 {{total}}건을 시작했습니다",
+  "Press again to send": "한 번 더 누르면 보냅니다"
 }
