@@ -108,6 +108,8 @@
   "Private repository": "プライベートリポジトリ",
   "Provider · region": "プロバイダー · リージョン",
   "Public URL": "公開 URL",
+  "Open site": "開く",
+  "Open {{name}} in a new tab": "{{name}} を新しいタブで開く",
   "Public URL (fixed)": "公開 URL(固定)",
   "Queued": "キュー待ち",
   "Re-scan all": "すべて再スキャン",

@@ -108,6 +108,8 @@
   "Private repository": "비공개 저장소",
   "Provider · region": "제공자 · 리전",
   "Public URL": "공개 URL",
+  "Open site": "열기",
+  "Open {{name}} in a new tab": "{{name}} 새 탭에서 열기",
   "Public URL (fixed)": "공개 URL(고정)",
   "Queued": "대기 중",
   "Re-scan all": "전체 다시 스캔",
