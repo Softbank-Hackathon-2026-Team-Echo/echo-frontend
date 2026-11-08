@@ -17,12 +17,38 @@ export const StatusPill = memo(function StatusPill({
   disaster,
   names,
   failing = NO_FAILING,
+  onprem,
 }: {
   migrating: { name: string; weight: number } | undefined;
   disaster: Disaster | undefined;
   names: Map<string, string>;
   failing?: string[];
+  /** 온프레 실시간(노트북 감시자) 장애 · 복구 한 줄. 평소엔 없다 */
+  onprem?: { tone: 'danger' | 'warning'; text: string };
 }) {
+  if (onprem && !migrating) {
+    return (
+      <span
+        data-testid="onprem-live-line"
+        data-tone={onprem.tone}
+        className={
+          onprem.tone === 'danger'
+            ? 'inline-flex items-center gap-1.5 rounded-full bg-danger-bg px-2.5 py-0.5 text-label text-danger-fg'
+            : 'inline-flex items-center gap-1.5 rounded-full bg-warning-bg px-2.5 py-0.5 text-label text-warning-fg'
+        }
+      >
+        <span
+          aria-hidden
+          className={
+            onprem.tone === 'danger'
+              ? 'size-1.5 rounded-full bg-danger-solid'
+              : 'size-1.5 rounded-full bg-warning-solid'
+          }
+        />
+        {onprem.text}
+      </span>
+    );
+  }
   if (migrating) {
     return (
       <span className="inline-flex items-center gap-1.5 rounded-full bg-migrating-bg px-2.5 py-0.5 text-label text-migrating-fg">

@@ -7,6 +7,7 @@ import { applyLiveTraffic, liveStatus, liveTrafficOn } from '@/lib/onprem-live';
 import { KpiTiles } from '@/pages/dashboard/KpiTiles';
 import { server } from '@/test/msw-server';
 import { renderRoute } from '@/test/render';
+import type { OnpremTopologyView } from './OnpremLive';
 import ServiceDetailPage from './ServiceDetailPage';
 import ServicesPage from './ServicesPage';
 
@@ -15,9 +16,11 @@ vi.mock('@/pages/dashboard/ServiceDashboard', () => ({
   ServiceDashboard: ({
     service,
     observed,
+    onprem,
   }: {
     service: ServiceDetail;
     observed?: { name: string; weight: number; note: string };
+    onprem?: OnpremTopologyView;
   }) => (
     <div data-testid="dashboard">
       {service.environments.map((link) => (
@@ -27,6 +30,18 @@ vi.mock('@/pages/dashboard/ServiceDashboard', () => ({
       ))}
       {observed && <span data-testid="observed">{`${observed.name} ${observed.weight}`}</span>}
       {observed && <span data-testid="note">{observed.note}</span>}
+      {onprem?.line && (
+        <span data-testid="line" data-tone={onprem.line.tone}>
+          {onprem.line.text}
+        </span>
+      )}
+      {onprem &&
+        [...onprem.alerts].map(([id, alert]) => (
+          <span key={id} data-testid={`alert-${id}`} data-tone={alert.tone}>
+            {alert.label}
+          </span>
+        ))}
+      {onprem && <span data-testid="caption">{onprem.caption}</span>}
     </div>
   ),
 }));
@@ -130,46 +145,26 @@ const renderDetail = (query = '') =>
     url: `/o/echo-demo/services/s1${query}`,
   });
 
-/** 환경 한 줄: 이름 · 상태 · 색(③ 토폴로지와 같은 어휘) · 트래픽 % */
-function expectRow(id: string, name: string, state: string, tone: string, weight: string) {
-  const row = screen.getByTestId(`onprem-live-row-${id}`);
-  expect(row).toHaveTextContent(name);
-  expect(row).toHaveTextContent(state);
-  expect(row).toHaveAttribute('data-tone', tone);
-  expect(screen.getByTestId(`onprem-live-weight-${id}`)).toHaveTextContent(weight);
+/** 「환경 상태」 카드는 없다. 모든 표시는 토폴로지(노드 라벨 · 갈래 비율 · 상태 줄)에서만 */
+function expectNoCard() {
+  expect(screen.queryByTestId('onprem-live')).not.toBeInTheDocument();
+  expect(screen.queryByTestId('onprem-live-summary')).not.toBeInTheDocument();
+  expect(screen.queryByText('Environment status')).not.toBeInTheDocument();
 }
 
-/** 빼기로 한 것: 요청 색 띠 · 범례 · 응답 환경 · 마지막 승격 · 감시자 epoch · 캡션 */
-function expectNoLeftovers() {
-  const card = screen.getByTestId('onprem-live');
-  expect(screen.queryByTestId('watch-strip')).not.toBeInTheDocument();
-  expect(screen.queryByTestId('onprem-live-watcher')).not.toBeInTheDocument();
-  expect(screen.queryByTestId('onprem-live-env')).not.toBeInTheDocument();
-  for (const gone of [
-    /epoch/i,
-    /heartbeat/i,
-    /promoted/i,
-    /Answering/,
-    /every 2 seconds/,
-    /Failed/,
-  ])
-    expect(card).not.toHaveTextContent(gone);
-}
-
-describe('온프레 실시간(서비스 상세)', () => {
-  it('NORMAL + 온프레 응답이면 🟢 카드이고 비율은 콘솔 등록값(온프레 100) 그대로다', async () => {
+describe('온프레 실시간(서비스 상세 · 토폴로지 안에서만)', () => {
+  it('NORMAL + 온프레 응답이면 평소 그대로: 노드 표시 · 상태 줄 없음, 비율은 온프레 100', async () => {
     const probes = serve(ONPREM, { state: 'NORMAL' }, 'onprem');
     renderDetail();
 
     await waitFor(() =>
-      expect(screen.getByTestId('onprem-live-summary')).toHaveTextContent(
-        'On-premises healthy — 100% of traffic on-prem',
-      ),
+      expect(screen.getByTestId('caption')).toHaveTextContent('Live observation (laptop watcher)'),
     );
-    expect(screen.getByText('Environment status')).toBeInTheDocument();
-    expectRow('onprem', 'On-premises', '🟢 Healthy', 'success', '100%');
-    expectRow('aws', 'AWS Tokyo', 'Standing by', 'idle', '0%');
-    expectNoLeftovers();
+    await waitFor(() => expect(probes.length).toBeGreaterThan(1));
+    expectNoCard();
+    expect(screen.queryByTestId('line')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('alert-onprem')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('alert-aws-tokyo')).not.toBeInTheDocument();
     expect(await screen.findByTestId('weight-onprem')).toHaveTextContent('100');
     expect(screen.getByTestId('weight-aws')).toHaveTextContent('0');
     expect(screen.queryByTestId('note')).not.toBeInTheDocument();
@@ -178,18 +173,20 @@ describe('온프레 실시간(서비스 상세)', () => {
     expect(probes).toContain('demo-laptop-nwjs7inr.echoport.uk/api/info');
   });
 
-  it('PROMOTED 면 🔴 오프라인 카드이고 비율을 AWS 100 / 온프레 0 으로 덮고 주석을 단다', async () => {
+  it('PROMOTED 면 온프레 노드 🔴 장애 · AWS 노드 대체 서비스 중 · 갈래 AWS 100 / 온프레 0 · 상태 줄', async () => {
     serve(ONPREM, { state: 'PROMOTED', hb: false }, 'aws');
     renderDetail();
 
     await waitFor(() =>
-      expect(screen.getByTestId('onprem-live-summary')).toHaveTextContent(
+      expect(screen.getByTestId('line')).toHaveTextContent(
         'On-premises outage detected — traffic switched to AWS Tokyo',
       ),
     );
-    expectRow('onprem', 'On-premises', '🔴 Outage (connection lost)', 'danger', '0%');
-    expectRow('aws', 'AWS Tokyo', '🟢 Serving instead', 'success', '100%');
-    expectNoLeftovers();
+    expect(screen.getByTestId('line')).toHaveAttribute('data-tone', 'danger');
+    expect(screen.getByTestId('alert-onprem')).toHaveTextContent('🔴 Outage (connection lost)');
+    expect(screen.getByTestId('alert-onprem')).toHaveAttribute('data-tone', 'danger');
+    expect(screen.getByTestId('alert-aws-tokyo')).toHaveTextContent('🟢 Serving instead');
+    expectNoCard();
     await waitFor(() => expect(screen.getByTestId('weight-aws')).toHaveTextContent('100'));
     expect(screen.getByTestId('weight-onprem')).toHaveTextContent('0');
     expect(screen.getByTestId('observed')).toHaveTextContent('aws-tokyo 100');
@@ -198,19 +195,31 @@ describe('온프레 실시간(서비스 상세)', () => {
     );
   });
 
-  it('FROZEN(복귀 중)이면 🟡 카드다. 손님이 아직 aws 로 답하면 비율은 AWS 100 이다', async () => {
+  it('FROZEN(복귀 중)이면 온프레 노드 🟡 복구 중 · 상태 줄. 손님이 아직 aws 로 답하면 갈래는 AWS 100', async () => {
     serve(ONPREM, { state: 'FROZEN' }, 'aws');
     renderDetail();
 
     await waitFor(() =>
-      expect(screen.getByTestId('onprem-live-summary')).toHaveTextContent(
+      expect(screen.getByTestId('line')).toHaveTextContent(
         'On-premises recovered — moving traffic back to on-premises',
       ),
     );
-    expectRow('onprem', 'On-premises', '🟡 Recovering', 'warning', '0%');
-    expectRow('aws', 'AWS Tokyo', '🟢 Serving instead', 'success', '100%');
-    expectNoLeftovers();
+    expect(screen.getByTestId('line')).toHaveAttribute('data-tone', 'warning');
+    expect(screen.getByTestId('alert-onprem')).toHaveTextContent('🟡 Recovering');
+    expect(screen.getByTestId('alert-onprem')).toHaveAttribute('data-tone', 'warning');
+    expectNoCard();
     await waitFor(() => expect(screen.getByTestId('weight-aws')).toHaveTextContent('100'));
+    expect(screen.getByTestId('weight-onprem')).toHaveTextContent('0');
+  });
+
+  it('복구 뒤 손님이 온프레로 답하면 갈래가 다시 온프레 100 이다(FROZEN + onprem 응답)', async () => {
+    serve(ONPREM, { state: 'FROZEN' }, 'onprem');
+    renderDetail();
+
+    await waitFor(() => expect(screen.getByTestId('alert-onprem')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByTestId('weight-onprem')).toHaveTextContent('100'));
+    expect(screen.getByTestId('weight-aws')).toHaveTextContent('0');
+    expect(screen.queryByTestId('alert-aws-tokyo')).not.toBeInTheDocument();
   });
 
   it('?watcher= · ?guest= 쿼리가 있으면 그 호스트를 부른다', async () => {
@@ -228,6 +237,8 @@ describe('온프레 실시간(서비스 상세)', () => {
 
     expect(await screen.findByTestId('dashboard')).toBeInTheDocument();
     expect(screen.queryByTestId('onprem-live')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('caption')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('line')).not.toBeInTheDocument();
     expect(screen.getByTestId('weight-aws')).toHaveTextContent('100');
     expect(probes).toEqual([]);
   });

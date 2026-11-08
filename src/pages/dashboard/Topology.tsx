@@ -47,10 +47,14 @@ type EnvNodeData = {
   links: ServiceOnEnvironment[];
   atRisk: boolean;
   receiving: boolean;
+  /** 온프레 실시간 관측(노트북 감시자): 장애 · 복구 중 · 대체 서비스 중 라벨 */
+  alert?: TopologyAlert;
 };
 type GroupNodeData = { label: string; risky: boolean };
 type ProxyNodeData = { url: string | undefined };
-type TrafficEdgeData = { weight: number; kind: 'traffic' | 'replication' };
+/** muted: 장애 · 복구 중인 환경으로 가는 0% 갈래는 회색 점선 */
+type TrafficEdgeData = { weight: number; kind: 'traffic' | 'replication'; muted?: boolean };
+export type TopologyAlert = { tone: 'danger' | 'warning' | 'success'; label: string };
 
 type TopologyNode =
   | Node<EnvNodeData, 'environment'>
@@ -68,7 +72,10 @@ function standbyText(link: ServiceOnEnvironment['link'] | undefined): string {
 
 /** 환경 노드: 역할 · 버전 · 트래픽 막대 · 위험 */
 function EnvironmentNode({ data }: NodeProps<Node<EnvNodeData, 'environment'>>) {
-  const { environment, links, atRisk, receiving } = data;
+  const { environment, links, receiving, alert } = data;
+  // 온프레 장애는 ③ 지진 피해 환경과 같은 빨간 테두리 · 경고 아이콘을 쓴다
+  const atRisk = data.atRisk || alert?.tone === 'danger';
+  const recovering = !atRisk && alert?.tone === 'warning';
   const primary = links.find((item) => item.link.role === 'SERVING') ?? links[0];
   const weight = links.reduce((sum, item) => sum + item.link.trafficWeight, 0);
   const displayedWeight = useAnimatedNumber(weight);
@@ -85,11 +92,15 @@ function EnvironmentNode({ data }: NodeProps<Node<EnvNodeData, 'environment'>>) 
         'relative flex flex-col justify-between rounded-md border bg-surface p-3 shadow-xs',
         atRisk
           ? 'topology-at-risk border-danger-solid ring-2 ring-danger-bg'
-          : receiving
-            ? 'border-migrating-solid motion-safe:border-migrating-bg'
-            : 'border-line',
+          : recovering
+            ? 'border-warning-solid ring-2 ring-warning-bg'
+            : receiving
+              ? 'border-migrating-solid motion-safe:border-migrating-bg'
+              : 'border-line',
       )}
       style={{ width: ENV_WIDTH, height: ENV_HEIGHT }}
+      data-testid={`topology-env-${environment.id}`}
+      data-alert={alert?.tone}
     >
       {receiving && <span aria-hidden className="topology-beam" />}
       <Handle
@@ -131,12 +142,22 @@ function EnvironmentNode({ data }: NodeProps<Node<EnvNodeData, 'environment'>>) 
         {atRisk ? (
           <span className="inline-flex items-center gap-1 rounded-sm bg-danger-bg px-1.5 text-label text-danger-fg">
             <TriangleAlert aria-hidden className="size-3" />
-            {t('At risk')}
+            {alert?.tone === 'danger' ? alert.label : t('At risk')}
+          </span>
+        ) : recovering && alert ? (
+          <span className="inline-flex items-center gap-1 rounded-sm bg-warning-bg px-1.5 text-label text-warning-fg">
+            <TriangleAlert aria-hidden className="size-3" />
+            {alert.label}
           </span>
         ) : role ? (
           <StatusBadge {...envRoleView(role)} />
         ) : (
           <StatusBadge {...connectionStatusView(environment.connectionStatus)} />
+        )}
+        {alert?.tone === 'success' && (
+          <span className="rounded-sm bg-success-bg px-1.5 text-label text-success-fg">
+            {alert.label}
+          </span>
         )}
       </span>
       <span className="flex items-center justify-between gap-2 text-caption text-fg-muted">
@@ -253,11 +274,12 @@ function TrafficEdge(props: EdgeProps<Edge<TrafficEdgeData>>) {
           weight > 0 && 'flow-rail',
         )}
         style={{
-          stroke: replication
-            ? 'var(--ep-color-text-muted)'
-            : weight > 0
-              ? 'var(--ep-color-chart-3)'
-              : 'var(--ep-color-brand-default)',
+          stroke:
+            replication || (data?.muted && weight === 0)
+              ? 'var(--ep-color-text-muted)'
+              : weight > 0
+                ? 'var(--ep-color-chart-3)'
+                : 'var(--ep-color-brand-default)',
           strokeWidth: replication ? 2 : lineWidth,
           strokeDasharray: replication || weight === 0 ? '5 4' : undefined,
         }}
@@ -354,7 +376,11 @@ type TopologyProps = {
   edgeUrl: string | undefined;
   /** 이전으로 지금 트래픽이 옮겨 가는 환경 */
   receivingId?: string;
+  /** 온프레 실시간 관측(노트북 감시자): 환경 id → 노드 라벨. 장애 · 복구 중 환경의 0% 갈래는 회색 점선 */
+  alerts?: Map<string, TopologyAlert>;
 };
+
+const NO_ALERTS = new Map<string, TopologyAlert>();
 
 function TopologyCanvas({
   environments,
@@ -362,6 +388,7 @@ function TopologyCanvas({
   atRisk,
   edgeUrl,
   receivingId,
+  alerts = NO_ALERTS,
 }: TopologyProps) {
   const { fitView } = useReactFlow();
   const [positions, setPositions] = useState<Positions>(new Map());
@@ -390,7 +417,13 @@ function TopologyCanvas({
         source: 'proxy',
         target: environment.id,
         type: 'traffic',
-        data: { weight, kind: 'traffic' },
+        data: {
+          weight,
+          kind: 'traffic',
+          muted:
+            alerts.get(environment.id)?.tone === 'danger' ||
+            alerts.get(environment.id)?.tone === 'warning',
+        },
       });
       if (serving && environment.id !== serving.id) {
         list.push({
@@ -405,7 +438,7 @@ function TopologyCanvas({
       }
     }
     return list;
-  }, [environments, byEnvironment]);
+  }, [environments, byEnvironment, alerts]);
 
   // 배치는 구조(환경·묶음)가 바뀔 때만 다시 계산한다. 이전으로 트래픽이 옮겨 가도 그대로 둔다
   const structureKey = useMemo(
@@ -482,13 +515,14 @@ function TopologyCanvas({
             links: byEnvironment.get(environment.id) ?? [],
             atRisk: atRisk.has(environment.id),
             receiving: environment.id === receivingId,
+            alert: alerts.get(environment.id),
           },
           draggable: false,
         });
       }
     }
     return list;
-  }, [positions, groups, byEnvironment, atRisk, edgeUrl, receivingId]);
+  }, [positions, groups, byEnvironment, atRisk, edgeUrl, receivingId, alerts]);
 
   // 캔버스 왼쪽 아래 버튼의 툴팁. 기본값이 영어 문구라 그대로 번역한다
   const ariaLabelConfig = useMemo(

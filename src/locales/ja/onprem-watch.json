@@ -37,5 +37,6 @@
   "Offline → AWS standing in": "オフライン → AWS が代替中",
   "Returning": "復帰中",
   "Traffic now (observed)": "現在のトラフィック(リアルタイム観測)",
-  "Live observation (laptop watcher). Console registered value: {{name}} {{weight}}": "リアルタイム観測値(ノートPC監視役の基準)。コンソール登録値は {{name}} {{weight}}"
+  "Live observation (laptop watcher). Console registered value: {{name}} {{weight}}": "リアルタイム観測値(ノートPC監視役の基準)。コンソール登録値は {{name}} {{weight}}",
+  "Live observation (laptop watcher)": "リアルタイム観測値(ノートPC監視役の基準)"
 }
