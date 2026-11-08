@@ -96,8 +96,9 @@ export function PlanDraft({
   const [maxWaitSeconds, setMaxWaitSeconds] = useState(DEFAULT_MAX_WAIT_SECONDS);
   const [conditions, setConditions] = useState(DEFAULT_CONDITIONS);
   const [picked, setSimulate] = useState<Simulate | null>(null);
-  // DB 쓰기 담당도 옮기면 비율 100% 뒤에 DB 쓰기 전환 단계가 붙는다(echo-was API 서버 17). 기본 끔
-  const [includeCutover, setIncludeCutover] = useState(false);
+  // DB 쓰기 담당도 옮기면 비율 100% 뒤에 DB 쓰기 전환 단계가 붙는다(echo-was API 서버 17).
+  // 기본 켬(시연 결정). 대피와 복귀가 이 초안을 함께 쓴다
+  const [includeCutover, setIncludeCutover] = useState(true);
   const simulate = realTarget ? null : picked;
   const errors = fieldErrors(create.error);
   const steps = draftSteps(required, maxWaitSeconds, includeCutover);
